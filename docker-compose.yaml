@@ -9,7 +9,7 @@ services:
     environment:
       PORT: '8080'
     env_file:
-      - .env
+      - src/.env
     depends_on:
       - database
 
@@ -20,7 +20,7 @@ services:
     ports:
       - '5432:5432'
     env_file:
-      - .env
+      - src/.env
     volumes:
       - data:/var/lib/postgresql/data
 
