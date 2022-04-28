@@ -20,21 +20,21 @@ type repository interface {
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type Controller struct {
-	service repository
+	repo repository
 }
 
 // InitController initializes the boargame controller.
 func InitController(boardGameRepo *boardgameRepo.BoardGameRepository) *Controller {
 	return &Controller{
-		service: boardGameRepo,
+		repo: boardGameRepo,
 	}
 }
 
-func (controller *Controller) CreateBG(w http.ResponseWriter, r *http.Request) {
+func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	temp := model.NewBoardGame("Bilbo", "Baggings", 10.0, 4)
 
-	err := controller.service.Create(temp)
+	err := controller.repo.Create(temp)
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}
@@ -42,9 +42,9 @@ func (controller *Controller) CreateBG(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, "200")
 }
 
-func (controller *Controller) GetBG(w http.ResponseWriter, r *http.Request) {
+func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
-	boardgame, err := controller.service.GetByName("Bilbo")
+	boardgame, err := controller.repo.GetByName("Bilbo")
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}
@@ -59,29 +59,29 @@ func (controller *Controller) GetBG(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, response)
 }
 
-func (controller *Controller) UpdateBG(w http.ResponseWriter, r *http.Request) {
+func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 
-	boardgame, err := controller.service.GetByName("Bilbo")
+	boardgame, err := controller.repo.GetByName("Bilbo")
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}
 
 	boardgame.Dealer = "420"
-	err = controller.service.Update(boardgame)
+	err = controller.repo.Update(boardgame)
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}
 	render.New().JSON(w, http.StatusOK, "200 - Updated")
 }
 
-func (controller *Controller) DeleteBG(w http.ResponseWriter, r *http.Request) {
+func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
-	boardgame, err := controller.service.GetByName("Bilbo")
+	boardgame, err := controller.repo.GetByName("Bilbo")
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}
 
-	err = controller.service.DeleteById(boardgame)
+	err = controller.repo.DeleteById(boardgame)
 	if err != nil {
 		render.New().JSON(w, http.StatusOK, "500")
 	}

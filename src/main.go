@@ -29,10 +29,10 @@ func main() {
 	// Creates routing
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-	router.Post("/api/boardgame", controllers.BoardgameController.CreateBG)
-	router.Get("/api/boardgame", controllers.BoardgameController.GetBG)
-	router.Patch("/api/boardgame", controllers.BoardgameController.UpdateBG)
-	router.Delete("/api/boardgame", controllers.BoardgameController.DeleteBG)
+	router.Post("/api/boardgame", controllers.BoardgameController.Create)
+	router.Get("/api/boardgame", controllers.BoardgameController.Get)
+	router.Patch("/api/boardgame", controllers.BoardgameController.Update)
+	router.Delete("/api/boardgame", controllers.BoardgameController.Delete)
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")
