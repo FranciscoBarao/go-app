@@ -12,6 +12,7 @@ import (
 	"go-app/controller"
 	"go-app/database"
 	"go-app/repository"
+	"go-app/route"
 )
 
 func main() {
@@ -29,10 +30,9 @@ func main() {
 	// Creates routing
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-	router.Post("/api/boardgame", controllers.BoardgameController.Create)
-	router.Get("/api/boardgame", controllers.BoardgameController.Get)
-	router.Patch("/api/boardgame", controllers.BoardgameController.Update)
-	router.Delete("/api/boardgame", controllers.BoardgameController.Delete)
+
+	// Adds Routers
+	route.AddBoardGameRouter(router, controllers.BoardgameController)
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")

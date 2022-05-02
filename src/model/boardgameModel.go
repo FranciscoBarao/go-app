@@ -21,6 +21,22 @@ func NewBoardGame(name, dealer string, price float64, playerNumber int) BoardGam
 	}
 }
 
+func (bg BoardGame) UpdateBoardGame(name, dealer string, price float64, playerNumber int) {
+	if name != "" {
+		bg.Name = name
+	}
+	if dealer != "" {
+		bg.Dealer = dealer
+	}
+	if price > 0 {
+		bg.Price = price
+	}
+
+	if playerNumber > 0 {
+		bg.PlayerNumber = playerNumber
+	}
+}
+
 // Getters
 func (bg BoardGame) GetName() string {
 	return bg.Name

@@ -3,9 +3,13 @@ package database
 import (
 	"errors"
 	"fmt"
-	"go-app/model"
 	"log"
+	"net/http"
 	"os"
+	"reflect"
+
+	"go-app/model"
+	"go-app/utils"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -64,11 +68,19 @@ func getConfig() (string, error) {
 	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port, nil
 }
 
+func isSliceOrArray(value interface{}) bool {
+	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
+}
+
 func (instance *PostgresqlRepository) Create(value interface{}) error {
 
 	result := instance.db.Create(value) //value and not &value ->  You want to pass a pointer of the struct not the interface
+
 	if result.Error != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
+		if errors.Is(result.Error, gorm.ErrRegistered) {
+			return utils.NewError(http.StatusConflict, "Entry already registered")
+		}
 		return result.Error
 	}
 
@@ -77,9 +89,20 @@ func (instance *PostgresqlRepository) Create(value interface{}) error {
 }
 
 func (instance *PostgresqlRepository) Read(value interface{}, search string, identifier string) error {
-	result := instance.db.First(&value, search, identifier)
+	var result *gorm.DB
+
+	if isSliceOrArray(value) {
+		result = instance.db.Find(value)
+	} else {
+		result = instance.db.Find(&value, search, identifier)
+	}
+
 	if result.Error != nil {
-		log.Println("Error while fetching a database entry: " + search + " " + identifier)
+		log.Println("Error while reading a database entry: " + search + " " + identifier)
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Println("Error Record not found: " + search + " " + identifier)
+			return utils.NewError(http.StatusNotFound, "Record Not found")
+		}
 		return result.Error
 	}
 
@@ -100,8 +123,12 @@ func (instance *PostgresqlRepository) Update(value interface{}) error {
 
 func (instance *PostgresqlRepository) Delete(value interface{}) error {
 	result := instance.db.Delete(value)
+
 	if result.Error != nil {
 		log.Println("Error while deleting a database entry: " + fmt.Sprintf("%v", value))
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			return utils.NewError(http.StatusNotFound, "Record Not found")
+		}
 		return result.Error
 	}
 
