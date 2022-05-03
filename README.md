@@ -39,7 +39,7 @@ curl -X GET localhost:8080/api/boardgame/Test
 
 Update
 ```
-curl -X PATCH localhost:8080/api/boardgame/2
+curl -X PATCH localhost:8080/api/boardgame/2 -H 'Content-Type: application/json' -d '{ "Name": "Test", "Dealer": "Dealer", "Price": 10.0, "PlayerNumber": 1 }'
 ```
 
 Delete

@@ -21,7 +21,7 @@ func NewBoardGame(name, dealer string, price float64, playerNumber int) BoardGam
 	}
 }
 
-func (bg BoardGame) UpdateBoardGame(name, dealer string, price float64, playerNumber int) {
+func (bg *BoardGame) UpdateBoardGame(name, dealer string, price float64, playerNumber int) {
 	if name != "" {
 		bg.Name = name
 	}
