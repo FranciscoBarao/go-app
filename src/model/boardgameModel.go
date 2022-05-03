@@ -1,7 +1,9 @@
 package model
 
+import "gorm.io/gorm"
+
 type BoardGame struct {
-	commonModelFields
+	gorm.Model
 	Name         string  `json:"name"`
 	Dealer       string  `json:"dealer"`
 	Price        float64 `json:"price"`

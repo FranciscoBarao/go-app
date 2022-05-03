@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/unrolled/render"
 
 	"go-app/model"
@@ -83,7 +82,7 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 // Method that Gets a boardgame based on a name
 func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) {
 
-	name := chi.URLParam(r, "name")
+	name := utils.GetFieldFromURL(r, "name")
 
 	boardgame, err := controller.repo.GetByName(name)
 	if err != nil {
@@ -116,7 +115,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get Boardgame by id
-	id := chi.URLParam(r, "id")
+	id := utils.GetFieldFromURL(r, "id")
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
 		var mr *utils.MalformedRequest
@@ -147,7 +146,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 // Method that Deletes a boardgame based on an uuid
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
-	id := chi.URLParam(r, "id")
+	id := utils.GetFieldFromURL(r, "id")
 
 	// Get Boardgame by name
 	boardgame, err := controller.repo.GetById(id)
@@ -172,5 +171,5 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	render.New().JSON(w, http.StatusOK, "200 - Deleted")
+	render.New().JSON(w, http.StatusNoContent, id)
 }
