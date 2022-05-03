@@ -28,22 +28,30 @@ func (repo *BoardGameRepository) Create(boardgame model.BoardGame) error {
 func (repo *BoardGameRepository) GetAll() ([]model.BoardGame, error) {
 
 	var bg []model.BoardGame
-	repo.db.Read(&bg, "", "")
-
+	err := repo.db.Read(&bg, "", "")
+	if err != nil {
+		return bg, err
+	}
 	return bg, nil
 }
 
 func (repo *BoardGameRepository) GetByName(name string) (model.BoardGame, error) {
 
 	var bg model.BoardGame
-	repo.db.Read(&bg, "name = ?", name)
+	err := repo.db.Read(&bg, "name = ?", name)
+	if err != nil {
+		return bg, err
+	}
 	return bg, nil
 }
 
 func (repo *BoardGameRepository) GetById(id string) (model.BoardGame, error) {
 
 	var bg model.BoardGame
-	repo.db.Read(&bg, "id = ?", id)
+	err := repo.db.Read(&bg, "id = ?", id)
+	if err != nil {
+		return bg, err
+	}
 	return bg, nil
 }
 
