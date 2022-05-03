@@ -1,15 +1,11 @@
 package model
 
-import (
-	"gorm.io/gorm"
-)
-
 type BoardGame struct {
-	gorm.Model
-	Name         string
-	Dealer       string
-	Price        float64
-	PlayerNumber int
+	commonModelFields
+	Name         string  `json:"name"`
+	Dealer       string  `json:"dealer"`
+	Price        float64 `json:"price"`
+	PlayerNumber int     `json:"playerNumber"`
 }
 
 func NewBoardGame(name, dealer string, price float64, playerNumber int) BoardGame {

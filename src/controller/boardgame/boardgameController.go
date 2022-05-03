@@ -1,10 +1,8 @@
 package boardgame
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/unrolled/render"
@@ -62,7 +60,7 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, "200")
+	render.New().JSON(w, http.StatusOK, boardGame)
 }
 
 // Method that Gets a boardgame based on a name
@@ -79,9 +77,7 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	b, err := json.Marshal(boardgames) // TO change this crap
-
-	render.New().JSON(w, http.StatusOK, string(b))
+	render.New().JSON(w, http.StatusOK, boardgames)
 }
 
 // Method that Gets a boardgame based on a name
@@ -100,14 +96,7 @@ func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	response := map[string]string{
-		"Name":         boardgame.GetName(),
-		"Dealer":       boardgame.GetDealer(),
-		"Price":        strconv.FormatFloat(boardgame.GetPrice(), 'g', 1, 64),
-		"PlayerNumber": strconv.Itoa(boardgame.GetPlayerNumber()),
-	}
-
-	render.New().JSON(w, http.StatusOK, response)
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Method that Updates a boardgame based on an uuid and json input
@@ -152,7 +141,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, "200 - Updated")
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Method that Deletes a boardgame based on an uuid
