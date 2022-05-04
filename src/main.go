@@ -33,6 +33,7 @@ func main() {
 
 	// Adds Routers
 	route.AddBoardGameRouter(router, controllers.BoardgameController)
+	route.AddTagRouter(router, controllers.TagController)
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")

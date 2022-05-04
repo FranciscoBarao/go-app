@@ -8,6 +8,7 @@ Repository for a Go-app
 
 
 
+## Boardgame API
 
 Boardgame JSON
 ```
@@ -45,4 +46,40 @@ curl -X PATCH localhost:8080/api/boardgame/2 -H 'Content-Type: application/json'
 Delete
 ```
 curl -X DELETE localhost:8080/api/boardgame/2
+```
+
+
+
+## Tag API
+
+
+
+Tag JSON
+```
+{
+    "Name": "Test"
+}
+```
+
+
+
+Create
+```
+curl -X POST localhost:8080/api/tag -H 'Content-Type: application/json' -d '{ "Name": "Test" }'
+```
+
+ReadAll
+```
+curl -X GET localhost:8080/api/tag
+```
+
+
+Read
+```
+curl -X GET localhost:8080/api/tag/Test
+```
+
+Delete
+```
+curl -X DELETE localhost:8080/api/tag/Test
 ```

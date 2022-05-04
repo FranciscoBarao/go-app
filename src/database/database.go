@@ -13,6 +13,7 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type PostgresqlRepository struct {
@@ -35,19 +36,35 @@ func Connect() (*PostgresqlRepository, error) {
 
 	migrate(db, model.BoardGame{})
 
+	migrate(db, model.Tag{}) // Association for BoardGame
+
 	log.Println("Database Migration Completed")
+
+	createAssociation(db, model.BoardGame{}, "Tags")
+
+	log.Println("Database Associations Completed")
 
 	return &PostgresqlRepository{db}, nil
 }
 
-func migrate(db *gorm.DB, value interface{}) error {
-	err := db.AutoMigrate(&value)
+func migrate(db *gorm.DB, model interface{}) error {
+	err := db.AutoMigrate(&model)
 	if err != nil {
-		log.Println("Error migrating database: " + fmt.Sprintf("%v", value))
+		log.Println("Error migrating database: " + fmt.Sprintf("%v", model))
 		return err
 	}
 
-	log.Println("Migrated " + fmt.Sprintf("%v", value))
+	log.Println("Migrated " + fmt.Sprintf("%v", model))
+	return nil
+}
+
+func createAssociation(db *gorm.DB, model interface{}, association string) error {
+	err := db.Model(&model).Association(association)
+	if err != nil {
+		log.Println("Error creating association with model: " + fmt.Sprintf("%v", model) + " and " + association)
+		return err.Error
+	}
+	log.Println("Created Association for " + fmt.Sprintf("%v", model) + " with " + association)
 	return nil
 }
 
@@ -74,7 +91,9 @@ func isSliceOrArray(value interface{}) bool {
 
 func (instance *PostgresqlRepository) Create(value interface{}) error {
 
-	result := instance.db.Create(value) //value and not &value ->  You want to pass a pointer of the struct not the interface
+	//value and not &value ->  You want to pass a pointer of the struct not the interface
+	// Omit() -> Skip all associations when creating a record.
+	result := instance.db.Omit(clause.Associations).Create(value)
 
 	if result.Error != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
@@ -111,7 +130,7 @@ func (instance *PostgresqlRepository) Read(value interface{}, search string, ide
 }
 
 func (instance *PostgresqlRepository) Update(value interface{}) error {
-	result := instance.db.Save(value)
+	result := instance.db.Omit(clause.Associations).Save(value)
 	if result.Error != nil {
 		log.Println("Error while updating a database entry: " + fmt.Sprintf("%v", value))
 		return result.Error
@@ -122,7 +141,12 @@ func (instance *PostgresqlRepository) Update(value interface{}) error {
 }
 
 func (instance *PostgresqlRepository) Delete(value interface{}) error {
-	result := instance.db.Delete(value)
+	result := instance.db.Omit(clause.Associations).Delete(value)
+
+	// Check if the following deletes Tags from Tag Table or just the associatons!
+
+	// delete user's has one/many/many2many relations when deleting user
+	// db.Select(clause.Associations).Delete(&user)
 
 	if result.Error != nil {
 		log.Println("Error while deleting a database entry: " + fmt.Sprintf("%v", value))
@@ -133,5 +157,33 @@ func (instance *PostgresqlRepository) Delete(value interface{}) error {
 	}
 
 	log.Println("Deleted database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+// Method that replaces the values of a certain association of a certain model (E.g Tags of a Boardgame)
+func (instance *PostgresqlRepository) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
+
+	result := instance.db.Model(model).Association(association).Replace(values)
+
+	if result != nil {
+		log.Println("Error while replacing associations type: " + association + " from model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+		return result
+	}
+
+	log.Println("Associated: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+	return nil
+}
+
+// Method that deletes all values of a certain association of a certain model (E.g all Tags of a Boardgame)
+func (instance *PostgresqlRepository) DeleteAssociatons(model interface{}, association string) error {
+
+	result := instance.db.Model(model).Association(association).Clear()
+
+	if result != nil {
+		log.Println("Error while deleting associations type: " + association + " from model: " + fmt.Sprintf("%v", model))
+		return result
+	}
+
+	log.Println("Deleted Associations: " + association + " to model: " + fmt.Sprintf("%v", model))
 	return nil
 }
