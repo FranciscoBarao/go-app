@@ -15,9 +15,11 @@ func NewBoardGameRepository(instance *database.PostgresqlRepository) *BoardGameR
 	}
 }
 
-func (repo *BoardGameRepository) Create(boardgame model.BoardGame) error {
+var omits = []string{"Tags.*"}
 
-	err := repo.db.Create(&boardgame)
+func (repo *BoardGameRepository) Create(boardgame model.Boardgame) error {
+
+	err := repo.db.Create(&boardgame, omits...)
 	if err != nil {
 		return err
 	}
@@ -25,9 +27,9 @@ func (repo *BoardGameRepository) Create(boardgame model.BoardGame) error {
 	return nil
 }
 
-func (repo *BoardGameRepository) GetAll() ([]model.BoardGame, error) {
+func (repo *BoardGameRepository) GetAll() ([]model.Boardgame, error) {
 
-	var bg []model.BoardGame
+	var bg []model.Boardgame
 	err := repo.db.Read(&bg, "", "")
 	if err != nil {
 		return bg, err
@@ -35,9 +37,9 @@ func (repo *BoardGameRepository) GetAll() ([]model.BoardGame, error) {
 	return bg, nil
 }
 
-func (repo *BoardGameRepository) GetByName(name string) (model.BoardGame, error) {
+func (repo *BoardGameRepository) GetByName(name string) (model.Boardgame, error) {
 
-	var bg model.BoardGame
+	var bg model.Boardgame
 	err := repo.db.Read(&bg, "name = ?", name)
 	if err != nil {
 		return bg, err
@@ -45,9 +47,9 @@ func (repo *BoardGameRepository) GetByName(name string) (model.BoardGame, error)
 	return bg, nil
 }
 
-func (repo *BoardGameRepository) GetById(id string) (model.BoardGame, error) {
+func (repo *BoardGameRepository) GetById(id string) (model.Boardgame, error) {
 
-	var bg model.BoardGame
+	var bg model.Boardgame
 	err := repo.db.Read(&bg, "id = ?", id)
 	if err != nil {
 		return bg, err
@@ -55,16 +57,23 @@ func (repo *BoardGameRepository) GetById(id string) (model.BoardGame, error) {
 	return bg, nil
 }
 
-func (repo *BoardGameRepository) Update(boardgame model.BoardGame) error {
+func (repo *BoardGameRepository) Update(boardgame model.Boardgame) error {
 
-	err := repo.db.Update(&boardgame)
+	err := repo.db.Update(&boardgame, omits...)
+	if err != nil {
+		return err
+	}
+
+	// Replace associations -> Easy fix? I dont like this approach -> Not modular
+	tags := boardgame.GetTags()
+	err = repo.db.ReplaceAssociatons(&boardgame, "Tags", &tags)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (repo *BoardGameRepository) DeleteById(boardgame model.BoardGame) error {
+func (repo *BoardGameRepository) DeleteById(boardgame model.Boardgame) error {
 
 	err := repo.db.Delete(&boardgame)
 	if err != nil {

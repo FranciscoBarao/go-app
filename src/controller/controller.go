@@ -15,7 +15,7 @@ type Controllers struct {
 // InitControllers returns a new Controllers
 func InitControllers(repositories *repository.Repositories) *Controllers {
 	return &Controllers{
-		BoardgameController: boardgame.InitController(repositories.BoardGameRepository),
+		BoardgameController: boardgame.InitController(repositories.BoardGameRepository, repositories.TagRepository),
 		TagController:       tag.InitController(repositories.TagRepository),
 	}
 }

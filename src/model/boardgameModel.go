@@ -2,52 +2,58 @@ package model
 
 import "gorm.io/gorm"
 
-type BoardGame struct {
+type Boardgame struct {
 	gorm.Model
 	Name         string  `json:"name"`
 	Dealer       string  `json:"dealer"`
 	Price        float64 `json:"price"`
 	PlayerNumber int     `json:"playerNumber"`
+	Tags         []Tag   `gorm:"many2many:boardgame_tags;"`
 }
 
-func NewBoardGame(name, dealer string, price float64, playerNumber int) BoardGame {
-	return BoardGame{
+func NewBoardgame(name, dealer string, price float64, playerNumber int, tags []Tag) Boardgame {
+	return Boardgame{
 		Name:         name,
 		Dealer:       dealer,
 		Price:        price,
 		PlayerNumber: playerNumber,
+		Tags:         tags,
 	}
 }
 
-func (bg *BoardGame) UpdateBoardGame(name, dealer string, price float64, playerNumber int) {
-	if name != "" {
-		bg.Name = name
-	}
-	if dealer != "" {
-		bg.Dealer = dealer
-	}
-	if price > 0 {
-		bg.Price = price
-	}
+func (bg *Boardgame) UpdateBoardgame(name, dealer string, price float64, playerNumber int, tags []Tag) {
+	bg.Name = name
 
-	if playerNumber > 0 {
-		bg.PlayerNumber = playerNumber
-	}
+	bg.Dealer = dealer
+
+	bg.Price = price
+
+	bg.PlayerNumber = playerNumber
+
+	bg.Tags = tags
+}
+
+func (bg Boardgame) IsTags() bool {
+	return len(bg.Tags) > 0
 }
 
 // Getters
-func (bg BoardGame) GetName() string {
+func (bg Boardgame) GetName() string {
 	return bg.Name
 }
 
-func (bg BoardGame) GetDealer() string {
+func (bg Boardgame) GetDealer() string {
 	return bg.Dealer
 }
 
-func (bg BoardGame) GetPrice() float64 {
+func (bg Boardgame) GetPrice() float64 {
 	return bg.Price
 }
 
-func (bg BoardGame) GetPlayerNumber() int {
+func (bg Boardgame) GetPlayerNumber() int {
 	return bg.PlayerNumber
+}
+
+func (bg Boardgame) GetTags() []Tag {
+	return bg.Tags
 }

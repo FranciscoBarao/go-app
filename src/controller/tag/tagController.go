@@ -58,7 +58,7 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, tag)
 }
 
-// Method that Gets a tag based on a unique name
+// Method that Gets all tags
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	tags, err := controller.repo.GetAll()

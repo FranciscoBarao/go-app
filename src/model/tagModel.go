@@ -1,10 +1,7 @@
 package model
 
-import "gorm.io/gorm"
-
 type Tag struct {
-	gorm.Model `json:"-"`
-	Name       string `gorm:"unique" json:"name"`
+	Name string `gorm:"primarykey" json:"name"`
 }
 
 func NewTag(name string) Tag {

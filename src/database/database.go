@@ -34,37 +34,23 @@ func Connect() (*PostgresqlRepository, error) {
 
 	log.Println("Connected to the Database")
 
-	migrate(db, model.BoardGame{})
+	migrate(db, &model.Boardgame{})
 
-	migrate(db, model.Tag{}) // Association for BoardGame
+	migrate(db, &model.Tag{})
 
 	log.Println("Database Migration Completed")
-
-	createAssociation(db, model.BoardGame{}, "Tags")
-
-	log.Println("Database Associations Completed")
 
 	return &PostgresqlRepository{db}, nil
 }
 
 func migrate(db *gorm.DB, model interface{}) error {
-	err := db.AutoMigrate(&model)
+	err := db.AutoMigrate(model)
 	if err != nil {
 		log.Println("Error migrating database: " + fmt.Sprintf("%v", model))
 		return err
 	}
 
 	log.Println("Migrated " + fmt.Sprintf("%v", model))
-	return nil
-}
-
-func createAssociation(db *gorm.DB, model interface{}, association string) error {
-	err := db.Model(&model).Association(association)
-	if err != nil {
-		log.Println("Error creating association with model: " + fmt.Sprintf("%v", model) + " and " + association)
-		return err.Error
-	}
-	log.Println("Created Association for " + fmt.Sprintf("%v", model) + " with " + association)
 	return nil
 }
 
@@ -89,12 +75,9 @@ func isSliceOrArray(value interface{}) bool {
 	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
 }
 
-func (instance *PostgresqlRepository) Create(value interface{}) error {
+func (instance *PostgresqlRepository) Create(value interface{}, omits ...string) error {
 
-	//value and not &value ->  You want to pass a pointer of the struct not the interface
-	// Omit() -> Skip all associations when creating a record.
-	result := instance.db.Omit(clause.Associations).Create(value)
-
+	result := instance.db.Omit(omits...).Create(value)
 	if result.Error != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
 		if errors.Is(result.Error, gorm.ErrRegistered) {
@@ -108,12 +91,13 @@ func (instance *PostgresqlRepository) Create(value interface{}) error {
 }
 
 func (instance *PostgresqlRepository) Read(value interface{}, search string, identifier string) error {
-	var result *gorm.DB
 
+	// Preloads everything into BoardGame
+	var result *gorm.DB
 	if isSliceOrArray(value) {
-		result = instance.db.Find(value)
-	} else {
-		result = instance.db.First(&value, search, identifier)
+		result = instance.db.Preload(clause.Associations).Find(value)
+	} else { // Select(associations...)
+		result = instance.db.Preload(clause.Associations).First(&value, search, identifier)
 	}
 
 	if result.Error != nil {
@@ -129,8 +113,8 @@ func (instance *PostgresqlRepository) Read(value interface{}, search string, ide
 	return nil
 }
 
-func (instance *PostgresqlRepository) Update(value interface{}) error {
-	result := instance.db.Omit(clause.Associations).Save(value)
+func (instance *PostgresqlRepository) Update(value interface{}, omits ...string) error {
+	result := instance.db.Omit(omits...).Save(value)
 	if result.Error != nil {
 		log.Println("Error while updating a database entry: " + fmt.Sprintf("%v", value))
 		return result.Error
@@ -141,13 +125,9 @@ func (instance *PostgresqlRepository) Update(value interface{}) error {
 }
 
 func (instance *PostgresqlRepository) Delete(value interface{}) error {
-	result := instance.db.Omit(clause.Associations).Delete(value)
 
-	// Check if the following deletes Tags from Tag Table or just the associatons!
-
-	// delete user's has one/many/many2many relations when deleting user
-	// db.Select(clause.Associations).Delete(&user)
-
+	// Delete BG and all its associations (E.g Tags associations)
+	result := instance.db.Select(clause.Associations).Delete(value)
 	if result.Error != nil {
 		log.Println("Error while deleting a database entry: " + fmt.Sprintf("%v", value))
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -160,28 +140,55 @@ func (instance *PostgresqlRepository) Delete(value interface{}) error {
 	return nil
 }
 
-// Method that replaces the values of a certain association of a certain model (E.g Tags of a Boardgame)
-func (instance *PostgresqlRepository) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ASSOCIATIONS        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+// The following section presents the associations generic methods. This section is up for debate and will possibly change in the future.
 
-	result := instance.db.Model(model).Association(association).Replace(values)
+// Method that Adds certain associations to a certain model (E.g Add Tags to a Boardgame)
+func (instance *PostgresqlRepository) AppendAssociatons(model interface{}, association string, values interface{}) error {
 
-	if result != nil {
-		log.Println("Error while replacing associations type: " + association + " from model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
-		return result
+	err := instance.db.Model(model).Association(association).Append(values)
+	if err != nil {
+		log.Println("Error while appending associations of type: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+		return err
 	}
 
 	log.Println("Associated: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
 	return nil
 }
 
-// Method that deletes all values of a certain association of a certain model (E.g all Tags of a Boardgame)
+// Method that Gets associations of a type of a certain model (E.g Get Tags of a Boardgame)
+func (instance *PostgresqlRepository) ReadAssociatons(model interface{}, association string, store interface{}) error {
+
+	err := instance.db.Model(model).Association(association).Find(store)
+	if err != nil {
+		log.Println("Error while Reading associations of type: " + association + " of model: " + fmt.Sprintf("%v", model))
+		return err
+	}
+
+	log.Println("Fetched: " + association + " og model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", store))
+	return nil
+}
+
+// Method that Replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
+func (instance *PostgresqlRepository) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
+
+	err := instance.db.Model(model).Association(association).Replace(values)
+	if err != nil {
+		log.Println("Error while replacing associations type: " + association + " from model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+		return err
+	}
+
+	log.Println("Associated: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+	return nil
+}
+
+// Method that Deletes all values of a certain association of a certain model (E.g Delete all Tags of a Boardgame)
 func (instance *PostgresqlRepository) DeleteAssociatons(model interface{}, association string) error {
 
-	result := instance.db.Model(model).Association(association).Clear()
-
-	if result != nil {
+	err := instance.db.Model(model).Association(association).Clear()
+	if err != nil {
 		log.Println("Error while deleting associations type: " + association + " from model: " + fmt.Sprintf("%v", model))
-		return result
+		return err
 	}
 
 	log.Println("Deleted Associations: " + association + " to model: " + fmt.Sprintf("%v", model))

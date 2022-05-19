@@ -2,42 +2,50 @@ package boardgame
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/unrolled/render"
 
 	"go-app/model"
 	"go-app/repository/boardgameRepo"
+	"go-app/repository/tagRepo"
 	"go-app/utils"
 )
 
-// declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
+// Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
 type repository interface {
-	Create(boardgame model.BoardGame) error
-	GetAll() ([]model.BoardGame, error)
-	GetByName(name string) (model.BoardGame, error)
-	GetById(id string) (model.BoardGame, error)
-	Update(boardgame model.BoardGame) error
-	DeleteById(boardgame model.BoardGame) error
+	Create(boardgame model.Boardgame) error
+	GetAll() ([]model.Boardgame, error)
+	GetByName(name string) (model.Boardgame, error)
+	GetById(id string) (model.Boardgame, error)
+	Update(boardgame model.Boardgame) error
+	DeleteById(boardgame model.Boardgame) error
+}
+
+type tagRepository interface {
+	GetByName(name string) (model.Tag, error)
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type Controller struct {
 	repo repository
+	tag  tagRepository
 }
 
 // InitController initializes the boargame controller.
-func InitController(boardGameRepo *boardgameRepo.BoardGameRepository) *Controller {
+func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository) *Controller {
 	return &Controller{
 		repo: boardGameRepo,
+		tag:  tagRepo,
 	}
 }
 
 // Method that Creates a boardgame based on json input
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
-	var boardGame model.BoardGame
-	err := utils.DecodeJSONBody(w, r, &boardGame)
+	var boardgame model.Boardgame
+	err := utils.DecodeJSONBody(w, r, &boardgame)
 	if err != nil {
 		var mr *utils.MalformedRequest
 		if errors.As(err, &mr) {
@@ -48,7 +56,8 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = controller.repo.Create(boardGame)
+	// Check if Tags exist
+	err = controller.validateTags(w, r, boardgame)
 	if err != nil {
 		var mr *utils.MalformedRequest
 		if errors.As(err, &mr) {
@@ -59,7 +68,18 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardGame)
+	err = controller.repo.Create(boardgame)
+	if err != nil {
+		var mr *utils.MalformedRequest
+		if errors.As(err, &mr) {
+			http.Error(w, mr.GetMessage(), mr.GetStatus())
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Method that Gets a boardgame based on a name
@@ -102,8 +122,20 @@ func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) 
 func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Get Boardgame input from JSON input
-	var input model.BoardGame
+	var input model.Boardgame
 	err := utils.DecodeJSONBody(w, r, &input)
+	if err != nil {
+		var mr *utils.MalformedRequest
+		if errors.As(err, &mr) {
+			http.Error(w, mr.GetMessage(), mr.GetStatus())
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if Tags exist
+	err = controller.validateTags(w, r, input)
 	if err != nil {
 		var mr *utils.MalformedRequest
 		if errors.As(err, &mr) {
@@ -127,8 +159,8 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Update Boardgame
-	boardgame.UpdateBoardGame(input.GetName(), input.GetDealer(), input.GetPrice(), input.GetPlayerNumber())
+	// Updates Boardgame
+	boardgame.UpdateBoardgame(input.GetName(), input.GetDealer(), input.GetPrice(), input.GetPlayerNumber(), input.GetTags())
 	err = controller.repo.Update(boardgame)
 	if err != nil {
 		var mr *utils.MalformedRequest
@@ -171,5 +203,22 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	render.New().JSON(w, http.StatusNoContent, id)
+}
+
+func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
+
+	// Boardgame can contain Tags ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
+	if boardgame.IsTags() {
+		for _, tempTag := range boardgame.GetTags() {
+
+			tag, err := controller.tag.GetByName(tempTag.GetName()) // Get tag by name
+			if err != nil {                                         // That tag does not exist -> Return Error
+				return err
+			}
+			log.Println("TAG: " + tag.GetName())
+		}
+	}
+	return nil
 }
