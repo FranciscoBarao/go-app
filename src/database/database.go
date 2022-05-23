@@ -97,7 +97,7 @@ func (instance *PostgresqlRepository) Read(value interface{}, search string, ide
 	if isSliceOrArray(value) {
 		result = instance.db.Preload(clause.Associations).Find(value)
 	} else {
-		result = instance.db.Preload(clause.Associations).First(&value, search, identifier)
+		result = instance.db.Preload(clause.Associations).First(value, search, identifier)
 	}
 
 	if result.Error != nil {
