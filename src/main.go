@@ -7,14 +7,24 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"github.com/unrolled/render"
 
 	"go-app/controller"
 	"go-app/database"
+	_ "go-app/docs"
 	"go-app/repository"
 	"go-app/route"
 )
 
+// @title Boardgame App Swagger
+// @version 1.0
+// @description This is adescription
+
+// @contact.name Francisco Barao
+// @contact.email s.franciscobarao@gmail.com
+
+// @BasePath /api/
 func main() {
 	// Connect to Database
 	db, err := database.Connect()
@@ -34,6 +44,9 @@ func main() {
 	// Adds Routers
 	route.AddBoardGameRouter(router, controllers.BoardgameController)
 	route.AddTagRouter(router, controllers.TagController)
+
+	// documentation for developers
+	router.Get("/swagger/*", httpSwagger.Handler())
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")

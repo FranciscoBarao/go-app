@@ -3,7 +3,7 @@ package model
 import "gorm.io/gorm"
 
 type Boardgame struct {
-	gorm.Model
+	gorm.Model   `swaggerignore:"true"`
 	Name         string  `json:"name"`
 	Dealer       string  `json:"dealer"`
 	Price        float64 `json:"price"`

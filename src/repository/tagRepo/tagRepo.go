@@ -35,7 +35,7 @@ func (repo *TagRepository) GetAll() ([]model.Tag, error) {
 	return tags, nil
 }
 
-func (repo *TagRepository) GetByName(name string) (model.Tag, error) {
+func (repo *TagRepository) Get(name string) (model.Tag, error) {
 
 	var tag model.Tag
 	err := repo.db.Read(&tag, "name = ?", name)

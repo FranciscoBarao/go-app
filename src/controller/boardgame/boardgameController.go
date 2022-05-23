@@ -24,7 +24,7 @@ type repository interface {
 }
 
 type tagRepository interface {
-	GetByName(name string) (model.Tag, error)
+	Get(name string) (model.Tag, error)
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -41,8 +41,15 @@ func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *t
 	}
 }
 
-// Method that Creates a boardgame based on json input
+// Create Boardgame godoc
+// @Summary 	Creates a Boardgame based on a json body
+// @Tags 		boardgames
+// @Produce 	json
+// @Param 		data body model.Boardgame true "The input Boardgame struct"
+// @Success 	200 {object} model.Boardgame
+// @Router 		/boardgame [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
+	// Method that Creates a boardgame based on json input
 
 	var boardgame model.Boardgame
 	err := utils.DecodeJSONBody(w, r, &boardgame)
@@ -82,7 +89,12 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
-// Method that Gets a boardgame based on a name
+// Get Boardgames godoc
+// @Summary 	Fetches all Boardgames
+// @Tags 		boardgames
+// @Produce 	json
+// @Success 	200 {object} model.Boardgame
+// @Router 		/boardgame [get]
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	boardgames, err := controller.repo.GetAll()
@@ -99,7 +111,13 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, boardgames)
 }
 
-// Method that Gets a boardgame based on a name
+// Get Boardgame by name godoc
+// @Summary 	Fetches a specific Boardgame using a name
+// @Tags 		boardgames
+// @Produce 	json
+// @Param 		name path string true "The Boardgame name"
+// @Success 	200 {object} model.Boardgame
+// @Router 		/boardgame/{name} [get]
 func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
@@ -118,7 +136,14 @@ func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) 
 	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
-// Method that Updates a boardgame based on an uuid and json input
+// Update Boardgame by id godoc
+// @Summary 	Updates a specific Boardgame via Id
+// @Tags 		boardgames
+// @Produce 	json
+// @Param 		id path int true "The Boardgame id"
+// @Param 		data body model.Boardgame true "The Boardgame struct to be updated into"
+// @Success 	200 {object} model.Boardgame
+// @Router 		/boardgame/{id} [patch]
 func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Get Boardgame input from JSON input
@@ -175,7 +200,13 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
-// Method that Deletes a boardgame based on an uuid
+// Delete Boardgame by id godoc
+// @Summary 	Deletes a specific Boardgame via Id
+// @Tags 		boardgames
+// @Produce 	json
+// @Param 		id path int true "The Boardgame id"
+// @Success 	200
+// @Router 		/boardgame/{id} [delete]
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
 	id := utils.GetFieldFromURL(r, "id")
@@ -213,8 +244,8 @@ func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Reques
 	if boardgame.IsTags() {
 		for _, tempTag := range boardgame.GetTags() {
 
-			tag, err := controller.tag.GetByName(tempTag.GetName()) // Get tag by name
-			if err != nil {                                         // That tag does not exist -> Return Error
+			tag, err := controller.tag.Get(tempTag.GetName()) // Get tag by name
+			if err != nil {                                   // That tag does not exist -> Return Error
 				return err
 			}
 			log.Println("TAG: " + tag.GetName())

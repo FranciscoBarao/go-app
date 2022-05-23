@@ -14,7 +14,7 @@ import (
 type repository interface {
 	Create(tag model.Tag) error
 	GetAll() ([]model.Tag, error)
-	GetByName(name string) (model.Tag, error)
+	Get(name string) (model.Tag, error)
 	Delete(tag model.Tag) error
 }
 
@@ -29,7 +29,13 @@ func InitController(tagRepo *tagRepo.TagRepository) *Controller {
 	}
 }
 
-// Method that Creates a tag based on json input
+// Create Tag godoc
+// @Summary 	Creates a Tag using a name
+// @Tags 		tags
+// @Produce 	json
+// @Param 		data body model.Tag true "The Tag name"
+// @Success 	200 {object} model.Tag
+// @Router 		/tag/{name} [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	var tag model.Tag
@@ -58,7 +64,12 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, tag)
 }
 
-// Method that Gets all tags
+// Get Tags godoc
+// @Summary 	Fetches all Tags
+// @Tags 		tags
+// @Produce 	json
+// @Success 	200 {object} model.Tag
+// @Router 		/tag [get]
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	tags, err := controller.repo.GetAll()
@@ -75,12 +86,18 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 	render.New().JSON(w, http.StatusOK, tags)
 }
 
-// Method that Gets a tag based on a unique name
-func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) {
+// Get Tag godoc
+// @Summary 	Fetches a specific Tag using a name
+// @Tags 		tags
+// @Produce 	json
+// @Param 		name path string true "The Tag name"
+// @Success 	200 {object} model.Tag
+// @Router 		/tag/{name} [get]
+func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	tag, err := controller.repo.GetByName(name)
+	tag, err := controller.repo.Get(name)
 	if err != nil {
 		var mr *utils.MalformedRequest
 		if errors.As(err, &mr) {
@@ -94,13 +111,19 @@ func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) 
 	render.New().JSON(w, http.StatusOK, tag)
 }
 
-// Method that Deletes a tag based on the unique name
+// Delete Tag godoc
+// @Summary 	Deletes a specific Tag
+// @Tags 		tags
+// @Produce 	json
+// @Param 		name path string true "The Tag name"
+// @Success 	200
+// @Router 		/tag/{name} [delete]
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Get Tag by name
-	tag, err := controller.repo.GetByName(name)
+	tag, err := controller.repo.Get(name)
 	if err != nil {
 		var mr *utils.MalformedRequest
 		if errors.As(err, &mr) {

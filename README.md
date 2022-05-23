@@ -109,3 +109,8 @@ value and not &value ->  You want to pass a pointer of the struct not the interf
 Omit() 				 -> skip the upserting of associations  
 omits... 			 -> Pass each omit value as a separate argument  
 Goal of omits 		 -> To receive many2many relations like 'tags.*' or 'expansions.*' and it should not create them but just add them to relational table  
+
+
+# Documentation - Swagger - Swagon
+For the documentation of the application, [Swag](https://github.com/swaggo/swag#the-swag-formatter) was used.
+For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
