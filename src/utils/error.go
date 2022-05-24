@@ -1,5 +1,7 @@
 package utils
 
+import "strconv"
+
 type MalformedRequest struct {
 	status  int
 	message string
@@ -21,5 +23,5 @@ func (mr *MalformedRequest) GetStatus() int {
 }
 
 func (mr *MalformedRequest) GetMessage() string {
-	return mr.message
+	return strconv.Itoa(mr.status) + " - " + mr.message
 }

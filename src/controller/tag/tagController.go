@@ -1,10 +1,7 @@
 package tag
 
 import (
-	"errors"
 	"net/http"
-
-	"github.com/unrolled/render"
 
 	"go-app/model"
 	"go-app/repository/tagRepo"
@@ -41,27 +38,17 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	var tag model.Tag
 	err := utils.DecodeJSONBody(w, r, &tag)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	err = controller.repo.Create(tag)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, tag)
+	utils.HTTPHandler(w, &tag, http.StatusOK, nil)
 }
 
 // Get Tags godoc
@@ -74,16 +61,11 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	tags, err := controller.repo.GetAll()
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, tags)
+	utils.HTTPHandler(w, &tags, http.StatusOK, nil)
 }
 
 // Get Tag godoc
@@ -99,16 +81,11 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
 	tag, err := controller.repo.Get(name)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, tag)
+	utils.HTTPHandler(w, &tag, http.StatusOK, nil)
 }
 
 // Delete Tag godoc
@@ -125,25 +102,15 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 	// Get Tag by name
 	tag, err := controller.repo.Get(name)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	// Delete by id
 	err = controller.repo.Delete(tag)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
-	render.New().JSON(w, http.StatusNoContent, name)
+	utils.HTTPHandler(w, name, http.StatusNoContent, nil)
 }

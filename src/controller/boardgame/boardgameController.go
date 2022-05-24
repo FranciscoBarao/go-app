@@ -1,11 +1,8 @@
 package boardgame
 
 import (
-	"errors"
 	"log"
 	"net/http"
-
-	"github.com/unrolled/render"
 
 	"go-app/model"
 	"go-app/repository/boardgameRepo"
@@ -49,44 +46,28 @@ func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *t
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
-	// Method that Creates a boardgame based on json input
 
 	var boardgame model.Boardgame
 	err := utils.DecodeJSONBody(w, r, &boardgame)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	// Check if Tags exist
 	err = controller.validateTags(w, r, boardgame)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	err = controller.repo.Create(boardgame)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgame)
+	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
 }
 
 // Get Boardgames godoc
@@ -99,16 +80,11 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	boardgames, err := controller.repo.GetAll()
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgames)
+	utils.HTTPHandler(w, &boardgames, http.StatusOK, nil)
 }
 
 // Get Boardgame by name godoc
@@ -124,16 +100,11 @@ func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) 
 
 	boardgame, err := controller.repo.GetByName(name)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgame)
+	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
 }
 
 // Update Boardgame by id godoc
@@ -150,24 +121,14 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	var input model.Boardgame
 	err := utils.DecodeJSONBody(w, r, &input)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	// Check if Tags exist
 	err = controller.validateTags(w, r, input)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
@@ -175,12 +136,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	id := utils.GetFieldFromURL(r, "id")
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
@@ -188,16 +144,11 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	boardgame.UpdateBoardgame(input.GetName(), input.GetPublisher(), input.GetPrice(), input.GetPlayerNumber(), input.GetTags())
 	err = controller.repo.Update(boardgame)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgame)
+	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
 }
 
 // Delete Boardgame by id godoc
@@ -214,28 +165,18 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 	// Get Boardgame by name
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
 	// Delete by Id
 	err = controller.repo.DeleteById(boardgame)
 	if err != nil {
-		var mr *utils.MalformedRequest
-		if errors.As(err, &mr) {
-			http.Error(w, mr.GetMessage(), mr.GetStatus())
-		} else {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
+		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusNoContent, id)
+	utils.HTTPHandler(w, id, http.StatusNoContent, nil)
 }
 
 func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
