@@ -27,7 +27,7 @@ Boardgame JSON
 
 Create
 ```
-curl -X POST localhost:8080/api/boardgame -H 'Content-Type: application/json' -d '{ "Name": "DS", "Dealer": "Dealer", "Price": 10.0, "PlayerNumber": 1, "Tags": [ { "Name": "A" }, { "Name": "B" }, { "Name": "C" }]}'
+curl -X POST localhost:8080/api/boardgame -H 'Content-Type: application/json' -d '{ "Name": "DS", "Publisher": "pub", "Price": 10.0, "PlayerNumber": 1, "Tags": [ { "Name": "A" }, { "Name": "B" }, { "Name": "C" }]}'
 ```
 
 ReadAll
@@ -42,7 +42,7 @@ curl -X GET localhost:8080/api/boardgame/Test
 
 Update
 ```
-curl -X PATCH localhost:8080/api/boardgame/2 -H 'Content-Type: application/json' -d '{ "Name": "O", "Dealer": "Dealer", "Price": 10.0, "PlayerNumber": 1, "Tags": [ { "Name": "A" }]}'
+curl -X PATCH localhost:8080/api/boardgame/2 -H 'Content-Type: application/json' -d '{ "Name": "O", "Publisher": "pub", "Price": 10.0, "PlayerNumber": 1, "Tags": [ { "Name": "A" }]}'
 ```
 
 Delete

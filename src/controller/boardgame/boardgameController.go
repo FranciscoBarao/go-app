@@ -185,7 +185,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Updates Boardgame
-	boardgame.UpdateBoardgame(input.GetName(), input.GetDealer(), input.GetPrice(), input.GetPlayerNumber(), input.GetTags())
+	boardgame.UpdateBoardgame(input.GetName(), input.GetPublisher(), input.GetPrice(), input.GetPlayerNumber(), input.GetTags())
 	err = controller.repo.Update(boardgame)
 	if err != nil {
 		var mr *utils.MalformedRequest

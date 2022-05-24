@@ -5,26 +5,26 @@ import "gorm.io/gorm"
 type Boardgame struct {
 	gorm.Model   `swaggerignore:"true"`
 	Name         string  `json:"name"`
-	Dealer       string  `json:"dealer"`
+	Publisher    string  `json:"publisher"`
 	Price        float64 `json:"price"`
 	PlayerNumber int     `json:"playerNumber"`
 	Tags         []Tag   `gorm:"many2many:boardgame_tags;"`
 }
 
-func NewBoardgame(name, dealer string, price float64, playerNumber int, tags []Tag) Boardgame {
+func NewBoardgame(name, publisher string, price float64, playerNumber int, tags []Tag) Boardgame {
 	return Boardgame{
 		Name:         name,
-		Dealer:       dealer,
+		Publisher:    publisher,
 		Price:        price,
 		PlayerNumber: playerNumber,
 		Tags:         tags,
 	}
 }
 
-func (bg *Boardgame) UpdateBoardgame(name, dealer string, price float64, playerNumber int, tags []Tag) {
+func (bg *Boardgame) UpdateBoardgame(name, publisher string, price float64, playerNumber int, tags []Tag) {
 	bg.Name = name
 
-	bg.Dealer = dealer
+	bg.Publisher = publisher
 
 	bg.Price = price
 
@@ -42,8 +42,8 @@ func (bg Boardgame) GetName() string {
 	return bg.Name
 }
 
-func (bg Boardgame) GetDealer() string {
-	return bg.Dealer
+func (bg Boardgame) GetPublisher() string {
+	return bg.Publisher
 }
 
 func (bg Boardgame) GetPrice() float64 {
