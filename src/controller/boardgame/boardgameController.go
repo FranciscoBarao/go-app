@@ -74,6 +74,7 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary 	Fetches all Boardgames
 // @Tags 		boardgames
 // @Produce 	json
+// @Param 		filterBy query string  false  "Filter using field.value (For String partial find) OR field.operator.value"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [get]
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
