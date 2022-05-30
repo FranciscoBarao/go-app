@@ -27,10 +27,10 @@ func (repo *BoardGameRepository) Create(boardgame model.Boardgame) error {
 	return nil
 }
 
-func (repo *BoardGameRepository) GetAll() ([]model.Boardgame, error) {
+func (repo *BoardGameRepository) GetAll(filterBody, filterValue string) ([]model.Boardgame, error) {
 
 	var bg []model.Boardgame
-	err := repo.db.Read(&bg, "", "")
+	err := repo.db.Read(&bg, filterBody, filterValue)
 	if err != nil {
 		return bg, err
 	}

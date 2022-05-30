@@ -40,6 +40,11 @@ Read
 curl -X GET localhost:8080/api/boardgame/Test
 ```
 
+Test filter
+```
+curl -X GET localhost:8080/api/boardgame?filterBy=name.asd
+```
+
 Update
 ```
 curl -X PATCH localhost:8080/api/boardgame/2 -H 'Content-Type: application/json' -d '{ "Name": "O", "Publisher": "pub", "Price": 10.0, "PlayerNumber": 1, "Tags": [ { "Name": "A" }]}'
@@ -114,3 +119,10 @@ Goal of omits 		 -> To receive many2many relations like 'tags.*' or 'expansions.
 # Documentation - Swagger - Swagon
 For the documentation of the application, [Swag](https://github.com/swaggo/swag#the-swag-formatter) was used.
 For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
+
+
+# Testing
+[Framework](https://apitest.dev/)
+
+# Sorting
+[Sorting in Golang](https://yourbasic.org/golang/how-to-sort-in-go/)
