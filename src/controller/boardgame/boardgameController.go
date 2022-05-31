@@ -89,7 +89,7 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 	var filterBody, filterValue string
 
 	filterBy := r.URL.Query().Get("filterBy")
-	filterBody, filterValue, err := utils.GetFilters(filterBy)
+	filterBody, filterValue, err := utils.GetFilters(model.Boardgame{}, filterBy)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return

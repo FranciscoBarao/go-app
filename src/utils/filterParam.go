@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"go-app/model"
 	"log"
 	"net/http"
 	"reflect"
@@ -159,11 +158,11 @@ func operatorToString(operator string) string {
 }
 
 // Main method of Getting the Filters
-func GetFilters(filterBy string) (string, string, error) {
+func GetFilters(model interface{}, filterBy string) (string, string, error) {
 
 	if filterBy != "" {
 		log.Println("Filtering using %s " + filterBy)
-		err := validateFilterParameters(model.Boardgame{}, filterBy) // Validates Filters -> By length, emptiness and type
+		err := validateFilterParameters(model, filterBy) // Validates Filters -> By length, emptiness and type
 		if err != nil {
 			return "", "", err
 		}
