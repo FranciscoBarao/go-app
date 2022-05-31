@@ -33,6 +33,8 @@ curl -X POST localhost:8080/api/boardgame -H 'Content-Type: application/json' -d
 ReadAll
 ```
 curl -X GET localhost:8080/api/boardgame
+
+FilterBy: ?filterBy=name.asd
 ```
 
 Read
@@ -40,10 +42,7 @@ Read
 curl -X GET localhost:8080/api/boardgame/Test
 ```
 
-Test filter
-```
-curl -X GET localhost:8080/api/boardgame?filterBy=name.asd
-```
+
 
 Update
 ```

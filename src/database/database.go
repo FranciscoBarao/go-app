@@ -90,15 +90,14 @@ func (instance *PostgresqlRepository) Create(value interface{}, omits ...string)
 	return nil
 }
 
-func (instance *PostgresqlRepository) Read(value interface{}, search string, identifier string) error {
+func (instance *PostgresqlRepository) Read(value interface{}, sort, search, identifier string) error {
 
-	// Preloads everything into BoardGame
 	var result *gorm.DB
 	if isSliceOrArray(value) {
 		if search == "" {
-			result = instance.db.Preload(clause.Associations).Find(value) // Find all with NO filters
+			result = instance.db.Preload(clause.Associations).Order(sort).Find(value) // Find all with sort and NO filters
 		} else {
-			result = instance.db.Preload(clause.Associations).Find(value, search, identifier) // Find all with filters
+			result = instance.db.Preload(clause.Associations).Order(sort).Find(value, search, identifier) // Find all with filters and sort
 		}
 	} else {
 		result = instance.db.Preload(clause.Associations).First(value, search, identifier) // Find 1 Specific

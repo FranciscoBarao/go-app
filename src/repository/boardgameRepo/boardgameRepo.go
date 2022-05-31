@@ -27,10 +27,10 @@ func (repo *BoardGameRepository) Create(boardgame model.Boardgame) error {
 	return nil
 }
 
-func (repo *BoardGameRepository) GetAll(filterBody, filterValue string) ([]model.Boardgame, error) {
+func (repo *BoardGameRepository) GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error) {
 
 	var bg []model.Boardgame
-	err := repo.db.Read(&bg, filterBody, filterValue)
+	err := repo.db.Read(&bg, sort, filterBody, filterValue)
 	if err != nil {
 		return bg, err
 	}
@@ -40,7 +40,7 @@ func (repo *BoardGameRepository) GetAll(filterBody, filterValue string) ([]model
 func (repo *BoardGameRepository) GetByName(name string) (model.Boardgame, error) {
 
 	var bg model.Boardgame
-	err := repo.db.Read(&bg, "name = ?", name)
+	err := repo.db.Read(&bg, "", "name = ?", name)
 	if err != nil {
 		return bg, err
 	}
@@ -50,7 +50,7 @@ func (repo *BoardGameRepository) GetByName(name string) (model.Boardgame, error)
 func (repo *BoardGameRepository) GetById(id string) (model.Boardgame, error) {
 
 	var bg model.Boardgame
-	err := repo.db.Read(&bg, "id = ?", id)
+	err := repo.db.Read(&bg, "", "id = ?", id)
 	if err != nil {
 		return bg, err
 	}

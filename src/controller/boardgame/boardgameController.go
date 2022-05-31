@@ -13,7 +13,7 @@ import (
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
 type repository interface {
 	Create(boardgame model.Boardgame) error
-	GetAll(filterBody, filterValue string) ([]model.Boardgame, error)
+	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
 	GetByName(name string) (model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
 	Update(boardgame model.Boardgame) error
@@ -79,14 +79,12 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Router 		/boardgame [get]
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	// field.order =>  E.g ?sortBy=name.asc
 	sortBy := r.URL.Query().Get("sortBy")
-	if sortBy != "" {
-		// id.asc is the default sort query
-		log.Println("SortBy => " + sortBy)
+	sort, err := utils.GetSort(model.Boardgame{}, sortBy)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
 	}
-
-	var filterBody, filterValue string
 
 	filterBy := r.URL.Query().Get("filterBy")
 	filterBody, filterValue, err := utils.GetFilters(model.Boardgame{}, filterBy)
@@ -95,7 +93,7 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardgames, err := controller.repo.GetAll(filterBody, filterValue)
+	boardgames, err := controller.repo.GetAll(sort, filterBody, filterValue)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return

@@ -8,13 +8,10 @@ import (
 	"strings"
 )
 
-// Method that validates if Filter Parameters are Correct
+// Function that validates if Filter Parameters are Correct
 func validateFilterParameters(model interface{}, filterBy string) error {
 	splits := strings.Split(filterBy, ".")
 
-	// Examples of filters that work:
-	// name.asd
-	// price.le.10
 	if len(splits) < 2 || len(splits) > 3 { // can be 2 or 3 fields
 		return NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, should be field.value or field.operator.value")
 	}
@@ -54,7 +51,7 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 	return nil
 }
 
-// Method that checks if the field exists in the struct and if the value is of the correct type
+// Function that checks if the field exists in the struct and if the value is of the correct type
 func validateFieldAndValueType(model interface{}, fieldName, value, operator string) error {
 
 	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
@@ -77,11 +74,11 @@ func validateFieldAndValueType(model interface{}, fieldName, value, operator str
 			return nil // Field exists and is of the correct type
 		}
 	}
-	log.Printf("Error - No field in struct %v with name %s", model, fieldName)
-	return NewError(http.StatusUnprocessableEntity, "No field with this name")
+	log.Printf("Error - No filterable field in struct %v with name %s", model, fieldName)
+	return NewError(http.StatusUnprocessableEntity, "No filterable field with this name")
 }
 
-// Method that receives a value and validates if it is of the provided type.
+// Function that receives a value and validates if it is of the provided type.
 func isValidType(typ, value string) error {
 	switch typ {
 	case "string":
@@ -116,7 +113,7 @@ func validateOperator(operator string) error {
 	return NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 }
 
-// Method that gets FilterBody and Value for GetFilters
+// Function that gets FilterBody and Value for GetFilters
 func getFilterBodyAndValue(filterBy string) (string, string) {
 	splits := strings.Split(filterBy, ".")
 
@@ -132,11 +129,6 @@ func getFilterBodyAndValue(filterBy string) (string, string) {
 		value = splits[2]
 		return field + " " + operatorToString(operator) + " ?", value
 	}
-
-	// Examples of filters that work:
-	// name.a 		---> name LIKE ?    %a%
-	// price.le.10  ---> price <= ?     10
-	// name.eq.asd  ---> name == ?     asd
 }
 
 // Converts operator language to string literal (eq -> ==)
@@ -157,7 +149,7 @@ func operatorToString(operator string) string {
 	}
 }
 
-// Main method of Getting the Filters
+// Main function of Getting the Filters
 func GetFilters(model interface{}, filterBy string) (string, string, error) {
 
 	if filterBy != "" {
@@ -171,4 +163,9 @@ func GetFilters(model interface{}, filterBy string) (string, string, error) {
 		return filterBody, filterValue, nil
 	}
 	return "", "", nil // No filter -> No error
+
+	// Examples of filters that work:
+	// name.a 		---> name LIKE ?    %a%
+	// price.le.10  ---> price <= ?     10
+	// name.eq.asd  ---> name == ?     asd
 }

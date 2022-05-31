@@ -28,7 +28,7 @@ func (repo *TagRepository) Create(tag model.Tag) error {
 func (repo *TagRepository) GetAll() ([]model.Tag, error) {
 
 	var tags []model.Tag
-	err := repo.db.Read(&tags, "", "")
+	err := repo.db.Read(&tags, "", "", "")
 	if err != nil {
 		return tags, err
 	}
@@ -38,7 +38,7 @@ func (repo *TagRepository) GetAll() ([]model.Tag, error) {
 func (repo *TagRepository) Get(name string) (model.Tag, error) {
 
 	var tag model.Tag
-	err := repo.db.Read(&tag, "name = ?", name)
+	err := repo.db.Read(&tag, "", "name = ?", name)
 	if err != nil {
 		return tag, err
 	}
