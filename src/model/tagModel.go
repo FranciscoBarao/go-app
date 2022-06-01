@@ -1,7 +1,8 @@
 package model
 
 type Tag struct {
-	Name string `gorm:"primarykey" json:"name"`
+	Name       string      `gorm:"primarykey" json:"name"`
+	Boardgames []Boardgame `gorm:"many2many:boardgame_tags;" json:"-"`
 }
 
 func NewTag(name string) Tag {
