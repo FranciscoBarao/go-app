@@ -10,7 +10,7 @@ import (
 
 type repository interface {
 	Create(tag model.Tag) error
-	GetAll() ([]model.Tag, error)
+	GetAll(sort string) ([]model.Tag, error)
 	Get(name string) (model.Tag, error)
 	Delete(tag model.Tag) error
 }
@@ -59,7 +59,14 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Router 		/tag [get]
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	tags, err := controller.repo.GetAll()
+	sortBy := r.URL.Query().Get("sortBy")
+	sort, err := utils.GetSort(model.Boardgame{}, sortBy)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
+	tags, err := controller.repo.GetAll(sort)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return

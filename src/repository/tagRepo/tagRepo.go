@@ -25,10 +25,10 @@ func (repo *TagRepository) Create(tag model.Tag) error {
 	return nil
 }
 
-func (repo *TagRepository) GetAll() ([]model.Tag, error) {
+func (repo *TagRepository) GetAll(sort string) ([]model.Tag, error) {
 
 	var tags []model.Tag
-	err := repo.db.Read(&tags, "", "", "")
+	err := repo.db.Read(&tags, sort, "", "")
 	if err != nil {
 		return tags, err
 	}
