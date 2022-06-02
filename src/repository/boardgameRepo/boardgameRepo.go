@@ -37,16 +37,6 @@ func (repo *BoardGameRepository) GetAll(sort, filterBody, filterValue string) ([
 	return bg, nil
 }
 
-func (repo *BoardGameRepository) GetByName(name string) (model.Boardgame, error) {
-
-	var bg model.Boardgame
-	err := repo.db.Read(&bg, "", "name = ?", name)
-	if err != nil {
-		return bg, err
-	}
-	return bg, nil
-}
-
 func (repo *BoardGameRepository) GetById(id string) (model.Boardgame, error) {
 
 	var bg model.Boardgame

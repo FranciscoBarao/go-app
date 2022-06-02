@@ -14,7 +14,6 @@ import (
 type repository interface {
 	Create(boardgame model.Boardgame) error
 	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
-	GetByName(name string) (model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
 	Update(boardgame model.Boardgame) error
 	DeleteById(boardgame model.Boardgame) error
@@ -186,7 +185,6 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
 	id := utils.GetFieldFromURL(r, "id")
 
-	// Get Boardgame by name
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
