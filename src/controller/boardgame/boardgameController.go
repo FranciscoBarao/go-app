@@ -43,12 +43,21 @@ func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *t
 // @Tags 		boardgames
 // @Produce 	json
 // @Param 		data body model.Boardgame true "The input Boardgame struct"
+// @Param 		id path int false "The Boardgame id indicating this is an Expansion"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	var boardgame model.Boardgame
 	err := utils.DecodeJSONBody(w, r, &boardgame)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
+	// Check if Expansion -> Connect if needed
+	id := utils.GetFieldFromURL(r, "id")
+	err = controller.connectBoardgameToExpansion(id, &boardgame)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return
@@ -102,18 +111,18 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 	utils.HTTPHandler(w, &boardgames, http.StatusOK, nil)
 }
 
-// Get Boardgame by name godoc
-// @Summary 	Fetches a specific Boardgame using a name
+// Get Boardgame by id godoc
+// @Summary 	Fetches a specific Boardgame using an id
 // @Tags 		boardgames
 // @Produce 	json
-// @Param 		name path string true "The Boardgame name"
+// @Param 		id path int true "The Boardgame unique id"
 // @Success 	200 {object} model.Boardgame
-// @Router 		/boardgame/{name} [get]
-func (controller *Controller) GetByName(w http.ResponseWriter, r *http.Request) {
+// @Router 		/boardgame/{id} [get]
+func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
-	name := utils.GetFieldFromURL(r, "name")
+	id := utils.GetFieldFromURL(r, "id")
 
-	boardgame, err := controller.repo.GetByName(name)
+	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return
@@ -194,18 +203,36 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 	utils.HTTPHandler(w, id, http.StatusNoContent, nil)
 }
 
+// Function that validates if tags exist when boardgames are created
 func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
 
 	// Boardgame can contain Tags ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsTags() {
 		for _, tempTag := range boardgame.GetTags() {
 
-			tag, err := controller.tag.Get(tempTag.GetName()) // Get tag by name
-			if err != nil {                                   // That tag does not exist -> Return Error
+			_, err := controller.tag.Get(tempTag.GetName()) // Get tag by name
+			if err != nil {                                 // That tag does not exist -> Return Error
 				return err
 			}
-			log.Println("TAG: " + tag.GetName())
 		}
+	}
+	return nil
+}
+
+// Function that checks if we are dealing with expansions and creates connection to boardgame parent if yes
+func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *model.Boardgame) error {
+	if id != "" { // This is an expansion
+		boardgameParent, err := controller.repo.GetById(id) // Get Parent BG
+		if err != nil {
+			return err
+		}
+
+		if boardgameParent.GetBoardgameID() != nil { // Already an expansion
+			log.Println("Error -> An expansion cannot have other expansions")
+			return utils.NewError(http.StatusUnprocessableEntity, " Error occurred while creating connection between Boardgames -> Expansion can't have expansions")
+		}
+
+		boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
 	}
 	return nil
 }

@@ -9,7 +9,9 @@ import (
 func AddBoardGameRouter(router chi.Router, boardGameControler *boardgame.Controller) {
 	router.Post("/api/boardgame", boardGameControler.Create)
 	router.Get("/api/boardgame", boardGameControler.GetAll)
-	router.Get("/api/boardgame/{name}", boardGameControler.GetByName)
+	router.Get("/api/boardgame/{id}", boardGameControler.Get)
 	router.Patch("/api/boardgame/{id}", boardGameControler.Update)
 	router.Delete("/api/boardgame/{id}", boardGameControler.Delete)
+
+	router.Post("/api/boardgame/{id}/expasion", boardGameControler.Create)
 }
