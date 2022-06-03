@@ -44,6 +44,7 @@ func main() {
 	// Adds Routers
 	route.AddBoardGameRouter(router, controllers.BoardgameController)
 	route.AddTagRouter(router, controllers.TagController)
+	route.AddCategoryRouter(router, controllers.CategoryController)
 
 	// documentation for developers
 	router.Get("/swagger/*", httpSwagger.Handler())

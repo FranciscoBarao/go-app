@@ -19,7 +19,7 @@ type Controller struct {
 	repo repository
 }
 
-// InitController initializes the boargame controller.
+// InitController initializes the tag controller.
 func InitController(tagRepo *tagRepo.TagRepository) *Controller {
 	return &Controller{
 		repo: tagRepo,
@@ -60,7 +60,7 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(model.Boardgame{}, sortBy)
+	sort, err := utils.GetSort(model.Tag{}, sortBy)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return

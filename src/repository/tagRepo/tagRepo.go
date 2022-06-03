@@ -45,9 +45,9 @@ func (repo *TagRepository) Get(name string) (model.Tag, error) {
 	return tag, nil
 }
 
-func (repo *TagRepository) Delete(Tag model.Tag) error {
+func (repo *TagRepository) Delete(tag model.Tag) error {
 
-	err := repo.db.Delete(&Tag)
+	err := repo.db.Delete(&tag)
 	if err != nil {
 		return err
 	}

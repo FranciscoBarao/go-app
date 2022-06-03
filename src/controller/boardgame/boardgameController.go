@@ -6,6 +6,7 @@ import (
 
 	"go-app/model"
 	"go-app/repository/boardgameRepo"
+	"go-app/repository/categoryRepo"
 	"go-app/repository/tagRepo"
 	"go-app/utils"
 )
@@ -23,17 +24,23 @@ type tagRepository interface {
 	Get(name string) (model.Tag, error)
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
-type Controller struct {
-	repo repository
-	tag  tagRepository
+type categoryRepository interface {
+	Get(name string) (model.Category, error)
 }
 
-// InitController initializes the boargame controller.
-func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository) *Controller {
+// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
+type Controller struct {
+	repo     repository
+	tag      tagRepository
+	category categoryRepository
+}
+
+// InitController initializes the boargame and the associations controller.
+func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository, categoryRepo *categoryRepo.CategoryRepository) *Controller {
 	return &Controller{
-		repo: boardGameRepo,
-		tag:  tagRepo,
+		repo:     boardGameRepo,
+		tag:      tagRepo,
+		category: categoryRepo,
 	}
 }
 
@@ -155,6 +162,13 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if Categories exist
+	err = controller.validateCategories(w, r, input)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
 	// Get Boardgame by id
 	id := utils.GetFieldFromURL(r, "id")
 	boardgame, err := controller.repo.GetById(id)
@@ -164,7 +178,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Updates Boardgame
-	boardgame.UpdateBoardgame(input.GetName(), input.GetPublisher(), input.GetPrice(), input.GetPlayerNumber(), input.GetTags())
+	boardgame.UpdateBoardgame(input)
 	err = controller.repo.Update(boardgame)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
@@ -201,6 +215,26 @@ func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 	utils.HTTPHandler(w, id, http.StatusNoContent, nil)
 }
 
+// Function that checks if we are dealing with expansions and creates connection to boardgame parent if yes
+func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *model.Boardgame) error {
+	if id != "" { // This is an expansion
+		boardgameParent, err := controller.repo.GetById(id) // Get Parent BG
+		if err != nil {
+			return err
+		}
+
+		if boardgameParent.IsExpansion() {
+			log.Println("Error -> An expansion cannot have other expansions")
+			return utils.NewError(http.StatusUnprocessableEntity, " Error occurred while creating connection between Boardgames -> Expansion can't have expansions")
+		}
+
+		boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
+	}
+	return nil
+}
+
+// <<<<<<<<<<<< I DISLIKE THIS APPROACH, NOT MODULAR AND WILL WANT TO CHANGE >>>>>>>>>>>>>>>>>>
+
 // Function that validates if tags exist when boardgames are created
 func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
 
@@ -217,20 +251,18 @@ func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Reques
 	return nil
 }
 
-// Function that checks if we are dealing with expansions and creates connection to boardgame parent if yes
-func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *model.Boardgame) error {
-	if id != "" { // This is an expansion
-		boardgameParent, err := controller.repo.GetById(id) // Get Parent BG
-		if err != nil {
-			return err
-		}
+// Function that validates if categories exist when boardgames are created
+func (controller *Controller) validateCategories(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
 
-		if boardgameParent.IsExpansion() {
-			log.Println("Error -> An expansion cannot have other expansions")
-			return utils.NewError(http.StatusUnprocessableEntity, " Error occurred while creating connection between Boardgames -> Expansion can't have expansions")
-		}
+	// Boardgame can contain Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
+	if boardgame.IsCategories() {
+		for _, tempCategory := range boardgame.GetCategories() {
 
-		boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
+			_, err := controller.category.Get(tempCategory.GetName()) // Get category by name
+			if err != nil {                                           // That category does not exist -> Return Error
+				return err
+			}
+		}
 	}
 	return nil
 }
