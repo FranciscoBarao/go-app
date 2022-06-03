@@ -13,5 +13,5 @@ func AddBoardGameRouter(router chi.Router, boardGameControler *boardgame.Control
 	router.Patch("/api/boardgame/{id}", boardGameControler.Update)
 	router.Delete("/api/boardgame/{id}", boardGameControler.Delete)
 
-	router.Post("/api/boardgame/{id}/expasion", boardGameControler.Create)
+	router.Post("/api/boardgame/{id}/expansion", boardGameControler.Create)
 }

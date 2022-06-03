@@ -56,6 +56,10 @@ func (bg Boardgame) IsExpansions() bool {
 	return len(bg.Expansions) > 0
 }
 
+func (bg Boardgame) IsExpansion() bool {
+	return bg.BoardgameID != nil
+}
+
 // Getters
 func (bg Boardgame) GetId() *uint {
 	return &bg.Model.ID
@@ -89,6 +93,6 @@ func (bg Boardgame) GetBoardgameID() *uint {
 	return bg.BoardgameID
 }
 
-func (bg Boardgame) SetBoardgameID(id *uint) {
+func (bg *Boardgame) SetBoardgameID(id *uint) {
 	bg.BoardgameID = id
 }

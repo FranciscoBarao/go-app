@@ -225,7 +225,7 @@ func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *
 			return err
 		}
 
-		if boardgameParent.GetBoardgameID() != nil { // Already an expansion
+		if boardgameParent.IsExpansion() {
 			log.Println("Error -> An expansion cannot have other expansions")
 			return utils.NewError(http.StatusUnprocessableEntity, " Error occurred while creating connection between Boardgames -> Expansion can't have expansions")
 		}
