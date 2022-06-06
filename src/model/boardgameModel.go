@@ -12,12 +12,13 @@ type Boardgame struct {
 	PlayerNumber int         `json:"playerNumber"`
 	Tags         []Tag       `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
 	Categories   []Category  `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
+	Mechanisms   []Mechanism `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
 	Expansions   []Boardgame `gorm:"foreignkey:BoardgameID" swaggerignore:"true" json:"expansions,omitempty"`
 	BoardgameID  *uint       `swaggerignore:"true" json:"boardgame_id,omitempty"`
 }
 
 // Constructors
-func NewBoardgame(name, publisher string, price float64, playerNumber int, tags []Tag, categories []Category) Boardgame {
+func NewBoardgame(name, publisher string, price float64, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) Boardgame {
 	return Boardgame{
 		Name:         name,
 		Publisher:    publisher,
@@ -25,6 +26,7 @@ func NewBoardgame(name, publisher string, price float64, playerNumber int, tags 
 		PlayerNumber: playerNumber,
 		Tags:         tags,
 		Categories:   categories,
+		Mechanisms:   mechanisms,
 	}
 }
 
@@ -64,6 +66,10 @@ func (bg Boardgame) IsCategories() bool {
 	return len(bg.Categories) > 0
 }
 
+func (bg Boardgame) IsMechanisms() bool {
+	return len(bg.Mechanisms) > 0
+}
+
 func (bg Boardgame) IsExpansions() bool {
 	return len(bg.Expansions) > 0
 }
@@ -99,6 +105,10 @@ func (bg Boardgame) GetTags() []Tag {
 
 func (bg Boardgame) GetCategories() []Category {
 	return bg.Categories
+}
+
+func (bg Boardgame) GetMechanisms() []Mechanism {
+	return bg.Mechanisms
 }
 
 func (bg Boardgame) GetExpansions() []Boardgame {

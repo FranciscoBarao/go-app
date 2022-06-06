@@ -3,6 +3,7 @@ package controller
 import (
 	"go-app/controller/boardgame"
 	"go-app/controller/category"
+	"go-app/controller/mechanism"
 	"go-app/controller/tag"
 	"go-app/repository"
 )
@@ -12,13 +13,15 @@ type Controllers struct {
 	BoardgameController *boardgame.Controller
 	TagController       *tag.Controller
 	CategoryController  *category.Controller
+	MechanismController *mechanism.Controller
 }
 
 // InitControllers returns a new Controllers
 func InitControllers(repositories *repository.Repositories) *Controllers {
 	return &Controllers{
-		BoardgameController: boardgame.InitController(repositories.BoardGameRepository, repositories.TagRepository, repositories.CategoryRepository),
+		BoardgameController: boardgame.InitController(repositories.BoardGameRepository, repositories.TagRepository, repositories.CategoryRepository, repositories.MechanismRepository),
 		TagController:       tag.InitController(repositories.TagRepository),
 		CategoryController:  category.InitController(repositories.CategoryRepository),
+		MechanismController: mechanism.InitController(repositories.MechanismRepository),
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"go-app/model"
 	"go-app/repository/boardgameRepo"
 	"go-app/repository/categoryRepo"
+	"go-app/repository/mechanismRepo"
 	"go-app/repository/tagRepo"
 	"go-app/utils"
 )
@@ -28,19 +29,25 @@ type categoryRepository interface {
 	Get(name string) (model.Category, error)
 }
 
+type mechanismRepository interface {
+	Get(name string) (model.Mechanism, error)
+}
+
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type Controller struct {
-	repo     repository
-	tag      tagRepository
-	category categoryRepository
+	repo      repository
+	tag       tagRepository
+	category  categoryRepository
+	mechanism mechanismRepository
 }
 
 // InitController initializes the boargame and the associations controller.
-func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository, categoryRepo *categoryRepo.CategoryRepository) *Controller {
+func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository, categoryRepo *categoryRepo.CategoryRepository, mechanismRepo *mechanismRepo.MechanismRepository) *Controller {
 	return &Controller{
-		repo:     boardGameRepo,
-		tag:      tagRepo,
-		category: categoryRepo,
+		repo:      boardGameRepo,
+		tag:       tagRepo,
+		category:  categoryRepo,
+		mechanism: mechanismRepo,
 	}
 }
 
@@ -247,6 +254,16 @@ func (controller *Controller) validateAssociations(w http.ResponseWriter, r *htt
 
 			_, err := controller.category.Get(tempCategory.GetName()) // Get category by name
 			if err != nil {                                           // That category does not exist -> Return Error
+				return err
+			}
+		}
+	}
+
+	if boardgame.IsMechanisms() {
+		for _, tempMechanism := range boardgame.GetMechanisms() {
+
+			_, err := controller.mechanism.Get(tempMechanism.GetName()) // Get mechanism by name
+			if err != nil {                                             // That mechanism does not exist -> Return Error
 				return err
 			}
 		}
