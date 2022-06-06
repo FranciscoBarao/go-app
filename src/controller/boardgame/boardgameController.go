@@ -69,8 +69,8 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if Tags exist
-	err = controller.validateTags(w, r, boardgame)
+	// Check if Tags & Categories exist
+	err = controller.validateAssociations(w, r, boardgame)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return
@@ -155,15 +155,8 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if Tags exist
-	err = controller.validateTags(w, r, input)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
-		return
-	}
-
-	// Check if Categories exist
-	err = controller.validateCategories(w, r, input)
+	// Check if Tags & Categories exist
+	err = controller.validateAssociations(w, r, input)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return
@@ -235,10 +228,10 @@ func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *
 
 // <<<<<<<<<<<< I DISLIKE THIS APPROACH, NOT MODULAR AND WILL WANT TO CHANGE >>>>>>>>>>>>>>>>>>
 
-// Function that validates if tags exist when boardgames are created
-func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
+// Function that validates if tags and categories exist when boardgames are created
+func (controller *Controller) validateAssociations(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
 
-	// Boardgame can contain Tags ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
+	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsTags() {
 		for _, tempTag := range boardgame.GetTags() {
 
@@ -248,13 +241,7 @@ func (controller *Controller) validateTags(w http.ResponseWriter, r *http.Reques
 			}
 		}
 	}
-	return nil
-}
 
-// Function that validates if categories exist when boardgames are created
-func (controller *Controller) validateCategories(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
-
-	// Boardgame can contain Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsCategories() {
 		for _, tempCategory := range boardgame.GetCategories() {
 

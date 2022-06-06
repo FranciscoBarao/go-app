@@ -15,7 +15,7 @@ func NewBoardGameRepository(instance *database.PostgresqlRepository) *BoardGameR
 	}
 }
 
-var omits = []string{"Tags.*"}
+var omits = []string{"Tags.*", "Categories.*"}
 
 func (repo *BoardGameRepository) Create(boardgame model.Boardgame) error {
 
