@@ -207,7 +207,7 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 // @Tags 		boardgames
 // @Produce 	json
 // @Param 		id path int true "The Boardgame id"
-// @Success 	200
+// @Success 	204
 // @Router 		/boardgame/{id} [delete]
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 

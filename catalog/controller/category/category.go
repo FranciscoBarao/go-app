@@ -107,7 +107,7 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 // @Tags 		categories
 // @Produce 	json
 // @Param 		name path string true "The Category name"
-// @Success 	200
+// @Success 	204
 // @Router 		/category/{name} [delete]
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 

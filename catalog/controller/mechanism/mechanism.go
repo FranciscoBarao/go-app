@@ -107,7 +107,7 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 // @Mechanisms 	mechanisms
 // @Produce 	json
 // @Param 		name path string true "The Mechanism name"
-// @Success 	200
+// @Success 	204
 // @Router 		/mechanism/{name} [delete]
 func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 

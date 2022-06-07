@@ -18,6 +18,14 @@ For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
 ## Testing
 [Framework](https://apitest.dev/)
 
+Command to test   
+Godotenv -> Initializes with .env   
+./... -> Tests all directories   
+```
+godotenv -f .env go test ./... -v
+```
+
+
 ## Sorting
 [Sorting in Golang](https://yourbasic.org/golang/how-to-sort-in-go/)
 

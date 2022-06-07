@@ -8,7 +8,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/unrolled/render"
 
 	"catalog/controller"
 	"catalog/database"
@@ -62,8 +61,4 @@ func main() {
 		return
 	}
 	log.Println("Server is Running on localhost:" + port)
-}
-
-func Test(w http.ResponseWriter, r *http.Request) {
-	render.New().JSON(w, http.StatusOK, "200")
 }
