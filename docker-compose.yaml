@@ -1,26 +1,26 @@
 version: '3'
 services:
   app:
-    container_name: boardgame-app
-    build: .
+    container_name: catalog
+    build: catalog/.
     ports:
       - 8080:8080
     restart: on-failure
     environment:
       PORT: '8080'
     env_file:
-      - src/.env
+      - catalog/.env
     depends_on:
       - database
 
   database:
     image: postgres
     restart: always
-    container_name: database
+    container_name: catalog-db
     ports:
       - '5432:5432'
     env_file:
-      - src/.env
+      - catalog/.env
     volumes:
       - data:/var/lib/postgresql/data
 
