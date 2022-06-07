@@ -140,3 +140,6 @@ For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
 
 # Sorting
 [Sorting in Golang](https://yourbasic.org/golang/how-to-sort-in-go/)
+
+# Validation
+[govalidator](https://github.com/asaskevich/govalidator)

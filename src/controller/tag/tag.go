@@ -42,6 +42,13 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate Tag input
+	err = utils.ValidateStruct(&tag)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
 	err = controller.repo.Create(tag)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)

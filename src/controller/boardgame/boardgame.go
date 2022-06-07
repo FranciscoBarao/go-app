@@ -68,6 +68,13 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate Boardgame input
+	err = utils.ValidateStruct(&boardgame)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
 	// Check if Expansion -> Connect if needed
 	id := utils.GetFieldFromURL(r, "id")
 	err = controller.connectBoardgameToExpansion(id, &boardgame)
@@ -76,7 +83,7 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if Tags & Categories exist
+	// Check if Tags, Categories & Mechanisms exist
 	err = controller.validateAssociations(w, r, boardgame)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
@@ -162,7 +169,14 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if Tags & Categories exist
+	// Validate Boardgame input
+	err = utils.ValidateStruct(&input)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
+	// Check if Tags & Categories & Mechanisms exist
 	err = controller.validateAssociations(w, r, input)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)

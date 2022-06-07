@@ -42,6 +42,13 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate Mechanism input
+	err = utils.ValidateStruct(&mechanism)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
 	err = controller.repo.Create(mechanism)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)

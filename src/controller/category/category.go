@@ -42,6 +42,13 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validate Category input
+	err = utils.ValidateStruct(&category)
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
 	err = controller.repo.Create(category)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)

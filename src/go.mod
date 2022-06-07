@@ -28,6 +28,7 @@ require (
 )
 
 require (
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect

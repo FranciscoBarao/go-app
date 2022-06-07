@@ -6,10 +6,10 @@ import (
 
 type Boardgame struct {
 	gorm.Model   `swaggerignore:"true"`
-	Name         string      `json:"name"`
-	Publisher    string      `json:"publisher"`
-	Price        float64     `json:"price"`
-	PlayerNumber int         `json:"playerNumber"`
+	Name         string      `json:"name" valid:"alphanum, maxstringlength(100)"`
+	Publisher    string      `json:"publisher" valid:"alphanum, maxstringlength(100)"`
+	Price        float64     `json:"price" valid:"float, range(0|1000)"`
+	PlayerNumber int         `json:"playerNumber" valid:"int, range(1|16)"`
 	Tags         []Tag       `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
 	Categories   []Category  `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
 	Mechanisms   []Mechanism `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
