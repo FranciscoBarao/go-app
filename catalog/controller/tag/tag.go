@@ -1,7 +1,6 @@
 package tag
 
 import (
-	"log"
 	"net/http"
 
 	"catalog/model"
@@ -93,9 +92,6 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
-	log.Println(r.URL.RawQuery)
-	log.Println("NAME: " + name)
-
 	tag, err := controller.repo.Get(name)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
