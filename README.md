@@ -1,15 +1,17 @@
 # go-app
 Repository for a Go-app 
 
-
-
  
+< Better describe the Architecture, UML and stuff >
 
 
 
 # Useful links/tools
 ## Structure 
 [Project Structure using Repository Pattern](https://dakaii.medium.com/repository-pattern-in-golang-d22d3fa76d91)
+
+< Better describe the Structure >
+
 
 ## Documentation
 For the documentation of the application, [Swag](https://github.com/swaggo/swag#the-swag-formatter) was used.
@@ -21,9 +23,17 @@ For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
 Command to test   
 Godotenv -> Initializes with .env   
 ./... -> Tests all directories   
+DATABASE_HOST -> Overwrites host since tests are not running in docker
 ```
-godotenv -f .env go test ./... -v
+DATABASE_HOST=localhost godotenv -f .env go test ./... -v
 ```
+
+For learning the testing framework, I developed Functional tests that simulate user behaviour on the catalog to trigger success and failure scenarios. 
+
+< Better describe the Tests implemented >
+
+< Implement and describe the Unit tests on the utils >
+
 
 
 ## Sorting

@@ -1,11 +1,12 @@
 package tag
 
 import (
-	"catalog/database"
-	"catalog/repository/tagRepo"
 	"log"
 	"net/http"
 	"testing"
+
+	"catalog/database"
+	"catalog/repository/tagRepo"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/steinfletcher/apitest"

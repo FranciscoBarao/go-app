@@ -11,8 +11,17 @@ export PATH=$(go env GOPATH)/bin:$PATH
 # Runs everything
 docker-compose up -d --build
 
+# Wait for it to boot before testing
+sleep 2 
+
+# Test Everything
+( cd catalog ; DATABASE_HOST=localhost godotenv -f .env go test ./... )
+
+# Sleep for checking tests/errors
+sleep 4
+
 # Pretty Console
-# printf "\033c"
+printf "\033c"
 echo "running on 8080"
 
 #Docker logging
