@@ -14,7 +14,7 @@ import (
 
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
 type repository interface {
-	Create(boardgame model.Boardgame) error
+	Create(boardgame *model.Boardgame) error
 	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
 	Update(boardgame model.Boardgame) error
@@ -90,11 +90,15 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = controller.repo.Create(boardgame)
+	log.Println(boardgame)
+
+	err = controller.repo.Create(&boardgame)
 	if err != nil {
 		utils.HTTPHandler(w, nil, 0, err)
 		return
 	}
+
+	log.Println(boardgame)
 
 	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
 }

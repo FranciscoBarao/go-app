@@ -17,9 +17,9 @@ func NewBoardGameRepository(instance *database.PostgresqlRepository) *BoardGameR
 
 var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*"}
 
-func (repo *BoardGameRepository) Create(boardgame model.Boardgame) error {
+func (repo *BoardGameRepository) Create(boardgame *model.Boardgame) error {
 
-	err := repo.db.Create(&boardgame, omits...)
+	err := repo.db.Create(boardgame, omits...)
 	if err != nil {
 		return err
 	}
