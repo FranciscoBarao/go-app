@@ -13,6 +13,7 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 	splits := strings.Split(filterBy, ".")
 
 	if len(splits) < 2 || len(splits) > 3 { // can be 2 or 3 fields
+		log.Printf("Error - Malformed filterBy query parameter, should be field.value or field.operator.value")
 		return NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, should be field.value or field.operator.value")
 	}
 

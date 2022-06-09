@@ -55,8 +55,9 @@ Examples of filters that work:
 ```
 	name.a 		   --->   name LIKE ?    %a%
 	price.le.10    --->   price <= ?     10
-	name.eq.asd    --->   name == ?      asd
 ```
+
+Filters will require an update sometime in the future because it doesnt allow floats cause we can't do ```price.lt.10,4```. 
 
 Examples of sorts that work:
 ```
