@@ -1,11 +1,14 @@
 package boardgame
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"catalog/database"
+	"catalog/model"
 	"catalog/repository/boardgameRepo"
 	"catalog/repository/categoryRepo"
 	"catalog/repository/mechanismRepo"
@@ -16,6 +19,7 @@ import (
 )
 
 var router *chi.Mux
+var id uint
 
 func init() {
 	log.Println("Setup Starting")
@@ -55,16 +59,12 @@ func TestCreateBoardgameSuccess(t *testing.T) {
 		Header("Content-Type", "application/json").
 		Expect(t).
 		Status(http.StatusOK).
-		End()
-}
-
-func TestGetBoardgameSuccess(t *testing.T) {
-	// Verifies if the created boardgame exists by ID (Runnable only once)
-	apitest.New().
-		HandlerFunc(router.ServeHTTP).
-		Get("/api/boardgame/29").
-		Expect(t).
-		Status(http.StatusOK).
+		Assert(func(res *http.Response, req *http.Request) error { // Gets ID from BG Creation for further test use
+			var bg model.Boardgame
+			json.NewDecoder(res.Body).Decode(&bg)
+			id = *bg.GetId()
+			return nil
+		}).
 		End()
 }
 
@@ -77,18 +77,39 @@ func TestGetAllBoardgameSuccess(t *testing.T) {
 		Status(http.StatusOK).
 		End()
 }
+func TestCreateExpansionSuccess(t *testing.T) {
+	idString := strconv.FormatUint(uint64(id), 10)
 
-/*
-func TestDeleteBoardgameSuccess(t *testing.T) {
-	// Deletes boardgame by ID (Runnable only once)
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
-		Delete("/api/boardgame/48").
+		Post("/api/boardgame/"+idString+"/expansion").
+		JSON(`{"Name":"expansion","Publisher":"expansion","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		Header("Content-Type", "application/json").
+		Expect(t).
+		Status(http.StatusOK).
+		End()
+}
+
+func TestGetBoardgameSuccess(t *testing.T) {
+	idString := strconv.FormatUint(uint64(id), 10)
+	apitest.New().
+		HandlerFunc(router.ServeHTTP).
+		Get("/api/boardgame/" + idString).
+		Expect(t).
+		Status(http.StatusOK).
+		End()
+}
+
+func TestDeleteBoardgameSuccess(t *testing.T) {
+	idString := strconv.FormatUint(uint64(id), 10)
+	apitest.New().
+		HandlerFunc(router.ServeHTTP).
+		Delete("/api/boardgame/" + idString).
 		Expect(t).
 		Status(http.StatusNoContent).
 		End()
 }
-*/
+
 func TestCreateBoardgameJsonFailures(t *testing.T) {
 	// Several Json Objects on the body
 	apitest.New().
