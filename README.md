@@ -1,8 +1,10 @@
 # go-app
 Repository for a Go-app 
 
+The following project intends to be a learning example of a marketplace for boardgame related products. 
+
  
-< Better describe the Architecture, UML and stuff >
+< Better describe the Architecture >
 
 
 
@@ -10,7 +12,23 @@ Repository for a Go-app
 ## Structure 
 [Project Structure using Repository Pattern](https://dakaii.medium.com/repository-pattern-in-golang-d22d3fa76d91)
 
-< Better describe the Structure >
+The structured used in the services was based on the previous link, and intends to asbtract the different layers while allowing to "pass around" the database instance. 
+
+![Structure](doc/structure.png)
+
+In the Controllers, which contain the REST endpoints that user interacts with, we do all functional logic which includes creating Models, invoking their validation, and redirecting the storage interactions to the Repositories. It stands to reason that in the controllers, we have Repository interfaces that abstract the implementation of these methods while allowing it to be swapped out, enforcing loose coupling.
+
+In the Repositories, we have an abstracted storage instance and this layer is the abstraction bridge between the controllers and the storage implementation. This was interesting since if we wanted to change the storage implementation, we could maintain the Repository as long as the generic methods maintained the same (Loosely coupled).
+
+The storage implementation, in this case, is a specific PostgreSQL implementation of generic but database specific methods that allow us to create, read, update and delete objects. It stands to reason that in this project we used a ORM, namely Gorm, to interact with the database.
+
+In the main file, we sequentially:
+1. Connect to the Database
+2. Initialize the Repositories with the database
+3. Initialize the Controllers with the repositories
+4. Add the Routers with the controllers
+
+Note: Optionally we could always further abstract the controllers into Controllers & Services, however there was no need to further complicate the structure given the size of the project.
 
 
 ## Documentation

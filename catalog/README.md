@@ -2,7 +2,7 @@
 Readme for the catalog service
 
 
-The following service contains the different boardgame related products that can be browsed. These products are the base for the marketplace.
+**Objective -** In the catalog, we are suppose to maintain a private repository of products that can be queried within the marketplace. This service contains the different boardgame related products that can be browsed. These products are the base for the marketplace.  
 At the moment, we have:
 - Boardgames
 - Expansions
@@ -11,6 +11,12 @@ Each product can be classified with:
 - Tags
 - Mechanisms
 - Categories
+
+
+**Future -** This repository is to be handled exclusively by admins and possible have some integration with BoardGameGeeks. 
+## Entity Relationship
+
+![Entity Relationship](doc/Catalog_ER.drawio.png)
 
 
 ## Boardgame API
