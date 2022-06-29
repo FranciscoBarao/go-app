@@ -32,7 +32,7 @@ func InitController(categoryRepo *categoryRepo.CategoryRepository) *Controller {
 // @Produce 	json
 // @Param 		data body model.Category true "The Category name"
 // @Success 	200 {object} model.Category
-// @Router 		/category/{name} [post]
+// @Router 		/category [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	var category model.Category

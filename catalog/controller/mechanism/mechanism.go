@@ -32,7 +32,7 @@ func InitController(mechanismRepo *mechanismRepo.MechanismRepository) *Controlle
 // @Produce 	json
 // @Param 		data body model.Mechanism true "The Mechanism name"
 // @Success 	200 {object} model.Mechanism
-// @Router 		/mechanism/{name} [post]
+// @Router 		/mechanism [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	var mechanism model.Mechanism

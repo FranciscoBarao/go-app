@@ -32,7 +32,7 @@ func InitController(tagRepo *tagRepo.TagRepository) *Controller {
 // @Produce 	json
 // @Param 		data body model.Tag true "The Tag name"
 // @Success 	200 {object} model.Tag
-// @Router 		/tag/{name} [post]
+// @Router 		/tag [post]
 func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 	var tag model.Tag
