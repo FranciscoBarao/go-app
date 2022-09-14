@@ -12,6 +12,7 @@ import (
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
 type repository interface {
 	Create(offer *model.Offer) error
+	ReadAll() ([]model.Offer, error)
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -51,4 +52,21 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.HTTPHandler(w, &offer, http.StatusOK, nil)
+}
+
+// Get Offer godoc
+// @Summary 	Fetches all Offers
+// @Tags 		offer
+// @Produce 	json
+// @Success 	200 {object} model.Offer
+// @Router 		/offer [get]
+func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
+
+	offers, err := controller.repo.ReadAll()
+	if err != nil {
+		utils.HTTPHandler(w, nil, 0, err)
+		return
+	}
+
+	utils.HTTPHandler(w, &offers, http.StatusOK, nil)
 }

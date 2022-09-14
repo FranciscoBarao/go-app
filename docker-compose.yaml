@@ -1,6 +1,6 @@
 version: '3'
 services:
-  app:
+  catalog:
     container_name: catalog
     build: catalog/.
     ports:
@@ -11,9 +11,9 @@ services:
     env_file:
       - catalog/.env
     depends_on:
-      - database
+      - catalog-db
 
-  database:
+  catalog-db:
     image: postgres
     restart: always
     container_name: catalog-db
@@ -22,7 +22,32 @@ services:
     env_file:
       - catalog/.env
     volumes:
-      - data:/var/lib/postgresql/data
+      - catalog-data:/var/lib/postgresql/data
+
+  marketplace:
+    container_name: marketplace
+    build: marketplace/.
+    ports:
+      - 8081:8080
+    restart: on-failure
+    environment:
+      PORT: '8080'
+    env_file:
+      - marketplace/.env
+    depends_on:
+      - marketplace-db
+
+  marketplace-db:
+    image: postgres
+    restart: always
+    container_name: marketplace-db
+    ports:
+      - '5433:5432'
+    env_file:
+      - marketplace/.env
+    volumes:
+      - marketplace-data:/var/lib/postgresql/data
 
 volumes:
-  data:
+  catalog-data:
+  marketplace-data:

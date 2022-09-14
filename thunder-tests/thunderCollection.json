@@ -1,0 +1,53 @@
+[
+  {
+    "_id": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
+    "colName": "Catalog",
+    "created": "2022-05-31T12:22:26.582Z",
+    "sortNum": 10000,
+    "folders": [
+      {
+        "_id": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
+        "name": "Boardgame",
+        "containerId": "",
+        "created": "2022-05-31T12:22:26.583Z",
+        "sortNum": 10000
+      },
+      {
+        "_id": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
+        "name": "Tag",
+        "containerId": "",
+        "created": "2022-05-31T12:22:26.583Z",
+        "sortNum": 20000
+      },
+      {
+        "_id": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
+        "name": "Category",
+        "containerId": "",
+        "created": "2022-06-06T14:28:53.863Z",
+        "sortNum": 30000
+      },
+      {
+        "_id": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
+        "name": "Mechanism",
+        "containerId": "",
+        "created": "2022-06-06T15:47:20.328Z",
+        "sortNum": 40000
+      }
+    ]
+  },
+  {
+    "_id": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "colName": "Marketplace",
+    "created": "2022-09-14T10:28:08.318Z",
+    "sortNum": 20000,
+    "folders": [
+      {
+        "_id": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+        "name": "Offer",
+        "containerId": "",
+        "created": "2022-09-14T10:28:27.001Z",
+        "sortNum": 10000
+      }
+    ]
+  }
+]

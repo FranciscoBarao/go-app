@@ -5,9 +5,9 @@ type Schema interface {
 	GetDropSchemas() string
 }
 
-type SchemaAgregator string
+type SchemaAgregator struct{}
 
-func (sa SchemaAgregator) GetCreateSchemas() string {
+func (SchemaAgregator) GetCreateSchemas() string {
 	offerSchema := GetOfferSchema()
 
 	schema := offerSchema
@@ -15,10 +15,10 @@ func (sa SchemaAgregator) GetCreateSchemas() string {
 	return schema
 }
 
-func (sa SchemaAgregator) GetDropSchemas() string {
+func (SchemaAgregator) GetDropSchemas() string {
 
 	schema := `
-		drop table person;
+		drop table offer;
 		`
 
 	return schema

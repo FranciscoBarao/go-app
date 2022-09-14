@@ -24,7 +24,7 @@ func (off Offer) GetName() string {
 // Get Schema
 func GetOfferSchema() string {
 	var schema = `
-		CREATE TABLE Offer (
+		CREATE TABLE IF NOT EXISTS Offer (
 			name text,
 			added_at timestamp default now()
 		);`

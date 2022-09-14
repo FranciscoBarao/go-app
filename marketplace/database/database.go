@@ -2,19 +2,21 @@ package database
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
 	"marketplace/model"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type PostgresqlRepository struct {
-	db string
+	db *sqlx.DB
 }
 
-func getConfig() (string, string, string, string, string, error) {
+func getConfig() (string, error) {
 	log.Println("Fetching env vars for Database")
 
 	host, hostPresent := os.LookupEnv("DATABASE_HOST")
@@ -25,33 +27,64 @@ func getConfig() (string, string, string, string, string, error) {
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
 		log.Println("Error occurred while fetching env vars")
-		return "", "", "", "", "", errors.New("Error occurred while fetching env vars")
+		return "", errors.New("Error occurred while fetching env vars")
 	}
-	return host, user, pass, dbname, port, nil
+
+	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port + " sslmode=disable", nil
 }
 
 func Connect() (*PostgresqlRepository, error) {
 	log.Println("Connecting to DB")
 
-	getConfig()
-
-	db, err := sqlx.Connect("postgres", "user=foo dbname=bar sslmode=disable")
+	config, err := getConfig()
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error Getting environment variables: " + err.Error())
+		return nil, err
 	}
 
-	var schemas model.Schema
+	db, err := sqlx.Connect("postgres", config)
+	if err != nil {
+		log.Println("Error Connecting to the database: " + err.Error())
+		return nil, err
+	}
+
+	log.Println("Connected to the Database")
+
+	var schemas model.Schema = model.SchemaAgregator{}
 	createSchemas := schemas.GetCreateSchemas()
 
-	// execute schema
+	_, err = db.Exec(createSchemas)
+	if err != nil {
+		log.Println("Error Creating schemas " + err.Error())
+		return nil, err
+	}
 
-	db.MustExec(createSchemas)
+	log.Println("Database Schemas creation Completed")
 
-	return nil, nil
+	return &PostgresqlRepository{db}, nil
 }
 
-func (instance *PostgresqlRepository) Create(value interface{}, omits ...string) error {
+func (instance *PostgresqlRepository) Create(query string, value ...interface{}) error {
 
-	log.Println("Creating DB")
+	_, err := instance.db.Exec(query, value...)
+	if err != nil {
+		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", query))
+		log.Println(err)
+		return err
+	}
+
+	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+func (instance *PostgresqlRepository) ReadAll(query string, value interface{}) error {
+
+	err := instance.db.Select(value, query)
+	if err != nil {
+		log.Println("Error fetching database entries: " + fmt.Sprintf("%v", query))
+		log.Println(err)
+		return err
+	}
+	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
 	return nil
 }

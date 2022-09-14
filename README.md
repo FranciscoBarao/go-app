@@ -66,3 +66,40 @@ For learning the testing framework, I developed Functional tests that simulate u
 ## JSON 
 [Decoding JSON Body](https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body)
 
+
+
+
+
+
+# Support Suff
+
+## Blogs, workshops, etc
+​
+## [Francesc Campoy Flores](https://www.campoy.cat) 
+​
+* Workshop @CERN "An Introduction to Go": [Pt 1](https://www.youtube.com/watch?v=xi8732QO33Y&t=2475s), [Pt 2](https://www.youtube.com/watch?v=wCU4g0kVZ8Y&t=647s), [Pt 3](https://www.youtube.com/watch?v=axXuYFA80QM&t=4s)
+* [Youtube channel](https://www.youtube.com/channel/UC_BzFbxG2za3bp5NRRRXJSw/)
+​
+## [Dave Cheney](https://dave.cheney.net/about)
+​
+* [Blog](https://dave.cheney.net/)
+* [Practical Go: Real world advice for writing maintainable Go programs](https://dave.cheney.net/practical-go/presentations/qcon-china.html)
+​
+## [Rob Pike](https://research.google/people/r/)
+​
+* [Presentation "Concurrency Is Not Parallelism"](https://www.youtube.com/watch?v=cN_DpYBzKso)
+​
+### [Russ Cox](https://swtch.com/~rsc/)
+​
+* [A Tour of Go](https://www.youtube.com/watch?v=ytEkHepK08c)
+​
+### [Jaana Dogan](https://rakyll.org/about/)
+​
+* [Blog](https://rakyll.org/)
+​
+## Ebooks & tutorials
+​
+* https://go101.org/
+* http://www.golangbootcamp.com/book/frontmatter
+* https://golangbot.com/learn-golang-series/
+* https://go.dev/blog/slices-intro
