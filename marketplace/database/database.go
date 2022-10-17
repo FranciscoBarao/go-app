@@ -1,11 +1,12 @@
 package database
 
 import (
-	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
+	"marketplace/middleware"
 	"marketplace/model"
 
 	"github.com/jmoiron/sqlx"
@@ -27,7 +28,7 @@ func getConfig() (string, error) {
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
 		log.Println("Error occurred while fetching env vars")
-		return "", errors.New("Error occurred while fetching env vars")
+		return "", middleware.NewError(http.StatusInternalServerError, "Error occurred while fetching env vars")
 	}
 
 	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port + " sslmode=disable", nil

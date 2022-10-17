@@ -1,7 +1,6 @@
-package offerRepo
+package repositories
 
 import (
-	"log"
 	"marketplace/database"
 	"marketplace/model"
 )
@@ -19,28 +18,12 @@ func NewOfferRepository(instance *database.PostgresqlRepository) *OfferRepositor
 func (repo *OfferRepository) Create(offer *model.Offer) error {
 
 	query := `INSERT INTO offer (name) VALUES ($1)`
-	err := repo.db.Create(query, offer.GetName())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Create(query, offer.GetName())
 }
 
 func (repo *OfferRepository) ReadAll() ([]model.Offer, error) {
 
 	var offers []model.Offer
-
 	query := "SELECT name FROM offer"
-	err := repo.db.ReadAll(query, &offers)
-	if err != nil {
-		return nil, err
-	}
-
-	// Printing offers
-	for k, v := range offers {
-		log.Println(k, v)
-	}
-
-	return offers, nil
+	return offers, repo.db.ReadAll(query, &offers)
 }

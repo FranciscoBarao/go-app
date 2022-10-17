@@ -1,18 +1,17 @@
-package repository
+package repositories
 
 import (
 	"marketplace/database"
-	"marketplace/repository/offerRepo"
 )
 
 // Repositories contains all the repo structs
 type Repositories struct {
-	OfferRepository *offerRepo.OfferRepository
+	OfferRepository *OfferRepository
 }
 
 // InitRepositories should be called in main.go
 func InitRepositories(db *database.PostgresqlRepository) *Repositories {
-	offerRepository := offerRepo.NewOfferRepository(db)
+	offerRepository := NewOfferRepository(db)
 
 	return &Repositories{
 		OfferRepository: offerRepository,

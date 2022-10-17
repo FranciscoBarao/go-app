@@ -9,9 +9,12 @@ import (
 	"net/http"
 	"strings"
 
+	"marketplace/middleware"
+
 	"github.com/golang/gddo/httputil/header"
 )
 
+// Method that deserializes input into models
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
 
 	if r.Header.Get("Content-Type") != "" { // Only allow requests with application/json as header
@@ -19,7 +22,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 		if value != "application/json" {
 			log.Println("Error - Content-Type header of request is not application/json ")
 			msg := "Content-Type header is not application/json"
-			return NewError(http.StatusNotAcceptable, msg)
+			return middleware.NewError(http.StatusNotAcceptable, msg)
 		}
 	}
 
@@ -34,7 +37,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 		if err != io.EOF { // Don't allow several JSON objects
 			log.Println("Error - Request body must only contain a single JSON object")
 			msg := "Request body must only contain a single JSON object"
-			return NewError(http.StatusBadRequest, msg)
+			return middleware.NewError(http.StatusBadRequest, msg)
 		}
 
 		return nil
@@ -69,12 +72,12 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 	case err.Error() == "http: request body too large":
 		log.Println("Request body must not be larger than 1MB")
 		msg = "Request body must not be larger than 1MB"
-		return NewError(http.StatusRequestEntityTooLarge, msg)
+		return middleware.NewError(http.StatusRequestEntityTooLarge, msg)
 
 	default:
 		log.Println(err)
 		return err
 	}
 
-	return NewError(http.StatusBadRequest, msg)
+	return middleware.NewError(http.StatusBadRequest, msg)
 }

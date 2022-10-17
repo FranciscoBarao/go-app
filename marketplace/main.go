@@ -1,9 +1,9 @@
 package main
 
 import (
-	"marketplace/controller"
+	"marketplace/controllers"
 	"marketplace/database"
-	"marketplace/repository"
+	"marketplace/repositories"
 	"marketplace/route"
 
 	"log"
@@ -32,8 +32,8 @@ func main() {
 	}
 
 	// Initialize Repositories and controllers
-	repos := repository.InitRepositories(db)
-	controllers := controller.InitControllers(repos)
+	repos := repositories.InitRepositories(db)
+	controllers := controllers.InitControllers(repos)
 
 	// Creates routing
 	router := chi.NewRouter()

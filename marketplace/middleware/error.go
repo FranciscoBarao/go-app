@@ -1,27 +1,28 @@
-package utils
+package middleware
 
-import "strconv"
+import "encoding/json"
 
 type MalformedRequest struct {
-	status  int
-	message string
+	Status  int
+	Message string
 }
 
 func NewError(status int, message string) *MalformedRequest {
 	return &MalformedRequest{
-		status:  status,
-		message: message,
+		Status:  status,
+		Message: message,
 	}
 }
 
 func (mr *MalformedRequest) Error() string {
-	return mr.message
+	return mr.Message
 }
 
 func (mr *MalformedRequest) GetStatus() int {
-	return mr.status
+	return mr.Status
 }
 
 func (mr *MalformedRequest) GetMessage() string {
-	return strconv.Itoa(mr.status) + " - " + mr.message
+	b, _ := json.Marshal(mr)
+	return string(b)
 }
