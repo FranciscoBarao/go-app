@@ -1,12 +1,12 @@
 package route
 
 import (
-	"catalog/controller/category"
+	"catalog/controllers"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func AddCategoryRouter(router chi.Router, categoryController *category.Controller) {
+func AddCategoryRouter(router chi.Router, categoryController *controllers.CategoryController) {
 	router.Post("/api/category", categoryController.Create)
 	router.Get("/api/category", categoryController.GetAll)
 	router.Get("/api/category/{name}", categoryController.Get)

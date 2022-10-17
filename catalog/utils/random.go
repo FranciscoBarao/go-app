@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"catalog/middleware"
 	"log"
 	"net/http"
 	"regexp"
 
 	"github.com/asaskevich/govalidator"
+	"github.com/go-chi/chi/v5"
 )
 
 func StringInSlice(value string, list []string) bool {
@@ -23,10 +25,13 @@ func IsAlphanumeric(word string) bool {
 }
 
 func ValidateStruct(value interface{}) error {
-	_, err := govalidator.ValidateStruct(value)
-	if err != nil {
+	if _, err := govalidator.ValidateStruct(value); err != nil {
 		log.Println("Error - Model validation failed: " + err.Error())
-		return NewError(http.StatusForbidden, "Error occurred, model validation failed")
+		return middleware.NewError(http.StatusForbidden, "Error occurred, model validation failed")
 	}
 	return nil
+}
+
+func GetFieldFromURL(r *http.Request, field string) string {
+	return chi.URLParam(r, field)
 }

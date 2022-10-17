@@ -1,27 +1,30 @@
-package mechanism
+package controllers
 
 import (
 	"net/http"
 
+	"catalog/middleware"
 	"catalog/model"
-	"catalog/repository/mechanismRepo"
+	"catalog/repositories"
 	"catalog/utils"
+
+	"github.com/unrolled/render"
 )
 
-type repository interface {
+type mechanismRepository interface {
 	Create(mechanism model.Mechanism) error
 	GetAll(sort string) ([]model.Mechanism, error)
 	Get(name string) (model.Mechanism, error)
 	Delete(mechanism model.Mechanism) error
 }
 
-type Controller struct {
-	repo repository
+type MechanismController struct {
+	repo mechanismRepository
 }
 
 // InitController initializes the mechanism controller.
-func InitController(mechanismRepo *mechanismRepo.MechanismRepository) *Controller {
-	return &Controller{
+func InitMechanismController(mechanismRepo *repositories.MechanismRepository) *MechanismController {
+	return &MechanismController{
 		repo: mechanismRepo,
 	}
 }
@@ -33,29 +36,27 @@ func InitController(mechanismRepo *mechanismRepo.MechanismRepository) *Controlle
 // @Param 		data body model.Mechanism true "The Mechanism name"
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [post]
-func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
+func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 
+	// Deserialize Mechanism input
 	var mechanism model.Mechanism
-	err := utils.DecodeJSONBody(w, r, &mechanism)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.DecodeJSONBody(w, r, &mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Mechanism input
-	err = utils.ValidateStruct(&mechanism)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.ValidateStruct(&mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	err = controller.repo.Create(mechanism)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Create(mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &mechanism, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, mechanism)
 }
 
 // Get Mechanisms godoc
@@ -64,22 +65,21 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Produce 	json
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [get]
-func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
+func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Mechanism{}, sortBy)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	mechanisms, err := controller.repo.GetAll(sort)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	utils.HTTPHandler(w, &mechanisms, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, mechanisms)
 }
 
 // Get Mechanism godoc
@@ -89,17 +89,17 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param 		name path string true "The Mechanism name"
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism/{name} [get]
-func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
+func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 
 	mechanism, err := controller.repo.Get(name)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &mechanism, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, mechanism)
 }
 
 // Delete Mechanism godoc
@@ -109,22 +109,22 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 // @Param 		name path string true "The Mechanism name"
 // @Success 	204
 // @Router 		/mechanism/{name} [delete]
-func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
+func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Get Mechanism by name
 	mechanism, err := controller.repo.Get(name)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Delete by id
-	err = controller.repo.Delete(mechanism)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Delete(mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
-	utils.HTTPHandler(w, name, http.StatusNoContent, nil)
+
+	render.New().JSON(w, http.StatusNoContent, name)
 }

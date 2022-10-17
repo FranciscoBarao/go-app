@@ -1,27 +1,30 @@
-package tag
+package controllers
 
 import (
 	"net/http"
 
+	"catalog/middleware"
 	"catalog/model"
-	"catalog/repository/tagRepo"
+	"catalog/repositories"
 	"catalog/utils"
+
+	"github.com/unrolled/render"
 )
 
-type repository interface {
+type tagRepository interface {
 	Create(tag model.Tag) error
 	GetAll(sort string) ([]model.Tag, error)
 	Get(name string) (model.Tag, error)
 	Delete(tag model.Tag) error
 }
 
-type Controller struct {
-	repo repository
+type TagController struct {
+	repo tagRepository
 }
 
 // InitController initializes the tag controller.
-func InitController(tagRepo *tagRepo.TagRepository) *Controller {
-	return &Controller{
+func InitTagController(tagRepo *repositories.TagRepository) *TagController {
+	return &TagController{
 		repo: tagRepo,
 	}
 }
@@ -33,29 +36,27 @@ func InitController(tagRepo *tagRepo.TagRepository) *Controller {
 // @Param 		data body model.Tag true "The Tag name"
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [post]
-func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
+func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) {
 
+	// Deserialize Tag input
 	var tag model.Tag
-	err := utils.DecodeJSONBody(w, r, &tag)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.DecodeJSONBody(w, r, &tag); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Tag input
-	err = utils.ValidateStruct(&tag)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.ValidateStruct(&tag); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	err = controller.repo.Create(tag)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Create(tag); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &tag, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, tag)
 }
 
 // Get Tags godoc
@@ -64,22 +65,21 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Produce 	json
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [get]
-func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
+func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Tag{}, sortBy)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	tags, err := controller.repo.GetAll(sort)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	utils.HTTPHandler(w, &tags, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, tags)
 }
 
 // Get Tag godoc
@@ -89,16 +89,16 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param 		name path string true "The Tag name"
 // @Success 	200 {object} model.Tag
 // @Router 		/tag/{name} [get]
-func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
+func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 	tag, err := controller.repo.Get(name)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &tag, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, tag)
 }
 
 // Delete Tag godoc
@@ -108,22 +108,22 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 // @Param 		name path string true "The Tag name"
 // @Success 	204
 // @Router 		/tag/{name} [delete]
-func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
+func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Get Tag by name
 	tag, err := controller.repo.Get(name)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Delete by id
-	err = controller.repo.Delete(tag)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Delete(tag); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
-	utils.HTTPHandler(w, name, http.StatusNoContent, nil)
+
+	render.New().JSON(w, http.StatusNoContent, name)
 }

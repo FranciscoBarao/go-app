@@ -1,4 +1,4 @@
-package categoryRepo
+package repositories
 
 import (
 	"catalog/database"
@@ -17,39 +17,22 @@ func NewCategoryRepository(instance *database.PostgresqlRepository) *CategoryRep
 
 func (repo *CategoryRepository) Create(category model.Category) error {
 
-	err := repo.db.Create(&category)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Create(&category)
 }
 
 func (repo *CategoryRepository) GetAll(sort string) ([]model.Category, error) {
 
 	var categories []model.Category
-	err := repo.db.Read(&categories, sort, "", "")
-	if err != nil {
-		return categories, err
-	}
-	return categories, nil
+	return categories, repo.db.Read(&categories, sort, "", "")
 }
 
 func (repo *CategoryRepository) Get(name string) (model.Category, error) {
 
 	var category model.Category
-	err := repo.db.Read(&category, "", "name = ?", name)
-	if err != nil {
-		return category, err
-	}
-	return category, nil
+	return category, repo.db.Read(&category, "", "name = ?", name)
 }
 
 func (repo *CategoryRepository) Delete(category model.Category) error {
 
-	err := repo.db.Delete(&category)
-	if err != nil {
-		return err
-	}
-	return nil
+	return repo.db.Delete(&category)
 }

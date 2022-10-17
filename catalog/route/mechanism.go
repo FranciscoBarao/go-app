@@ -1,12 +1,12 @@
 package route
 
 import (
-	"catalog/controller/mechanism"
+	"catalog/controllers"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func AddMechanismRouter(router chi.Router, mechanismController *mechanism.Controller) {
+func AddMechanismRouter(router chi.Router, mechanismController *controllers.MechanismController) {
 	router.Post("/api/mechanism", mechanismController.Create)
 	router.Get("/api/mechanism", mechanismController.GetAll)
 	router.Get("/api/mechanism/{name}", mechanismController.Get)

@@ -8,8 +8,8 @@ import (
 	"os"
 	"reflect"
 
+	"catalog/middleware"
 	"catalog/model"
-	"catalog/utils"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -44,8 +44,7 @@ func Connect() (*PostgresqlRepository, error) {
 }
 
 func migrate(db *gorm.DB, model interface{}) error {
-	err := db.AutoMigrate(model)
-	if err != nil {
+	if err := db.AutoMigrate(model); err != nil {
 		log.Println("Error migrating database: " + fmt.Sprintf("%v", model))
 		return err
 	}
@@ -65,7 +64,7 @@ func getConfig() (string, error) {
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
 		log.Println("Error occurred while fetching env vars")
-		return "", errors.New("Error occurred while fetching env vars")
+		return "", middleware.NewError(http.StatusInternalServerError, "Error occurred while fetching env vars")
 	}
 
 	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port, nil
@@ -81,7 +80,7 @@ func (instance *PostgresqlRepository) Create(value interface{}, omits ...string)
 	if result.Error != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
 		if errors.Is(result.Error, gorm.ErrRegistered) {
-			return utils.NewError(http.StatusConflict, "Entry already registered")
+			return middleware.NewError(http.StatusConflict, "Entry already registered")
 		}
 		return result.Error
 	}
@@ -107,7 +106,7 @@ func (instance *PostgresqlRepository) Read(value interface{}, sort, search, iden
 		log.Println("Error while reading a database entry: " + search + " " + identifier)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Println("Error Record not found: " + search + " " + identifier)
-			return utils.NewError(http.StatusNotFound, "Record Not found")
+			return middleware.NewError(http.StatusNotFound, "Record Not found")
 		}
 		return result.Error
 	}
@@ -134,7 +133,7 @@ func (instance *PostgresqlRepository) Delete(value interface{}) error {
 	if result.Error != nil {
 		log.Println("Error while deleting a database entry: " + fmt.Sprintf("%v", value))
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return utils.NewError(http.StatusNotFound, "Record Not found")
+			return middleware.NewError(http.StatusNotFound, "Record Not found")
 		}
 		return result.Error
 	}

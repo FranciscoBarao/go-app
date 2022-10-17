@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"catalog/middleware"
 	"log"
 	"net/http"
 	"reflect"
@@ -13,7 +14,7 @@ func validateSortParameters(model interface{}, sortBy string) error {
 	splits := strings.Split(sortBy, ".")
 
 	if len(splits) != 2 { // Validate if there are only 2 parameters
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
 	}
 
 	field := splits[0]
@@ -21,19 +22,14 @@ func validateSortParameters(model interface{}, sortBy string) error {
 
 	if field == "" || order == "" { // Validate if there are no empty parameters
 		log.Printf("Error - Filter malformed, empty parameters")
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
 	}
 
 	if order != "desc" && order != "asc" { // Validate if order is valid
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
 	}
 
-	err := validateField(model, field) // Validate if field exists
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return validateField(model, field) // Validate if field exists
 }
 
 // Function that checks if the field exists in the struct
@@ -43,15 +39,11 @@ func validateField(model interface{}, fieldName string) error {
 	for _, field := range fields {
 		if strings.ToLower(field.Name) == fieldName { // If there is a Field with this name
 
-			err := isTypeSortable(field.Type.String()) // Checks if field is sortable
-			if err != nil {
-				return err
-			}
-			return nil // Field exists
+			return isTypeSortable(field.Type.String()) // Checks if field is sortable.
 		}
 	}
 	log.Printf("Error - No field in struct %v with name %s", model, fieldName)
-	return NewError(http.StatusUnprocessableEntity, "No field with this name")
+	return middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
 }
 
 // Function that verifies if the field is sortable (E.g We cant sort by Tags)
@@ -61,7 +53,7 @@ func isTypeSortable(typ string) error {
 		return nil
 	}
 	log.Printf("Error - Field of type %s is not sortable", typ)
-	return NewError(http.StatusUnprocessableEntity, "Field not sortable")
+	return middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
 }
 
 // Function that constructs sort query

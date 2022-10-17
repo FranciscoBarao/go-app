@@ -9,10 +9,10 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"catalog/controller"
+	"catalog/controllers"
 	"catalog/database"
 	_ "catalog/docs"
-	"catalog/repository"
+	"catalog/repositories"
 	"catalog/route"
 )
 
@@ -33,8 +33,8 @@ func main() {
 	}
 
 	// Initialize Repositories and controllers
-	repos := repository.InitRepositories(db)
-	controllers := controller.InitControllers(repos)
+	repos := repositories.InitRepositories(db)
+	controllers := controllers.InitControllers(repos)
 
 	// Creates routing
 	router := chi.NewRouter()

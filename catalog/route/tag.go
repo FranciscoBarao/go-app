@@ -1,12 +1,12 @@
 package route
 
 import (
-	"catalog/controller/tag"
+	"catalog/controllers"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func AddTagRouter(router chi.Router, tagController *tag.Controller) {
+func AddTagRouter(router chi.Router, tagController *controllers.TagController) {
 	router.Post("/api/tag", tagController.Create)
 	router.Get("/api/tag", tagController.GetAll)
 	router.Get("/api/tag/{name}", tagController.Get)

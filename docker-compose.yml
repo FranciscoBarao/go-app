@@ -2,14 +2,14 @@ version: '3'
 services:
   catalog:
     container_name: catalog
-    build: catalog/.
+    build: 
+      context: catalog/.
+      dockerfile: ./dockerfile/dev/dockerfile
     ports:
       - 8080:8080
     restart: on-failure
-    environment:
-      PORT: '8080'
     env_file:
-      - catalog/.env
+      - ./catalog/environment/dev/.env
     depends_on:
       - catalog-db
 
@@ -20,7 +20,7 @@ services:
     ports:
       - '5432:5432'
     env_file:
-      - catalog/.env
+      - ./catalog/environment/dev/.env
     volumes:
       - catalog-data:/var/lib/postgresql/data
 

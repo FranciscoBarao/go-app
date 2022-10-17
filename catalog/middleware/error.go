@@ -1,6 +1,6 @@
-package utils
+package middleware
 
-import "strconv"
+import "encoding/json"
 
 type MalformedRequest struct {
 	status  int
@@ -23,5 +23,6 @@ func (mr *MalformedRequest) GetStatus() int {
 }
 
 func (mr *MalformedRequest) GetMessage() string {
-	return strconv.Itoa(mr.status) + " - " + mr.message
+	b, _ := json.Marshal(mr)
+	return string(b)
 }

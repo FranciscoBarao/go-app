@@ -1,19 +1,19 @@
-package boardgame
+package controllers
 
 import (
 	"log"
 	"net/http"
 
+	"catalog/middleware"
 	"catalog/model"
-	"catalog/repository/boardgameRepo"
-	"catalog/repository/categoryRepo"
-	"catalog/repository/mechanismRepo"
-	"catalog/repository/tagRepo"
+	"catalog/repositories"
 	"catalog/utils"
+
+	"github.com/unrolled/render"
 )
 
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
-type repository interface {
+type boardgameRepository interface {
 	Create(boardgame *model.Boardgame) error
 	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
@@ -21,29 +21,17 @@ type repository interface {
 	DeleteById(boardgame model.Boardgame) error
 }
 
-type tagRepository interface {
-	Get(name string) (model.Tag, error)
-}
-
-type categoryRepository interface {
-	Get(name string) (model.Category, error)
-}
-
-type mechanismRepository interface {
-	Get(name string) (model.Mechanism, error)
-}
-
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
-type Controller struct {
-	repo      repository
+type BoardgameController struct {
+	repo      boardgameRepository
 	tag       tagRepository
 	category  categoryRepository
 	mechanism mechanismRepository
 }
 
 // InitController initializes the boargame and the associations controller.
-func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *tagRepo.TagRepository, categoryRepo *categoryRepo.CategoryRepository, mechanismRepo *mechanismRepo.MechanismRepository) *Controller {
-	return &Controller{
+func InitBoardgameController(boardGameRepo *repositories.BoardgameRepository, tagRepo *repositories.TagRepository, categoryRepo *repositories.CategoryRepository, mechanismRepo *repositories.MechanismRepository) *BoardgameController {
+	return &BoardgameController{
 		repo:      boardGameRepo,
 		tag:       tagRepo,
 		category:  categoryRepo,
@@ -59,44 +47,40 @@ func InitController(boardGameRepo *boardgameRepo.BoardGameRepository, tagRepo *t
 // @Param 		id path int false "The Boardgame id indicating this is an Expansion"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [post]
-func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
+func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 
+	// Deserialize Boardgame input
 	var boardgame model.Boardgame
-	err := utils.DecodeJSONBody(w, r, &boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.DecodeJSONBody(w, r, &boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	err = utils.ValidateStruct(&boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.ValidateStruct(&boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Check if Expansion -> Connect if needed
 	id := utils.GetFieldFromURL(r, "id")
-	err = controller.connectBoardgameToExpansion(id, &boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.connectBoardgameToExpansion(id, &boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Check if Tags, Categories & Mechanisms exist
-	err = controller.validateAssociations(w, r, boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.validateAssociations(w, r, boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	err = controller.repo.Create(&boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Create(&boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Get Boardgames godoc
@@ -106,29 +90,30 @@ func (controller *Controller) Create(w http.ResponseWriter, r *http.Request) {
 // @Param 		filterBy query string  false  "Filter using field.value (For String partial find) OR field.operator.value"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [get]
-func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
+func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Boardgame{}, sortBy)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	filterBy := r.URL.Query().Get("filterBy")
 	filterBody, filterValue, err := utils.GetFilters(model.Boardgame{}, filterBy)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	boardgames, err := controller.repo.GetAll(sort, filterBody, filterValue)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &boardgames, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, boardgames)
+
 }
 
 // Get Boardgame by id godoc
@@ -138,17 +123,16 @@ func (controller *Controller) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param 		id path int true "The Boardgame unique id"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame/{id} [get]
-func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
+func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Request) {
 
 	id := utils.GetFieldFromURL(r, "id")
 
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Update Boardgame by id godoc
@@ -159,27 +143,24 @@ func (controller *Controller) Get(w http.ResponseWriter, r *http.Request) {
 // @Param 		data body model.Boardgame true "The Boardgame struct to be updated into"
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame/{id} [patch]
-func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
+func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
 
-	// Get Boardgame input from JSON input
+	// Deserialize Boardgame input
 	var input model.Boardgame
-	err := utils.DecodeJSONBody(w, r, &input)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.DecodeJSONBody(w, r, &input); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	err = utils.ValidateStruct(&input)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := utils.ValidateStruct(&input); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Check if Tags & Categories & Mechanisms exist
-	err = controller.validateAssociations(w, r, input)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.validateAssociations(w, r, input); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
@@ -187,19 +168,18 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	id := utils.GetFieldFromURL(r, "id")
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Updates Boardgame
 	boardgame.UpdateBoardgame(input)
-	err = controller.repo.Update(boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.Update(boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, &boardgame, http.StatusOK, nil)
+	render.New().JSON(w, http.StatusOK, boardgame)
 }
 
 // Delete Boardgame by id godoc
@@ -209,28 +189,27 @@ func (controller *Controller) Update(w http.ResponseWriter, r *http.Request) {
 // @Param 		id path int true "The Boardgame id"
 // @Success 	204
 // @Router 		/boardgame/{id} [delete]
-func (controller *Controller) Delete(w http.ResponseWriter, r *http.Request) {
+func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	id := utils.GetFieldFromURL(r, "id")
 
 	boardgame, err := controller.repo.GetById(id)
 	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Delete by Id
-	err = controller.repo.DeleteById(boardgame)
-	if err != nil {
-		utils.HTTPHandler(w, nil, 0, err)
+	if err := controller.repo.DeleteById(boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	utils.HTTPHandler(w, id, http.StatusNoContent, nil)
+	render.New().JSON(w, http.StatusNoContent, id)
 }
 
 // Function that checks if we are dealing with expansions and creates connection to boardgame parent if yes
-func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *model.Boardgame) error {
+func (controller *BoardgameController) connectBoardgameToExpansion(id string, boardgame *model.Boardgame) error {
 	if id != "" { // This is an expansion
 		boardgameParent, err := controller.repo.GetById(id) // Get Parent BG
 		if err != nil {
@@ -239,7 +218,7 @@ func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *
 
 		if boardgameParent.IsExpansion() {
 			log.Println("Error -> An expansion cannot have other expansions")
-			return utils.NewError(http.StatusUnprocessableEntity, " Error occurred while creating connection between Boardgames -> Expansion can't have expansions")
+			return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 		}
 
 		boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
@@ -250,7 +229,7 @@ func (controller *Controller) connectBoardgameToExpansion(id string, boardgame *
 // <<<<<<<<<<<< I DISLIKE THIS APPROACH, NOT MODULAR AND WILL WANT TO CHANGE >>>>>>>>>>>>>>>>>>
 
 // Function that validates if tags and categories exist when boardgames are created
-func (controller *Controller) validateAssociations(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
+func (controller *BoardgameController) validateAssociations(w http.ResponseWriter, r *http.Request, boardgame model.Boardgame) error {
 
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsTags() {

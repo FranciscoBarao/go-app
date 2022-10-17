@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"catalog/middleware"
 	"log"
 	"net/http"
 	"reflect"
@@ -14,7 +15,7 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 
 	if len(splits) < 2 || len(splits) > 3 { // can be 2 or 3 fields
 		log.Printf("Error - Malformed filterBy query parameter, should be field.value or field.operator.value")
-		return NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, should be field.value or field.operator.value")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, should be field.value or field.operator.value")
 	}
 
 	// Get field, operator, value
@@ -24,14 +25,14 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 	if len(splits) == 2 {
 		if splits[0] == "" || splits[1] == "" {
 			log.Printf("Error - Filter malformed, empty parameters")
-			return NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
+			return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
 		}
 		value = splits[1]
 	}
 	if len(splits) == 3 {
 		if splits[0] == "" || splits[1] == "" || splits[2] == "" {
 			log.Printf("Error - Filter malformed, empty parameters")
-			return NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
+			return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
 		}
 
 		operator = splits[1]
@@ -44,12 +45,7 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 	}
 
 	// Validate Field & Value
-	err := validateFieldAndValueType(model, field, value, operator)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return validateFieldAndValueType(model, field, value, operator)
 }
 
 // Function that checks if the field exists in the struct and if the value is of the correct type
@@ -61,22 +57,18 @@ func validateFieldAndValueType(model interface{}, fieldName, value, operator str
 
 			if operator == "" && field.Type.String() != "string" { // If there are only 2 field params and its not a string -> error -> E.g price.10
 				log.Printf("Error - Filter malformed, %s had to be a String", fieldName)
-				return NewError(http.StatusUnprocessableEntity, "Filter Malformed, field not a string")
+				return middleware.NewError(http.StatusUnprocessableEntity, "Filter Malformed, field not a string")
 			}
 			if operator != "" && field.Type.String() == "string" { // If there are 3 field params and its a string -> error -> E.g name.gt.asd
 				log.Printf("Error - Filter malformed, %s can't be a String", fieldName)
-				return NewError(http.StatusUnprocessableEntity, "Filter Malformed, field can't be a string")
+				return middleware.NewError(http.StatusUnprocessableEntity, "Filter Malformed, field can't be a string")
 			}
 
-			err := isValidType(field.Type.String(), value) // Check if value is of the correct Type
-			if err != nil {
-				return err
-			}
-			return nil // Field exists and is of the correct type
+			return isValidType(field.Type.String(), value) // Field exists and is of the correct type
 		}
 	}
 	log.Printf("Error - No filterable field in struct %v with name %s", model, fieldName)
-	return NewError(http.StatusUnprocessableEntity, "No filterable field with this name")
+	return middleware.NewError(http.StatusUnprocessableEntity, "No filterable field with this name")
 }
 
 // Function that receives a value and validates if it is of the provided type.
@@ -100,7 +92,7 @@ func isValidType(typ, value string) error {
 		}
 	}
 	log.Printf("Error - Field convertion faile due to Mistype")
-	return NewError(http.StatusUnprocessableEntity, "Field not of the correct type")
+	return middleware.NewError(http.StatusUnprocessableEntity, "Field not of the correct type")
 }
 
 // Function that validates the operator in the URL parameter
@@ -111,7 +103,7 @@ func validateOperator(operator string) error {
 		return nil
 	}
 	log.Printf("Error - No such Operator: %s", operator)
-	return NewError(http.StatusUnprocessableEntity, "Operator not allowed")
+	return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 }
 
 // Function that gets FilterBody and Value for GetFilters

@@ -1,55 +1,17 @@
-package boardgame
+package tests
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strconv"
 	"testing"
 
-	"catalog/database"
 	"catalog/model"
-	"catalog/repository/boardgameRepo"
-	"catalog/repository/categoryRepo"
-	"catalog/repository/mechanismRepo"
-	"catalog/repository/tagRepo"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/steinfletcher/apitest"
 )
 
-var router *chi.Mux
 var id uint
-
-func init() {
-	log.Println("Setup Starting")
-
-	// Set Database
-	db, err := database.Connect()
-	if err != nil {
-		log.Println("Error occurred while connecting to database")
-		return
-	}
-
-	// Set Repositories
-	boardgameRepo := boardgameRepo.NewBoardGameRepository(db)
-	tagRepo := tagRepo.NewTagRepository(db)
-	categoryRepo := categoryRepo.NewCategoryRepository(db)
-	mechanismRepo := mechanismRepo.NewMechanismRepository(db)
-
-	// Set Boardgame Controller
-	controller := InitController(boardgameRepo, tagRepo, categoryRepo, mechanismRepo)
-
-	router = chi.NewRouter()
-	router.Post("/api/boardgame", controller.Create)
-	router.Get("/api/boardgame", controller.GetAll)
-	router.Get("/api/boardgame/{id}", controller.Get)
-	router.Patch("/api/boardgame/{id}", controller.Update)
-	router.Delete("/api/boardgame/{id}", controller.Delete)
-	router.Post("/api/boardgame/{id}/expansion", controller.Create)
-
-	log.Println("Setup Complete")
-}
 
 func TestCreateBoardgameSuccess(t *testing.T) {
 	apitest.New().

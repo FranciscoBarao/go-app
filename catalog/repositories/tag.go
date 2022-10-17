@@ -1,4 +1,4 @@
-package tagRepo
+package repositories
 
 import (
 	"catalog/database"
@@ -17,39 +17,22 @@ func NewTagRepository(instance *database.PostgresqlRepository) *TagRepository {
 
 func (repo *TagRepository) Create(tag model.Tag) error {
 
-	err := repo.db.Create(&tag)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repo.db.Create(&tag)
 }
 
 func (repo *TagRepository) GetAll(sort string) ([]model.Tag, error) {
 
 	var tags []model.Tag
-	err := repo.db.Read(&tags, sort, "", "")
-	if err != nil {
-		return tags, err
-	}
-	return tags, nil
+	return tags, repo.db.Read(&tags, sort, "", "")
 }
 
 func (repo *TagRepository) Get(name string) (model.Tag, error) {
 
 	var tag model.Tag
-	err := repo.db.Read(&tag, "", "name = ?", name)
-	if err != nil {
-		return tag, err
-	}
-	return tag, nil
+	return tag, repo.db.Read(&tag, "", "name = ?", name)
 }
 
 func (repo *TagRepository) Delete(tag model.Tag) error {
 
-	err := repo.db.Delete(&tag)
-	if err != nil {
-		return err
-	}
-	return nil
+	return repo.db.Delete(&tag)
 }
