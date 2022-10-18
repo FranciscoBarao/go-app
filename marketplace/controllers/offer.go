@@ -6,27 +6,27 @@ import (
 
 	"marketplace/middleware"
 	"marketplace/model"
-	"marketplace/repositories"
+	"marketplace/services"
 	"marketplace/utils"
 
 	"github.com/unrolled/render"
 )
 
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
-type offerRepository interface {
+type offerService interface {
 	Create(offer *model.Offer) error
 	ReadAll() ([]model.Offer, error)
 }
 
 // OfferController contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type OfferController struct {
-	repo offerRepository
+	service offerService
 }
 
 // InitController initializes the boargame and the associations controller.
-func InitOfferController(offerRepo *repositories.OfferRepository) *OfferController {
+func InitOfferController(offerService *services.OfferService) *OfferController {
 	return &OfferController{
-		repo: offerRepo,
+		service: offerService,
 	}
 }
 
@@ -47,7 +47,7 @@ func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := controller.repo.Create(&offer); err != nil {
+	if err := controller.service.Create(&offer); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -63,7 +63,7 @@ func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request
 // @Router 		/offer [get]
 func (controller *OfferController) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	offers, err := controller.repo.ReadAll()
+	offers, err := controller.service.ReadAll()
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

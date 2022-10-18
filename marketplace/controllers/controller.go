@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"marketplace/repositories"
+	"marketplace/services"
 )
 
 // Controllers contains all the controllers
@@ -10,8 +10,8 @@ type Controllers struct {
 }
 
 // InitControllers returns a new Controllers
-func InitControllers(repositories *repositories.Repositories) *Controllers {
+func InitControllers(services *services.Services) *Controllers {
 	return &Controllers{
-		OfferController: InitOfferController(repositories.OfferRepository),
+		OfferController: InitOfferController(services.OfferService),
 	}
 }

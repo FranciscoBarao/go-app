@@ -5,6 +5,7 @@ import (
 	"marketplace/database"
 	"marketplace/repositories"
 	"marketplace/route"
+	"marketplace/services"
 
 	"log"
 	"net/http"
@@ -32,8 +33,10 @@ func main() {
 	}
 
 	// Initialize Repositories and controllers
-	repos := repositories.InitRepositories(db)
-	controllers := controllers.InitControllers(repos)
+	repositories := repositories.InitRepositories(db)
+	services := services.InitServices(repositories)
+
+	controllers := controllers.InitControllers(services)
 
 	// Creates routing
 	router := chi.NewRouter()
