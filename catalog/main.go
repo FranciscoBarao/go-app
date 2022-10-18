@@ -14,6 +14,7 @@ import (
 	_ "catalog/docs"
 	"catalog/repositories"
 	"catalog/route"
+	"catalog/services"
 )
 
 // @title Catalog App Swagger
@@ -32,9 +33,10 @@ func main() {
 		return
 	}
 
-	// Initialize Repositories and controllers
-	repos := repositories.InitRepositories(db)
-	controllers := controllers.InitControllers(repos)
+	// Initialize Repositories & Services & controllers
+	repositories := repositories.InitRepositories(db)
+	services := services.InitServices(repositories)
+	controllers := controllers.InitControllers(services)
 
 	// Creates routing
 	router := chi.NewRouter()

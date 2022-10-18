@@ -5,6 +5,7 @@ import (
 	"catalog/database"
 	"catalog/repositories"
 	"catalog/route"
+	"catalog/services"
 	"log"
 
 	"github.com/go-chi/chi/v5"
@@ -23,9 +24,10 @@ func init() {
 		return
 	}
 
-	// Set Repositories & Controllers
+	// Set Repositories & Controllers & Services
 	repositories := repositories.InitRepositories(db)
-	controllers := controllers.InitControllers(repositories)
+	services := services.InitServices(repositories)
+	controllers := controllers.InitControllers(services)
 
 	router = chi.NewRouter()
 	// Adds Routers

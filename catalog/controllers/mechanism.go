@@ -5,27 +5,27 @@ import (
 
 	"catalog/middleware"
 	"catalog/model"
-	"catalog/repositories"
+	"catalog/services"
 	"catalog/utils"
 
 	"github.com/unrolled/render"
 )
 
-type mechanismRepository interface {
-	Create(mechanism model.Mechanism) error
+type mechanismService interface {
+	Create(mechanism *model.Mechanism) error
 	GetAll(sort string) ([]model.Mechanism, error)
 	Get(name string) (model.Mechanism, error)
-	Delete(mechanism model.Mechanism) error
+	Delete(name string) error
 }
 
 type MechanismController struct {
-	repo mechanismRepository
+	service mechanismService
 }
 
 // InitController initializes the mechanism controller.
-func InitMechanismController(mechanismRepo *repositories.MechanismRepository) *MechanismController {
+func InitMechanismController(mechanismSvc *services.MechanismService) *MechanismController {
 	return &MechanismController{
-		repo: mechanismRepo,
+		service: mechanismSvc,
 	}
 }
 
@@ -39,19 +39,19 @@ func InitMechanismController(mechanismRepo *repositories.MechanismRepository) *M
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize Mechanism input
-	var mechanism model.Mechanism
-	if err := utils.DecodeJSONBody(w, r, &mechanism); err != nil {
+	var mechanism *model.Mechanism
+	if err := utils.DecodeJSONBody(w, r, mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Mechanism input
-	if err := utils.ValidateStruct(&mechanism); err != nil {
+	if err := utils.ValidateStruct(mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.repo.Create(mechanism); err != nil {
+	if err := controller.service.Create(mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -74,7 +74,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	mechanisms, err := controller.repo.GetAll(sort)
+	mechanisms, err := controller.service.GetAll(sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -93,7 +93,7 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	mechanism, err := controller.repo.Get(name)
+	mechanism, err := controller.service.Get(name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -113,15 +113,8 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	// Get Mechanism by name
-	mechanism, err := controller.repo.Get(name)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
-
 	// Delete by id
-	if err := controller.repo.Delete(mechanism); err != nil {
+	if err := controller.service.Delete(name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

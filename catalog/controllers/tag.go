@@ -5,27 +5,27 @@ import (
 
 	"catalog/middleware"
 	"catalog/model"
-	"catalog/repositories"
+	"catalog/services"
 	"catalog/utils"
 
 	"github.com/unrolled/render"
 )
 
-type tagRepository interface {
-	Create(tag model.Tag) error
+type tagService interface {
+	Create(tag *model.Tag) error
 	GetAll(sort string) ([]model.Tag, error)
 	Get(name string) (model.Tag, error)
-	Delete(tag model.Tag) error
+	Delete(name string) error
 }
 
 type TagController struct {
-	repo tagRepository
+	service tagService
 }
 
 // InitController initializes the tag controller.
-func InitTagController(tagRepo *repositories.TagRepository) *TagController {
+func InitTagController(tagSvc *services.TagService) *TagController {
 	return &TagController{
-		repo: tagRepo,
+		service: tagSvc,
 	}
 }
 
@@ -51,7 +51,7 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := controller.repo.Create(tag); err != nil {
+	if err := controller.service.Create(&tag); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -74,7 +74,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tags, err := controller.repo.GetAll(sort)
+	tags, err := controller.service.GetAll(sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -92,7 +92,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 
 	name := utils.GetFieldFromURL(r, "name")
-	tag, err := controller.repo.Get(name)
+	tag, err := controller.service.Get(name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -112,15 +112,8 @@ func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) 
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	// Get Tag by name
-	tag, err := controller.repo.Get(name)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
-
 	// Delete by id
-	if err := controller.repo.Delete(tag); err != nil {
+	if err := controller.service.Delete(name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

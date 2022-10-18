@@ -5,27 +5,27 @@ import (
 
 	"catalog/middleware"
 	"catalog/model"
-	"catalog/repositories"
+	"catalog/services"
 	"catalog/utils"
 
 	"github.com/unrolled/render"
 )
 
-type categoryRepository interface {
-	Create(category model.Category) error
+type categoryService interface {
+	Create(category *model.Category) error
 	GetAll(sort string) ([]model.Category, error)
 	Get(name string) (model.Category, error)
-	Delete(category model.Category) error
+	Delete(name string) error
 }
 
 type CategoryController struct {
-	repo categoryRepository
+	service categoryService
 }
 
 // InitController initializes the category controller.
-func InitCategoryController(categoryRepo *repositories.CategoryRepository) *CategoryController {
+func InitCategoryController(categorySvc *services.CategoryService) *CategoryController {
 	return &CategoryController{
-		repo: categoryRepo,
+		service: categorySvc,
 	}
 }
 
@@ -39,19 +39,19 @@ func InitCategoryController(categoryRepo *repositories.CategoryRepository) *Cate
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize Category input
-	var category model.Category
-	if err := utils.DecodeJSONBody(w, r, &category); err != nil {
+	var category *model.Category
+	if err := utils.DecodeJSONBody(w, r, category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Category input
-	if err := utils.ValidateStruct(&category); err != nil {
+	if err := utils.ValidateStruct(category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.repo.Create(category); err != nil {
+	if err := controller.service.Create(category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -74,7 +74,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	categories, err := controller.repo.GetAll(sort)
+	categories, err := controller.service.GetAll(sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -93,7 +93,7 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	category, err := controller.repo.Get(name)
+	category, err := controller.service.Get(name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -112,15 +112,8 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 
 	name := utils.GetFieldFromURL(r, "name")
 
-	// Get category by name
-	category, err := controller.repo.Get(name)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
-
 	// Delete by id
-	if err := controller.repo.Delete(category); err != nil {
+	if err := controller.service.Delete(name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

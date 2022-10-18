@@ -15,7 +15,7 @@ func NewMechanismRepository(instance *database.PostgresqlRepository) *MechanismR
 	}
 }
 
-func (repo *MechanismRepository) Create(mechanism model.Mechanism) error {
+func (repo *MechanismRepository) Create(mechanism *model.Mechanism) error {
 
 	return repo.db.Create(&mechanism)
 }

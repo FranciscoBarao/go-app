@@ -15,9 +15,9 @@ func NewCategoryRepository(instance *database.PostgresqlRepository) *CategoryRep
 	}
 }
 
-func (repo *CategoryRepository) Create(category model.Category) error {
+func (repo *CategoryRepository) Create(category *model.Category) error {
 
-	return repo.db.Create(&category)
+	return repo.db.Create(category)
 }
 
 func (repo *CategoryRepository) GetAll(sort string) ([]model.Category, error) {
@@ -32,7 +32,7 @@ func (repo *CategoryRepository) Get(name string) (model.Category, error) {
 	return category, repo.db.Read(&category, "", "name = ?", name)
 }
 
-func (repo *CategoryRepository) Delete(category model.Category) error {
+func (repo *CategoryRepository) Delete(category *model.Category) error {
 
-	return repo.db.Delete(&category)
+	return repo.db.Delete(category)
 }

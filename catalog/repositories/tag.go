@@ -15,9 +15,9 @@ func NewTagRepository(instance *database.PostgresqlRepository) *TagRepository {
 	}
 }
 
-func (repo *TagRepository) Create(tag model.Tag) error {
+func (repo *TagRepository) Create(tag *model.Tag) error {
 
-	return repo.db.Create(&tag)
+	return repo.db.Create(tag)
 }
 
 func (repo *TagRepository) GetAll(sort string) ([]model.Tag, error) {
@@ -32,7 +32,7 @@ func (repo *TagRepository) Get(name string) (model.Tag, error) {
 	return tag, repo.db.Read(&tag, "", "name = ?", name)
 }
 
-func (repo *TagRepository) Delete(tag model.Tag) error {
+func (repo *TagRepository) Delete(tag *model.Tag) error {
 
-	return repo.db.Delete(&tag)
+	return repo.db.Delete(tag)
 }

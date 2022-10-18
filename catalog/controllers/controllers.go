@@ -1,6 +1,8 @@
 package controllers
 
-import "catalog/repositories"
+import (
+	"catalog/services"
+)
 
 // Controllers contains all the controllers
 type Controllers struct {
@@ -11,11 +13,11 @@ type Controllers struct {
 }
 
 // InitControllers returns a new Controllers
-func InitControllers(repositories *repositories.Repositories) *Controllers {
+func InitControllers(services *services.Services) *Controllers {
 	return &Controllers{
-		BoardgameController: InitBoardgameController(repositories.BoardgameRepository, repositories.TagRepository, repositories.CategoryRepository, repositories.MechanismRepository),
-		TagController:       InitTagController(repositories.TagRepository),
-		CategoryController:  InitCategoryController(repositories.CategoryRepository),
-		MechanismController: InitMechanismController(repositories.MechanismRepository),
+		BoardgameController: InitBoardgameController(services.BoardgameService),
+		TagController:       InitTagController(services.TagService),
+		CategoryController:  InitCategoryController(services.CategoryService),
+		MechanismController: InitMechanismController(services.MechanismService),
 	}
 }
