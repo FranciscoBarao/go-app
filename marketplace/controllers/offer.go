@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"marketplace/middleware"
@@ -16,6 +15,9 @@ import (
 type offerService interface {
 	Create(offer *model.Offer) error
 	ReadAll() ([]model.Offer, error)
+	Get(uuid string) (model.Offer, error)
+	Update(input *model.Offer, uuid string) error
+	Delete(uuid string) error
 }
 
 // OfferController contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -39,10 +41,15 @@ func InitOfferController(offerService *services.OfferService) *OfferController {
 // @Router 		/offer [post]
 func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request) {
 
-	log.Println(" Offer OfferController -> Create ")
-
+	// Deserialize input
 	var offer model.Offer
 	if err := utils.DecodeJSONBody(w, r, &offer); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	// Validate input
+	if err := utils.ValidateStruct(&offer); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -70,4 +77,77 @@ func (controller *OfferController) GetAll(w http.ResponseWriter, r *http.Request
 	}
 
 	render.New().JSON(w, http.StatusOK, offers)
+}
+
+// Get Offer godoc
+// @Summary 	Fetches a Offer
+// @Tags 		offer
+// @Produce 	json
+// @Success 	200 {object} model.Offer
+// @Router 		/offer/{id} [get]
+func (controller *OfferController) Get(w http.ResponseWriter, r *http.Request) {
+
+	uuid := utils.GetFieldFromURL(r, "id")
+
+	offer, err := controller.service.Get(uuid)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	render.New().JSON(w, http.StatusOK, offer)
+}
+
+// Update Offer by uuid godoc
+// @Summary 	Updates a specific Offer via Uuid
+// @Tags 		offers
+// @Produce 	json
+// @Param 		id path int true "The Offer id"
+// @Param 		data body model.Offer true "The Offer struct to be updated into"
+// @Success 	200 {object} model.Offer
+// @Router 		/offer/{id} [patch]
+func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request) {
+
+	// Deserialize input
+	var input model.Offer
+	if err := utils.DecodeJSONBody(w, r, &input); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	// Validate input
+	if err := utils.ValidateStruct(&input); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	uuid := utils.GetFieldFromURL(r, "id")
+
+	// Updates Boardgame
+	if err := controller.service.Update(&input, uuid); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	render.New().JSON(w, http.StatusOK, input)
+}
+
+// Delete Offer by uuid godoc
+// @Summary 	Deletes a specific Offer via Uuid
+// @Tags 		offers
+// @Produce 	json
+// @Param 		id path int true "The Offer id"
+// @Success 	204
+// @Router 		/offer/{id} [delete]
+func (controller *OfferController) Delete(w http.ResponseWriter, r *http.Request) {
+
+	uuid := utils.GetFieldFromURL(r, "id")
+
+	// Delete by Id
+	if err := controller.service.Delete(uuid); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	render.New().JSON(w, http.StatusNoContent, uuid)
 }

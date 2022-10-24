@@ -54,8 +54,7 @@ func Connect() (*PostgresqlRepository, error) {
 	var schemas model.Schema = model.SchemaAgregator{}
 	createSchemas := schemas.GetCreateSchemas()
 
-	_, err = db.Exec(createSchemas)
-	if err != nil {
+	if _, err = db.Exec(createSchemas); err != nil {
 		log.Println("Error Creating schemas " + err.Error())
 		return nil, err
 	}
@@ -65,27 +64,52 @@ func Connect() (*PostgresqlRepository, error) {
 	return &PostgresqlRepository{db}, nil
 }
 
-func (instance *PostgresqlRepository) Create(query string, value ...interface{}) error {
+func (instance *PostgresqlRepository) Create(query string, value ...interface{}) (string, error) {
 
-	_, err := instance.db.Exec(query, value...)
+	var uuid string
+	err := instance.db.QueryRow(query, value...).Scan(&uuid)
+
 	if err != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", query))
-		log.Println(err)
-		return err
+		return "", err
 	}
 
 	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
-	return nil
+	return uuid, nil
 }
 
-func (instance *PostgresqlRepository) ReadAll(query string, value interface{}) error {
+func (instance *PostgresqlRepository) GetAll(query string, value interface{}, args ...interface{}) error {
 
-	err := instance.db.Select(value, query)
+	err := instance.db.Select(value, query, args...)
 	if err != nil {
 		log.Println("Error fetching database entries: " + fmt.Sprintf("%v", query))
 		log.Println(err)
 		return err
 	}
 	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+func (instance *PostgresqlRepository) Get(query string, value interface{}, args ...interface{}) error {
+
+	err := instance.db.Get(value, query, args...)
+	if err != nil {
+		log.Println("Error fetching database entries: " + fmt.Sprintf("%v", query))
+		log.Println(err)
+		return err
+	}
+	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+func (instance *PostgresqlRepository) ExecuteQuery(query string, value ...interface{}) error {
+
+	_, err := instance.db.Exec(query, value...)
+	if err != nil {
+		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", query))
+		return err
+	}
+
+	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
 	return nil
 }
