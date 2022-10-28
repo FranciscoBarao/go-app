@@ -13,7 +13,6 @@ Readme for the marketplace service
 User JSON
 ```
 {
-    "Name": "name",
 	"Username": "user",
 	"Email": "email@email.com",
 	"Password":"123"
@@ -21,11 +20,15 @@ User JSON
 ```
 
 
-Create
+Register a user 
 ```
-curl -X POST localhost:8082/api/register -H 'Content-Type: application/json' -d '{"name": "name", "username": "user", "email": "email@email.com", "password":"123"}'
+curl -X POST localhost:8082/api/register -H 'Content-Type: application/json' -d '{"username": "user", "email": "email@email.com", "password":"123"}'
 ```
 
+Login 
+```
+curl -X POST localhost:8082/api/login -H 'Content-Type: application/json' -d '{"username": "user", "email": "email@email.com", "password":"123"}'
+```
 
 
 

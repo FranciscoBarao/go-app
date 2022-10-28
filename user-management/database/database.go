@@ -93,19 +93,19 @@ func (instance *PostgresqlRepository) Read(value interface{}, sort, search, iden
 	var result *gorm.DB
 	if isSliceOrArray(value) {
 		if search == "" {
-			result = instance.db.Preload(clause.Associations).Order(sort).Find(value) // Find all with sort and NO filters
+			result = instance.db.Order(sort).Find(value) // Find all with sort and NO filters
 		} else {
-			result = instance.db.Preload(clause.Associations).Order(sort).Find(value, search, identifier) // Find all with filters and sort
+			result = instance.db.Order(sort).Find(value, search, identifier) // Find all with filters and sort
 		}
 	} else {
-		result = instance.db.Preload(clause.Associations).First(value, search, identifier) // Find 1 Specific
+		result = instance.db.First(value, search, identifier) // Find 1 Specific
 	}
 
 	if result.Error != nil {
 		log.Println("Error while reading a database entry: " + search + " " + identifier)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Println("Error Record not found: " + search + " " + identifier)
-			return middleware.NewError(http.StatusNotFound, "Record Not found")
+			return middleware.NewError(http.StatusNotFound, "Record not found")
 		}
 		return result.Error
 	}

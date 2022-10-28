@@ -26,10 +26,10 @@ func (repo *UserRepository) GetAll(sort string) ([]models.User, error) {
 	return users, repo.db.Read(&users, sort, "", "")
 }
 
-func (repo *UserRepository) Get(name string) (models.User, error) {
+func (repo *UserRepository) Get(username string) (models.User, error) {
 
 	var user models.User
-	return user, repo.db.Read(&user, "", "name = ?", name)
+	return user, repo.db.Read(&user, "", "username = ?", username)
 }
 
 func (repo *UserRepository) Delete(user *models.User) error {

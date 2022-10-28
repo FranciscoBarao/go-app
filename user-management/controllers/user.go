@@ -13,7 +13,7 @@ import (
 type userService interface {
 	Register(user *models.User) error
 	GetAll(sort string) ([]models.User, error)
-	Get(name string) (models.User, error)
+	Login(username, password string) error
 	Delete(name string) error
 }
 
@@ -22,9 +22,9 @@ type UserController struct {
 }
 
 // InitController initializes the user controller.
-func InitUserController(tagSvc *services.UserService) *UserController {
+func InitUserController(userSvc *services.UserService) *UserController {
 	return &UserController{
-		service: tagSvc,
+		service: userSvc,
 	}
 }
 

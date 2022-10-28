@@ -13,6 +13,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/oauth"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -41,7 +43,8 @@ func main() {
 	// Creates routing
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
-
+	// use the Bearer Authentication middleware
+	router.Use(oauth.Authorize("mySecretKey-10101", nil))
 	// Adds Routers
 	route.AddOfferRouter(router, controllers.OfferController)
 

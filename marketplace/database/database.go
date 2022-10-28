@@ -64,6 +64,10 @@ func Connect() (*PostgresqlRepository, error) {
 	return &PostgresqlRepository{db}, nil
 }
 
+func (instance *PostgresqlRepository) GetDB() *sqlx.DB {
+	return instance.db
+}
+
 func (instance *PostgresqlRepository) Create(query string, value ...interface{}) (string, error) {
 
 	var uuid string

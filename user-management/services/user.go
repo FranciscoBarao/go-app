@@ -8,7 +8,7 @@ import (
 type userRepository interface {
 	Register(user *models.User) error
 	GetAll(sort string) ([]models.User, error)
-	Get(name string) (models.User, error)
+	Get(username string) (models.User, error)
 	Delete(user *models.User) error
 }
 
@@ -42,13 +42,14 @@ func (svc *UserService) GetAll(sort string) ([]models.User, error) {
 	return users, nil
 }
 
-func (svc *UserService) Get(name string) (models.User, error) {
+func (svc *UserService) Login(username, password string) error {
 
-	user, err := svc.repo.Get(name)
+	user, err := svc.repo.Get(username)
 	if err != nil {
-		return user, err
+		return err
 	}
-	return user, nil
+
+	return user.CheckPassword(password)
 }
 
 func (svc *UserService) Delete(name string) error {

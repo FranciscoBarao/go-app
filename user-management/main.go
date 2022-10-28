@@ -36,15 +36,14 @@ func main() {
 
 	s := oauth.NewBearerServer(
 		"mySecretKey-10101",
-		time.Second*120,
-		&services.VerifierService,
+		time.Second*1000,
+		&controllers.VerifierController,
 		nil)
-
-	router.Post("/token", s.UserCredentials)
-	router.Post("/auth", s.ClientCredentials)
 
 	// Adds Routers
 	router.Post("/api/register", controllers.UserController.Register)
+	router.Post("/api/login", s.UserCredentials)
+	router.Post("/api/auth", s.ClientCredentials)
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")

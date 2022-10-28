@@ -2,6 +2,8 @@ package models
 
 import (
 	"log"
+	"net/http"
+	"user-management/middleware"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -9,7 +11,6 @@ import (
 
 type User struct {
 	gorm.Model `json:"-"`
-	Name       string `json:"name"`
 	Username   string `json:"username" gorm:"unique"`
 	Email      string `json:"email" gorm:"unique"`
 	Password   string `json:"password"`
@@ -31,7 +32,8 @@ func (user *User) HashPassword(password string) error {
 func (user *User) CheckPassword(providedPassword string) error {
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(providedPassword))
 	if err != nil {
-		return err
+		log.Println("Error - Passwords don't match")
+		return middleware.NewError(http.StatusUnauthorized, "Error - Incorrect Credentials")
 	}
 	return nil
 }

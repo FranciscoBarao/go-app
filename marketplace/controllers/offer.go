@@ -1,12 +1,15 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	"marketplace/middleware"
 	"marketplace/model"
 	"marketplace/services"
 	"marketplace/utils"
+
+	"github.com/go-chi/oauth"
 
 	"github.com/unrolled/render"
 )
@@ -69,6 +72,9 @@ func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request
 // @Success 	200 {object} model.Offer
 // @Router 		/offer [get]
 func (controller *OfferController) GetAll(w http.ResponseWriter, r *http.Request) {
+
+	log.Println(r.Context().Value(oauth.CredentialContext))
+	log.Println(r.Context().Value(oauth.ClaimsContext))
 
 	offers, err := controller.service.ReadAll()
 	if err != nil {
