@@ -17,8 +17,8 @@ func NewOfferRepository(instance *database.PostgresqlRepository) *OfferRepositor
 
 func (repo *OfferRepository) Create(offer *model.Offer) error {
 
-	query := `INSERT INTO offer (type, name, price) VALUES ($1, $2, $3) RETURNING uuid`
-	uuid, err := repo.db.Create(query, offer.GetType(), offer.GetName(), offer.GetPrice())
+	query := `INSERT INTO offer (username, type, name, price) VALUES ($1, $2, $3, $4) RETURNING uuid`
+	uuid, err := repo.db.Create(query, offer.GetUsername(), offer.GetType(), offer.GetName(), offer.GetPrice())
 	if err != nil {
 		return err
 	}
@@ -35,10 +35,16 @@ func (repo *OfferRepository) ReadAll() ([]model.Offer, error) {
 	return offers, repo.db.GetAll(query, &offers)
 }
 
-func (repo *OfferRepository) Get(uuid string) (model.Offer, error) {
+func (repo *OfferRepository) Get(uuid, username string) (model.Offer, error) {
 
 	var offer model.Offer
 	query := `SELECT * FROM offer WHERE uuid=$1`
+
+	if username != "" { // Add filter for username check
+		query += ` AND username=$2`
+		return offer, repo.db.Get(query, &offer, uuid, username)
+	}
+
 	return offer, repo.db.Get(query, &offer, uuid)
 }
 

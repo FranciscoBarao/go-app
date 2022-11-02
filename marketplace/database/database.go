@@ -1,6 +1,7 @@
 package database
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -98,8 +99,10 @@ func (instance *PostgresqlRepository) Get(query string, value interface{}, args 
 
 	err := instance.db.Get(value, query, args...)
 	if err != nil {
-		log.Println("Error fetching database entries: " + fmt.Sprintf("%v", query))
-		log.Println(err)
+		if err != sql.ErrNoRows {
+			log.Println("Error Record not found with query: " + query)
+			return middleware.NewError(http.StatusNotFound, "Error - Record not found")
+		}
 		return err
 	}
 	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))

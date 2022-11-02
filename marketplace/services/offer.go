@@ -9,7 +9,7 @@ type offerRepository interface {
 	Create(offer *model.Offer) error
 	ReadAll() ([]model.Offer, error)
 	Update(offer model.Offer) error
-	Get(id string) (model.Offer, error)
+	Get(id, username string) (model.Offer, error)
 	Delete(id string) error
 }
 
@@ -25,7 +25,9 @@ func InitOfferService(offerRepository *repositories.OfferRepository) *OfferServi
 	}
 }
 
-func (svc *OfferService) Create(offer *model.Offer) error {
+func (svc *OfferService) Create(offer *model.Offer, user string) error {
+
+	offer.SetUsername(user)
 
 	return svc.repo.Create(offer)
 }
@@ -43,7 +45,7 @@ func (svc *OfferService) ReadAll() ([]model.Offer, error) {
 func (svc *OfferService) Get(uuid string) (model.Offer, error) {
 
 	// Get Offer by id
-	offer, err := svc.repo.Get(uuid)
+	offer, err := svc.repo.Get(uuid, "")
 	if err != nil {
 		return offer, err
 	}
@@ -51,25 +53,23 @@ func (svc *OfferService) Get(uuid string) (model.Offer, error) {
 	return offer, nil
 }
 
-func (svc *OfferService) Update(input *model.Offer, uuid string) error {
+func (svc *OfferService) Update(input *model.OfferUpdate, uuid, username string) (model.Offer, error) {
 
-	// Get Offer by id
-	offer, err := svc.repo.Get(uuid)
+	// Get Offer by id & username
+	offer, err := svc.repo.Get(uuid, username)
 	if err != nil {
-		return err
+		return model.Offer{}, err
 	}
 
 	offer.UpdateOffer(input)
 
-	input.SetId(uuid)
-
-	return svc.repo.Update(offer)
+	return offer, svc.repo.Update(offer)
 }
 
-func (svc *OfferService) Delete(id string) error {
+func (svc *OfferService) Delete(id, username string) error {
 
 	// Get Offer by id
-	offer, err := svc.repo.Get(id)
+	offer, err := svc.repo.Get(id, username)
 	if err != nil {
 		return err
 	}

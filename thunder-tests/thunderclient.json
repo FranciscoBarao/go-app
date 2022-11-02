@@ -421,12 +421,17 @@
     "method": "POST",
     "sortNum": 20000,
     "created": "2022-09-14T10:28:32.957Z",
-    "modified": "2022-09-14T11:25:13.097Z",
-    "headers": [],
+    "modified": "2022-11-02T15:34:18.857Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\":\"asddd\"\n}",
+      "raw": "{\n  \"type\": \"Boardgame\",\n  \"name\": \"name\", \n  \"price\": 10.0\n}\n\n",
       "form": []
     },
     "tests": []
@@ -440,9 +445,188 @@
     "method": "GET",
     "sortNum": 30000,
     "created": "2022-09-14T11:19:19.040Z",
-    "modified": "2022-09-14T11:19:29.946Z",
-    "headers": [],
+    "modified": "2022-11-02T15:34:07.977Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [],
+    "tests": []
+  },
+  {
+    "_id": "64446b73-b955-4d2c-9d21-db77dc4aaf35",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Register User",
+    "url": "localhost:8080/api/register",
+    "method": "POST",
+    "sortNum": 10000,
+    "created": "2022-10-27T16:39:31.194Z",
+    "modified": "2022-10-28T09:43:14.490Z",
+    "headers": [
+      {
+        "name": "'Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": " { \"username\": \"lala\", \"email\": \"email@s.com\", \"password\":\"123\"}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "b135fdb9-0d9d-4298-bfcf-93ec55280f0d",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Login",
+    "url": "localhost:8080/api/login?grant_type=password&username=lala&password=123",
+    "method": "POST",
+    "sortNum": 20000,
+    "created": "2022-10-27T16:50:14.365Z",
+    "modified": "2022-11-02T14:36:38.258Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/x-www-form-urlencoded"
+      }
+    ],
+    "params": [
+      {
+        "name": "grant_type",
+        "value": "password",
+        "isPath": false
+      },
+      {
+        "name": "username",
+        "value": "lala",
+        "isPath": false
+      },
+      {
+        "name": "password",
+        "value": "123",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "b2c1617e-3d21-4265-a927-0b6e8601183d",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Generate Token id/secret",
+    "url": "localhost:8080/auth?grant_type=client_credentials&client_id=abcdef&client_secret=12345",
+    "method": "POST",
+    "sortNum": 30000,
+    "created": "2022-10-27T16:51:37.410Z",
+    "modified": "2022-10-27T16:51:52.246Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/x-www-form-urlencoded"
+      }
+    ],
+    "params": [
+      {
+        "name": "grant_type",
+        "value": "client_credentials",
+        "isPath": false
+      },
+      {
+        "name": "client_id",
+        "value": "abcdef",
+        "isPath": false
+      },
+      {
+        "name": "client_secret",
+        "value": "12345",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "a55695a3-be7d-484e-990f-05330502c6d3",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Get",
+    "url": "localhost:8081/api/offer/{id}",
+    "method": "GET",
+    "sortNum": 40000,
+    "created": "2022-11-02T15:28:19.341Z",
+    "modified": "2022-11-02T16:17:50.221Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "id",
+        "value": "asd",
+        "isPath": true
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "50da4590-1e68-472a-9b32-574e5691e996",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Update",
+    "url": "localhost:8081/api/offer/{uuid}",
+    "method": "PATCH",
+    "sortNum": 50000,
+    "created": "2022-11-02T15:28:23.789Z",
+    "modified": "2022-11-02T15:59:18.924Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "uuid",
+        "value": "sd",
+        "isPath": true
+      }
+    ],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"name\": \"osd\", \n  \"price\": 20.0\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "8dd42786-367a-41e0-a3a7-87de29e99e77",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Delete",
+    "url": "localhost:8081/api/offer/{uuid}",
+    "method": "DELETE",
+    "sortNum": 60000,
+    "created": "2022-11-02T15:28:27.252Z",
+    "modified": "2022-11-02T16:19:32.267Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "uuid",
+        "value": "a",
+        "isPath": true
+      }
+    ],
     "tests": []
   }
 ]

@@ -36,7 +36,7 @@ func main() {
 
 	s := oauth.NewBearerServer(
 		"mySecretKey-10101",
-		time.Second*1000,
+		time.Minute*60,
 		&controllers.VerifierController,
 		nil)
 

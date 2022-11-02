@@ -7,6 +7,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/oauth"
 )
 
 func GetFieldFromURL(r *http.Request, field string) string {
@@ -19,4 +20,14 @@ func ValidateStruct(value interface{}) error {
 		return middleware.NewError(http.StatusForbidden, "Error occurred, model validation failed")
 	}
 	return nil
+}
+
+func GetUsernameFromToken(r *http.Request) (string, error) {
+	claims := r.Context().Value(oauth.ClaimsContext).(map[string]string)
+
+	if username, ok := claims["username"]; ok {
+		return username, nil
+	}
+
+	return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
 }

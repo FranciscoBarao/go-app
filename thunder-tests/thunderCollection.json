@@ -49,5 +49,12 @@
         "sortNum": 10000
       }
     ]
+  },
+  {
+    "_id": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "colName": "User Management",
+    "created": "2022-10-27T16:39:31.192Z",
+    "sortNum": 30000,
+    "folders": []
   }
 ]

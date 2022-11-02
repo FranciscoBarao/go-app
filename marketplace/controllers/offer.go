@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"marketplace/middleware"
@@ -9,18 +8,16 @@ import (
 	"marketplace/services"
 	"marketplace/utils"
 
-	"github.com/go-chi/oauth"
-
 	"github.com/unrolled/render"
 )
 
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
 type offerService interface {
-	Create(offer *model.Offer) error
+	Create(offer *model.Offer, user string) error
 	ReadAll() ([]model.Offer, error)
 	Get(uuid string) (model.Offer, error)
-	Update(input *model.Offer, uuid string) error
-	Delete(uuid string) error
+	Update(input *model.OfferUpdate, uuid, username string) (model.Offer, error)
+	Delete(uuid, username string) error
 }
 
 // OfferController contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -57,7 +54,14 @@ func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	if err := controller.service.Create(&offer); err != nil {
+	// Get username from oauth Token
+	user, err := utils.GetUsernameFromToken(r)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	if err := controller.service.Create(&offer, user); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -72,9 +76,6 @@ func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request
 // @Success 	200 {object} model.Offer
 // @Router 		/offer [get]
 func (controller *OfferController) GetAll(w http.ResponseWriter, r *http.Request) {
-
-	log.Println(r.Context().Value(oauth.CredentialContext))
-	log.Println(r.Context().Value(oauth.ClaimsContext))
 
 	offers, err := controller.service.ReadAll()
 	if err != nil {
@@ -115,7 +116,7 @@ func (controller *OfferController) Get(w http.ResponseWriter, r *http.Request) {
 func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize input
-	var input model.Offer
+	var input model.OfferUpdate
 	if err := utils.DecodeJSONBody(w, r, &input); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -127,15 +128,23 @@ func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	uuid := utils.GetFieldFromURL(r, "id")
-
-	// Updates Boardgame
-	if err := controller.service.Update(&input, uuid); err != nil {
+	// Get username from oauth Token
+	user, err := utils.GetUsernameFromToken(r)
+	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, input)
+	uuid := utils.GetFieldFromURL(r, "id")
+
+	// Updates Boardgame
+	offer, err := controller.service.Update(&input, uuid, user)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	render.New().JSON(w, http.StatusOK, offer)
 }
 
 // Delete Offer by uuid godoc
@@ -147,10 +156,17 @@ func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request
 // @Router 		/offer/{id} [delete]
 func (controller *OfferController) Delete(w http.ResponseWriter, r *http.Request) {
 
+	// Get username from oauth Token
+	user, err := utils.GetUsernameFromToken(r)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
 	uuid := utils.GetFieldFromURL(r, "id")
 
 	// Delete by Id
-	if err := controller.service.Delete(uuid); err != nil {
+	if err := controller.service.Delete(uuid, user); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
