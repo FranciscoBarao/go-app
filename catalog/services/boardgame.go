@@ -18,19 +18,19 @@ type boardgameRepository interface {
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type BoardgameService struct {
-	repo          boardgameRepository
-	tagRepo       tagRepository
-	categoryRepo  categoryRepository
-	mechanismRepo mechanismRepository
+	repo         boardgameRepository
+	tagSvc       *TagService
+	categorySvc  *CategoryService
+	mechanismSvc *MechanismService
 }
 
 // InitController initializes the boargame and the associations controller.
-func InitBoardgameService(boardgameRepo *repositories.BoardgameRepository, tagRepo *repositories.TagRepository, categoryRepo *repositories.CategoryRepository, mechanismRepo *repositories.MechanismRepository) *BoardgameService {
+func InitBoardgameService(boardgameRepo *repositories.BoardgameRepository, tagService *TagService, categoryService *CategoryService, mechanismService *MechanismService) *BoardgameService {
 	return &BoardgameService{
-		repo:          boardgameRepo,
-		tagRepo:       tagRepo,
-		categoryRepo:  categoryRepo,
-		mechanismRepo: mechanismRepo,
+		repo:         boardgameRepo,
+		tagSvc:       tagService,
+		categorySvc:  categoryService,
+		mechanismSvc: mechanismService,
 	}
 }
 
@@ -116,36 +116,30 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardg
 	return nil
 }
 
-// Function that validates if tags and categories exist when boardgames are created
+// Function that validates if tags, categories and mechanisms exist when boardgames are created
 func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) error {
 
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsTags() {
 		for _, tempTag := range boardgame.GetTags() {
-
-			_, err := svc.tagRepo.Get(tempTag.GetName()) // Get tag by name
-			if err != nil {                              // That tag does not exist -> Return Error
-				return err
+			if _, err := svc.tagSvc.Get(tempTag.GetName()); err != nil { // Get tag by name
+				return err // That tag does not exist -> Return Error
 			}
 		}
 	}
 
 	if boardgame.IsCategories() {
 		for _, tempCategory := range boardgame.GetCategories() {
-
-			_, err := svc.categoryRepo.Get(tempCategory.GetName()) // Get category by name
-			if err != nil {                                        // That category does not exist -> Return Error
-				return err
+			if _, err := svc.categorySvc.Get(tempCategory.GetName()); err != nil { // Get category by name
+				return err // That category does not exist -> Return Error
 			}
 		}
 	}
 
 	if boardgame.IsMechanisms() {
 		for _, tempMechanism := range boardgame.GetMechanisms() {
-
-			_, err := svc.mechanismRepo.Get(tempMechanism.GetName()) // Get mechanism by name
-			if err != nil {                                          // That mechanism does not exist -> Return Error
-				return err
+			if _, err := svc.mechanismSvc.Get(tempMechanism.GetName()); err != nil { // Get mechanism by name
+				return err // That mechanism does not exist -> Return Error
 			}
 		}
 	}

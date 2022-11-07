@@ -12,12 +12,10 @@ type userRepository interface {
 	Delete(user *models.User) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type UserService struct {
 	repo userRepository
 }
 
-// InitController initializes the boargame and the associations controller.
 func InitUserService(userRepo *repositories.UserRepository) *UserService {
 	return &UserService{
 		repo: userRepo,

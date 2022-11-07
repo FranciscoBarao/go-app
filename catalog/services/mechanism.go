@@ -12,12 +12,10 @@ type mechanismRepository interface {
 	Delete(mechanism model.Mechanism) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type MechanismService struct {
 	repo mechanismRepository
 }
 
-// InitController initializes the boargame and the associations controller.
 func InitMechanismService(mechanismRepo *repositories.MechanismRepository) *MechanismService {
 	return &MechanismService{
 		repo: mechanismRepo,

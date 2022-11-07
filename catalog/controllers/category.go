@@ -40,19 +40,19 @@ func InitCategoryController(categorySvc *services.CategoryService) *CategoryCont
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize Category input
-	var category *model.Category
-	if err := utils.DecodeJSONBody(w, r, category); err != nil {
+	var category model.Category
+	if err := utils.DecodeJSONBody(w, r, &category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Category input
-	if err := utils.ValidateStruct(category); err != nil {
+	if err := utils.ValidateStruct(&category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(category); err != nil {
+	if err := controller.service.Create(&category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

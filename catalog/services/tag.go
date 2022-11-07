@@ -12,12 +12,10 @@ type tagRepository interface {
 	Delete(tag *model.Tag) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type TagService struct {
 	repo tagRepository
 }
 
-// InitController initializes the boargame and the associations controller.
 func InitTagService(tagRepo *repositories.TagRepository) *TagService {
 	return &TagService{
 		repo: tagRepo,

@@ -12,12 +12,10 @@ type categoryRepository interface {
 	Delete(category *model.Category) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
 type CategoryService struct {
 	repo categoryRepository
 }
 
-// InitController initializes the boargame and the associations controller.
 func InitCategoryService(tagRepo *repositories.CategoryRepository) *CategoryService {
 	return &CategoryService{
 		repo: tagRepo,

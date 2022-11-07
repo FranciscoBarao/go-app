@@ -12,10 +12,10 @@ type Services struct {
 
 // InitRepositories should be called in main.go
 func InitServices(repositories *repositories.Repositories) *Services {
-	boardgameService := InitBoardgameService(repositories.BoardgameRepository, repositories.TagRepository, repositories.CategoryRepository, repositories.MechanismRepository)
 	tagService := InitTagService(repositories.TagRepository)
 	mechanismService := InitMechanismService(repositories.MechanismRepository)
 	categoryService := InitCategoryService(repositories.CategoryRepository)
+	boardgameService := InitBoardgameService(repositories.BoardgameRepository, tagService, categoryService, mechanismService)
 
 	return &Services{
 		BoardgameService: boardgameService,

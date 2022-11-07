@@ -40,19 +40,19 @@ func InitMechanismController(mechanismSvc *services.MechanismService) *Mechanism
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize Mechanism input
-	var mechanism *model.Mechanism
-	if err := utils.DecodeJSONBody(w, r, mechanism); err != nil {
+	var mechanism model.Mechanism
+	if err := utils.DecodeJSONBody(w, r, &mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Mechanism input
-	if err := utils.ValidateStruct(mechanism); err != nil {
+	if err := utils.ValidateStruct(&mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(mechanism); err != nil {
+	if err := controller.service.Create(&mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
