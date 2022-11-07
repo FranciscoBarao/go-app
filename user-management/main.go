@@ -25,6 +25,13 @@ func main() {
 		return
 	}
 
+	// Fetch oauth key
+	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
+	if !oauthKeyPresent {
+		log.Println("Error occurred while fetching Oauth Key")
+		return
+	}
+
 	// Initialize Repositories & Services & controllers
 	repositories := repositories.InitRepositories(db)
 	services := services.InitServices(repositories)
@@ -34,16 +41,16 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
-	s := oauth.NewBearerServer(
-		"mySecretKey-10101",
+	oauthServer := oauth.NewBearerServer(
+		oauthKey,
 		time.Minute*60,
 		&controllers.VerifierController,
 		nil)
 
 	// Adds Routers
 	router.Post("/api/register", controllers.UserController.Register)
-	router.Post("/api/login", s.UserCredentials)
-	router.Post("/api/auth", s.ClientCredentials)
+	router.Post("/api/login", oauthServer.UserCredentials)
+	router.Post("/api/auth", oauthServer.ClientCredentials)
 
 	// Starts server
 	port, portPresent := os.LookupEnv("PORT")

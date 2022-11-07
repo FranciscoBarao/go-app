@@ -34,6 +34,7 @@ func InitTagController(tagSvc *services.TagService) *TagController {
 // @Tags 		tags
 // @Produce 	json
 // @Param 		data body model.Tag true "The Tag name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [post]
 func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +107,7 @@ func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 // @Tags 		tags
 // @Produce 	json
 // @Param 		name path string true "The Tag name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	204
 // @Router 		/tag/{name} [delete]
 func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) {

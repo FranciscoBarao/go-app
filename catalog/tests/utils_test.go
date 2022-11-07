@@ -20,6 +20,7 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -33,6 +34,7 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -46,6 +48,7 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -64,6 +67,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -80,6 +84,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -94,6 +99,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -111,6 +117,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -126,6 +133,7 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -139,6 +147,7 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -152,6 +161,7 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -169,6 +179,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -184,6 +195,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -198,6 +210,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -212,6 +225,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()

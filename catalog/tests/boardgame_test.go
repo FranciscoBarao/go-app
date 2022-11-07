@@ -19,6 +19,7 @@ func TestCreateBoardgameSuccess(t *testing.T) {
 		Post("/api/boardgame").
 		JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		Assert(func(res *http.Response, req *http.Request) error { // Gets ID from BG Creation for further test use
@@ -35,6 +36,7 @@ func TestGetAllBoardgameSuccess(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/boardgame").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -47,6 +49,7 @@ func TestCreateExpansionSuccess(t *testing.T) {
 		Post("/api/boardgame/"+idString+"/expansion").
 		JSON(`{"Name":"expansion","Publisher":"expansion","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -56,7 +59,8 @@ func TestGetBoardgameSuccess(t *testing.T) {
 	idString := strconv.FormatUint(uint64(id), 10)
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
-		Get("/api/boardgame/" + idString).
+		Get("/api/boardgame/"+idString).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -66,7 +70,8 @@ func TestDeleteBoardgameSuccess(t *testing.T) {
 	idString := strconv.FormatUint(uint64(id), 10)
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
-		Delete("/api/boardgame/" + idString).
+		Delete("/api/boardgame/"+idString).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNoContent).
 		End()
@@ -78,6 +83,7 @@ func TestCreateBoardgameJsonFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/boardgame").
 		JSON(`[{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]},{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}]`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -87,6 +93,7 @@ func TestCreateBoardgameJsonFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/boardgame").
 		JSON(`{"Name:"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -96,6 +103,7 @@ func TestCreateBoardgameJsonFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/boardgame").
 		JSON(`{"Name":100,"Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -105,6 +113,7 @@ func TestCreateBoardgameJsonFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/boardgame").
 		JSON(`{"TEST":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -114,6 +123,7 @@ func TestCreateBoardgameJsonFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/boardgame").
 		JSON(``).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -125,6 +135,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -133,6 +144,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test?","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -142,6 +154,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -150,6 +163,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test?","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -159,6 +173,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":"string","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()
@@ -167,6 +182,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":1001,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -176,6 +192,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1.5,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()
@@ -184,6 +201,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":17,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusForbidden).
 			End()
@@ -193,6 +211,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[{"name":"test"}],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusNotFound).
 			End()
@@ -201,6 +220,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[{"name":"test", "test":"test"}],"Categories":[],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()
@@ -210,6 +230,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[{"name":"test"}],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusNotFound).
 			End()
@@ -217,6 +238,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[{"name":"test", "test":"test"}],"Mechanisms":[]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()
@@ -226,6 +248,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test"}]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusNotFound).
 			End()
@@ -233,6 +256,7 @@ func TestCreateBoardgameValidStructFailures(t *testing.T) {
 			HandlerFunc(router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","Price":10,"PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test", "test":"test"}]}`).
+			Header("Authorization", "Bearer "+oauthHeader).
 			Expect(t).
 			Status(http.StatusBadRequest).
 			End()
@@ -243,6 +267,7 @@ func TestGetBoardgameFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/boardgame/1000").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
@@ -252,6 +277,7 @@ func TestDeleteBoardgameFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Delete("/api/boardgame/1000").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()

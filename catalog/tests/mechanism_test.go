@@ -12,6 +12,7 @@ func TestPostMechanism(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{"name": "test"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Body(`{"name": "test"}`).
 		Status(http.StatusOK).
@@ -22,6 +23,7 @@ func TestGetMechanism(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/mechanism/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		Body(`{"name": "test"}`).
@@ -32,6 +34,7 @@ func TestDeleteMechanism(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Delete("/api/mechanism/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNoContent).
 		End()
@@ -43,6 +46,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`[{"name":"a"},{"name":"b"}]`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -52,6 +56,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{name:"a"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -61,6 +66,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{"name": 1}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -70,6 +76,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{"test": "test"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -79,6 +86,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(``).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -88,6 +96,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
@@ -97,6 +106,7 @@ func TestCreateMechanismFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`{"name": "test.?"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
@@ -107,6 +117,7 @@ func TestGetMechanismFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/mechanism/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
@@ -117,6 +128,7 @@ func TestDeleteMechanismFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Delete("/api/mechanism/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()

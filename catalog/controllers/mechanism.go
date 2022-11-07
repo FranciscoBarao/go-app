@@ -31,9 +31,10 @@ func InitMechanismController(mechanismSvc *services.MechanismService) *Mechanism
 
 // Create Mechanism godoc
 // @Summary 	Creates a Mechanism using a name
-// @Mechanisms 	mechanisms
+// @Tags 	mechanisms
 // @Produce 	json
 // @Param 		data body model.Mechanism true "The Mechanism name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [post]
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +62,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 
 // Get Mechanisms godoc
 // @Summary 	Fetches all Mechanisms
-// @Mechanisms 	mechanisms
+// @Tags 	mechanisms
 // @Produce 	json
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [get]
@@ -84,7 +85,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 
 // Get Mechanism godoc
 // @Summary 	Fetches a specific Mechanism using a name
-// @Mechanisms 	mechanisms
+// @Tags 	mechanisms
 // @Produce 	json
 // @Param 		name path string true "The Mechanism name"
 // @Success 	200 {object} model.Mechanism
@@ -104,9 +105,10 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 
 // Delete Mechanism godoc
 // @Summary 	Deletes a specific Mechanism
-// @Mechanisms 	mechanisms
+// @Tags 	mechanisms
 // @Produce 	json
 // @Param 		name path string true "The Mechanism name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	204
 // @Router 		/mechanism/{name} [delete]
 func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Request) {

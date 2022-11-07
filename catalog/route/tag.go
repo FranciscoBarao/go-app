@@ -4,11 +4,18 @@ import (
 	"catalog/controllers"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/oauth"
 )
 
-func AddTagRouter(router chi.Router, tagController *controllers.TagController) {
-	router.Post("/api/tag", tagController.Create)
-	router.Get("/api/tag", tagController.GetAll)
-	router.Get("/api/tag/{name}", tagController.Get)
-	router.Delete("/api/tag/{name}", tagController.Delete)
+func AddTagRouter(router chi.Router, oauthKey string, tagController *controllers.TagController) {
+	// Protected layer
+	router.Route("/api/tag", func(router chi.Router) {
+		// Use the Bearer Authentication middleware
+		router.Use(oauth.Authorize(oauthKey, nil))
+
+		router.Post("/", tagController.Create)
+		router.Get("/", tagController.GetAll)
+		router.Get("/{name}", tagController.Get)
+		router.Delete("/{name}", tagController.Delete)
+	})
 }

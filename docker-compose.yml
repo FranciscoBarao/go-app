@@ -6,7 +6,7 @@ services:
       context: catalog/.
       dockerfile: ./dockerfile/dev/dockerfile
     ports:
-      - 8080:8080
+      - 8081:8080
     restart: on-failure
     env_file:
       - ./catalog/environment/dev/.env
@@ -18,7 +18,7 @@ services:
     restart: always
     container_name: catalog-db
     ports:
-      - '5432:5432'
+      - '5433:5432'
     env_file:
       - ./catalog/environment/dev/.env
     volumes:
@@ -30,7 +30,7 @@ services:
       context: marketplace/.
       dockerfile: ./dockerfile/dev/dockerfile
     ports:
-      - 8081:8080
+      - 8082:8080
     restart: on-failure
     env_file:
       - ./marketplace/environment/dev/.env
@@ -42,12 +42,37 @@ services:
     restart: always
     container_name: marketplace-db
     ports:
-      - '5433:5432'
+      - '5434:5432'
     env_file:
       -  ./marketplace/environment/dev/.env
-    volumes:
-      - marketplace-data:/var/lib/postgresql/data
+    #volumes:
+    #  - marketplace-data:/var/lib/postgresql/data
+
+  user-management:
+    container_name: user-management
+    build: 
+      context: user-management/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8080:8080
+    restart: on-failure
+    env_file:
+      - ./user-management/environment/dev/.env
+    depends_on:
+      - user-management-db
+
+  user-management-db:
+    image: postgres
+    restart: always
+    container_name: user-management-db
+    ports:
+      - '5432:5432'
+    env_file:
+      - ./user-management/environment/dev/.env
+    #volumes:
+    #  - user-management-data:/var/lib/postgresql/data
 
 volumes:
   catalog-data:
-  marketplace-data:
+  #marketplace-data:
+  #user-management-data:

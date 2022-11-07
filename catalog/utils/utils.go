@@ -8,6 +8,7 @@ import (
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/oauth"
 )
 
 func StringInSlice(value string, list []string) bool {
@@ -34,4 +35,14 @@ func ValidateStruct(value interface{}) error {
 
 func GetFieldFromURL(r *http.Request, field string) string {
 	return chi.URLParam(r, field)
+}
+
+func GetUsernameFromToken(r *http.Request) (string, error) {
+	claims := r.Context().Value(oauth.ClaimsContext).(map[string]string)
+
+	if username, ok := claims["username"]; ok {
+		return username, nil
+	}
+
+	return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
 }

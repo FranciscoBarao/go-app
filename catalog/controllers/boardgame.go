@@ -38,6 +38,7 @@ func InitBoardgameController(boardGameSvc *services.BoardgameService) *Boardgame
 // @Produce 	json
 // @Param 		data body model.Boardgame true "The input Boardgame struct"
 // @Param 		id path int false "The Boardgame id indicating this is an Expansion"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
@@ -124,6 +125,7 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 // @Produce 	json
 // @Param 		id path int true "The Boardgame id"
 // @Param 		data body model.Boardgame true "The Boardgame struct to be updated into"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame/{id} [patch]
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
@@ -157,6 +159,7 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 // @Tags 		boardgames
 // @Produce 	json
 // @Param 		id path int true "The Boardgame id"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	204
 // @Router 		/boardgame/{id} [delete]
 func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Request) {

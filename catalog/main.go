@@ -33,6 +33,14 @@ func main() {
 		return
 	}
 
+	// Fetch Env variables
+	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
+	port, portPresent := os.LookupEnv("PORT")
+	if !oauthKeyPresent || !portPresent {
+		log.Println("Error occurred while fetching essential env variables")
+		return
+	}
+
 	// Initialize Repositories & Services & controllers
 	repositories := repositories.InitRepositories(db)
 	services := services.InitServices(repositories)
@@ -43,21 +51,15 @@ func main() {
 	router.Use(middleware.Logger)
 
 	// Adds Routers
-	route.AddBoardGameRouter(router, controllers.BoardgameController)
-	route.AddTagRouter(router, controllers.TagController)
-	route.AddCategoryRouter(router, controllers.CategoryController)
-	route.AddMechanismRouter(router, controllers.MechanismController)
+	route.AddBoardGameRouter(router, oauthKey, controllers.BoardgameController)
+	route.AddTagRouter(router, oauthKey, controllers.TagController)
+	route.AddCategoryRouter(router, oauthKey, controllers.CategoryController)
+	route.AddMechanismRouter(router, oauthKey, controllers.MechanismController)
 
 	// documentation for developers
 	router.Get("/swagger/*", httpSwagger.Handler())
 
 	// Starts server
-	port, portPresent := os.LookupEnv("PORT")
-	if !portPresent {
-		log.Println("Error occurred while fetching Port")
-		return
-	}
-
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Println("Error occured while creating Server" + err.Error())
 		return

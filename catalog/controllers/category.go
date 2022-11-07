@@ -34,6 +34,7 @@ func InitCategoryController(categorySvc *services.CategoryService) *CategoryCont
 // @Tags 		categories
 // @Produce 	json
 // @Param 		data body model.Category true "The Category name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Category
 // @Router 		/category [post]
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +107,7 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 // @Tags 		categories
 // @Produce 	json
 // @Param 		name path string true "The Category name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	204
 // @Router 		/category/{name} [delete]
 func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Request) {

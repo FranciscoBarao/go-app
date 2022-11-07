@@ -34,11 +34,12 @@ func InitOfferController(offerService *services.OfferService) *OfferController {
 
 // Create Offer godoc
 // @Summary 	Creates a Offer based on a json body
-// @Tags 		offers
+// @Tags 		offer
 // @Produce 	json
 // @Param 		data body model.Offer true "The input Offer struct"
 // @Success 	200 {object} model.Offer
 // @Router 		/offer [post]
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 func (controller *OfferController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize input
@@ -107,12 +108,13 @@ func (controller *OfferController) Get(w http.ResponseWriter, r *http.Request) {
 
 // Update Offer by uuid godoc
 // @Summary 	Updates a specific Offer via Uuid
-// @Tags 		offers
+// @Tags 		offer
 // @Produce 	json
 // @Param 		id path int true "The Offer id"
 // @Param 		data body model.Offer true "The Offer struct to be updated into"
 // @Success 	200 {object} model.Offer
 // @Router 		/offer/{id} [patch]
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request) {
 
 	// Deserialize input
@@ -149,11 +151,12 @@ func (controller *OfferController) Update(w http.ResponseWriter, r *http.Request
 
 // Delete Offer by uuid godoc
 // @Summary 	Deletes a specific Offer via Uuid
-// @Tags 		offers
+// @Tags 		offer
 // @Produce 	json
 // @Param 		id path int true "The Offer id"
 // @Success 	204
 // @Router 		/offer/{id} [delete]
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 func (controller *OfferController) Delete(w http.ResponseWriter, r *http.Request) {
 
 	// Get username from oauth Token

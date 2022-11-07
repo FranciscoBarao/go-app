@@ -13,6 +13,7 @@ func TestCreateTagSuccess(t *testing.T) {
 		Post("/api/tag").
 		JSON(`{"name": "test"}`).
 		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Body(`{"name": "test"}`).
 		Status(http.StatusOK).
@@ -23,6 +24,7 @@ func TestGetTagSuccess(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/tag/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		Body(`{"name": "test"}`).
@@ -33,6 +35,7 @@ func TestGetAllTagSuccess(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/tag").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -42,6 +45,7 @@ func TestDeleteTagSuccess(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Delete("/api/tag/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNoContent).
 		End()
@@ -53,6 +57,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`[{"name":"a"},{"name":"b"}]`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -62,6 +67,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`{name:"a"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -71,6 +77,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`{"name": 1}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -80,6 +87,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`{"test": "test"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -89,6 +97,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(``).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
@@ -98,6 +107,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
@@ -107,6 +117,7 @@ func TestCreateTagFailures(t *testing.T) {
 		HandlerFunc(router.ServeHTTP).
 		Post("/api/tag").
 		JSON(`{"name": "test.?"}`).
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
@@ -117,6 +128,7 @@ func TestGetTagFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Get("/api/tag/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
@@ -127,6 +139,7 @@ func TestDeleteTagFailure(t *testing.T) {
 	apitest.New().
 		HandlerFunc(router.ServeHTTP).
 		Delete("/api/tag/test").
+		Header("Authorization", "Bearer "+oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
