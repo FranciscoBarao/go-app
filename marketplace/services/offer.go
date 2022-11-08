@@ -34,23 +34,12 @@ func (svc *OfferService) Create(offer *model.Offer, user string) error {
 
 func (svc *OfferService) ReadAll() ([]model.Offer, error) {
 
-	offers, err := svc.repo.ReadAll()
-	if err != nil {
-		return offers, err
-	}
-
-	return offers, nil
+	return svc.repo.ReadAll()
 }
 
 func (svc *OfferService) Get(uuid string) (model.Offer, error) {
 
-	// Get Offer by id
-	offer, err := svc.repo.Get(uuid, "")
-	if err != nil {
-		return offer, err
-	}
-
-	return offer, nil
+	return svc.repo.Get(uuid, "")
 }
 
 func (svc *OfferService) Update(input *model.OfferUpdate, uuid, username string) (model.Offer, error) {

@@ -33,11 +33,7 @@ func (svc *UserService) Register(user *models.User) error {
 
 func (svc *UserService) GetAll(sort string) ([]models.User, error) {
 
-	users, err := svc.repo.GetAll(sort)
-	if err != nil {
-		return users, err
-	}
-	return users, nil
+	return svc.repo.GetAll(sort)
 }
 
 func (svc *UserService) Login(username, password string) error {

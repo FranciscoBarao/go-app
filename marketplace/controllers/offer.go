@@ -25,7 +25,6 @@ type OfferController struct {
 	service offerService
 }
 
-// InitController initializes the boargame and the associations controller.
 func InitOfferController(offerService *services.OfferService) *OfferController {
 	return &OfferController{
 		service: offerService,

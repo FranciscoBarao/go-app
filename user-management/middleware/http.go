@@ -13,6 +13,5 @@ func ErrorHandler(w http.ResponseWriter, err error) {
 		} else {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
-		return
 	}
 }
