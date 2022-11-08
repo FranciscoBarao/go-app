@@ -64,6 +64,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 // @Summary 	Fetches all Mechanisms
 // @Tags 	mechanisms
 // @Produce 	json
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +89,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 // @Tags 	mechanisms
 // @Produce 	json
 // @Param 		name path string true "The Mechanism name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism/{name} [get]
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {

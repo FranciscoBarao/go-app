@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"catalog/database"
+	"catalog/middleware"
 	"catalog/model"
+	"errors"
 )
 
 type MechanismRepository struct {
@@ -29,7 +31,14 @@ func (repo *MechanismRepository) GetAll(sort string) ([]model.Mechanism, error) 
 func (repo *MechanismRepository) Get(name string) (model.Mechanism, error) {
 
 	var mechanism model.Mechanism
-	return mechanism, repo.db.Read(&mechanism, "", "name = ?", name)
+	err := repo.db.Read(&mechanism, "", "name = ?", name)
+
+	var mr *middleware.MalformedRequest
+	if err != nil && errors.As(err, &mr) {
+		return mechanism, middleware.NewError(mr.GetStatus(), "Mechanism not found with name: "+name)
+	}
+
+	return mechanism, err
 }
 
 func (repo *MechanismRepository) Delete(mechanism model.Mechanism) error {

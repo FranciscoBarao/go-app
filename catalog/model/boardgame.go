@@ -8,7 +8,6 @@ type Boardgame struct {
 	gorm.Model   `swaggerignore:"true"`
 	Name         string      `json:"name" valid:"alphanum, maxstringlength(100)"`
 	Publisher    string      `json:"publisher" valid:"alphanum, maxstringlength(100)"`
-	Price        float64     `json:"price" valid:"float, range(0|1000)"`
 	PlayerNumber int         `json:"playerNumber" valid:"int, range(1|16)"`
 	Tags         []Tag       `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
 	Categories   []Category  `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
@@ -18,11 +17,10 @@ type Boardgame struct {
 }
 
 // Constructors
-func NewBoardgame(name, publisher string, price float64, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) Boardgame {
+func NewBoardgame(name, publisher string, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) Boardgame {
 	return Boardgame{
 		Name:         name,
 		Publisher:    publisher,
-		Price:        price,
 		PlayerNumber: playerNumber,
 		Tags:         tags,
 		Categories:   categories,
@@ -30,11 +28,10 @@ func NewBoardgame(name, publisher string, price float64, playerNumber int, tags 
 	}
 }
 
-func NewExpansion(name, publisher string, price float64, playerNumber int, tags []Tag, categories []Category, boardgameId *uint) Boardgame {
+func NewExpansion(name, publisher string, playerNumber int, tags []Tag, categories []Category, boardgameId *uint) Boardgame {
 	return Boardgame{
 		Name:         name,
 		Publisher:    publisher,
-		Price:        price,
 		PlayerNumber: playerNumber,
 		Tags:         tags,
 		Categories:   categories,
@@ -47,8 +44,6 @@ func (bg *Boardgame) UpdateBoardgame(boardgame Boardgame) {
 	bg.Name = boardgame.GetName()
 
 	bg.Publisher = boardgame.GetPublisher()
-
-	bg.Price = boardgame.GetPrice()
 
 	bg.PlayerNumber = boardgame.GetPlayerNumber()
 
@@ -89,10 +84,6 @@ func (bg Boardgame) GetName() string {
 
 func (bg Boardgame) GetPublisher() string {
 	return bg.Publisher
-}
-
-func (bg Boardgame) GetPrice() float64 {
-	return bg.Price
 }
 
 func (bg Boardgame) GetPlayerNumber() int {

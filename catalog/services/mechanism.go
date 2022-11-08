@@ -29,20 +29,12 @@ func (svc *MechanismService) Create(mechanism *model.Mechanism) error {
 
 func (svc *MechanismService) GetAll(sort string) ([]model.Mechanism, error) {
 
-	mechanisms, err := svc.repo.GetAll(sort)
-	if err != nil {
-		return mechanisms, err
-	}
-	return mechanisms, nil
+	return svc.repo.GetAll(sort)
 }
 
 func (svc *MechanismService) Get(name string) (model.Mechanism, error) {
 
-	mechanism, err := svc.repo.Get(name)
-	if err != nil {
-		return mechanism, err
-	}
-	return mechanism, nil
+	return svc.repo.Get(name)
 }
 
 func (svc *MechanismService) Delete(name string) error {

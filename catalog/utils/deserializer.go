@@ -19,8 +19,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
 		if value != "application/json" {
 			log.Println("Error - Content-Type header of request is not application/json ")
-			msg := "Content-Type header is not application/json"
-			return middleware.NewError(http.StatusNotAcceptable, msg)
+			return middleware.NewError(http.StatusBadRequest, "Content-Type header is not application/json")
 		}
 	}
 
@@ -34,8 +33,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 		err = decoder.Decode(&struct{}{})
 		if err != io.EOF { // Don't allow several JSON objects
 			log.Println("Error - Request body must only contain a single JSON object")
-			msg := "Request body must only contain a single JSON object"
-			return middleware.NewError(http.StatusBadRequest, msg)
+			return middleware.NewError(http.StatusBadRequest, "Request body must only contain a single JSON object")
 		}
 
 		return nil

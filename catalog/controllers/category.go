@@ -64,6 +64,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 // @Summary 	Fetches all Categories
 // @Tags 		categories
 // @Produce 	json
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Category
 // @Router 		/category [get]
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +89,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 // @Tags 		categories
 // @Produce 	json
 // @Param 		name path string true "The Category name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Category
 // @Router 		/category/{name} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {

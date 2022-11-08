@@ -106,7 +106,7 @@ func (instance *PostgresqlRepository) Read(value interface{}, sort, search, iden
 		log.Println("Error while reading a database entry: " + search + " " + identifier)
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Println("Error Record not found: " + search + " " + identifier)
-			return middleware.NewError(http.StatusNotFound, "Record Not found")
+			return middleware.NewError(http.StatusNotFound, "Record not found")
 		}
 		return result.Error
 	}

@@ -61,11 +61,7 @@ func (svc *BoardgameService) GetAll(sort, filterBody, filterValue string) ([]mod
 
 func (svc *BoardgameService) GetById(id string) (model.Boardgame, error) {
 
-	bg, err := svc.repo.GetById(id)
-	if err != nil {
-		return bg, err
-	}
-	return bg, nil
+	return svc.repo.GetById(id)
 }
 
 func (svc *BoardgameService) Update(input model.Boardgame, id string) error {

@@ -29,20 +29,12 @@ func (svc *CategoryService) Create(category *model.Category) error {
 
 func (svc *CategoryService) GetAll(sort string) ([]model.Category, error) {
 
-	categories, err := svc.repo.GetAll(sort)
-	if err != nil {
-		return categories, err
-	}
-	return categories, nil
+	return svc.repo.GetAll(sort)
 }
 
 func (svc *CategoryService) Get(name string) (model.Category, error) {
 
-	category, err := svc.repo.Get(name)
-	if err != nil {
-		return category, err
-	}
-	return category, nil
+	return svc.repo.Get(name)
 }
 
 func (svc *CategoryService) Delete(name string) error {

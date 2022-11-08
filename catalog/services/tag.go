@@ -29,20 +29,12 @@ func (svc *TagService) Create(tag *model.Tag) error {
 
 func (svc *TagService) GetAll(sort string) ([]model.Tag, error) {
 
-	tags, err := svc.repo.GetAll(sort)
-	if err != nil {
-		return tags, err
-	}
-	return tags, nil
+	return svc.repo.GetAll(sort)
 }
 
 func (svc *TagService) Get(name string) (model.Tag, error) {
 
-	tag, err := svc.repo.Get(name)
-	if err != nil {
-		return tag, err
-	}
-	return tag, nil
+	return svc.repo.Get(name)
 }
 
 func (svc *TagService) Delete(name string) error {

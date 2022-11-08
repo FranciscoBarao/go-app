@@ -2,7 +2,9 @@ package repositories
 
 import (
 	"catalog/database"
+	"catalog/middleware"
 	"catalog/model"
+	"errors"
 )
 
 type BoardgameRepository struct {
@@ -31,7 +33,14 @@ func (repo *BoardgameRepository) GetAll(sort, filterBody, filterValue string) ([
 func (repo *BoardgameRepository) GetById(id string) (model.Boardgame, error) {
 
 	var bg model.Boardgame
-	return bg, repo.db.Read(&bg, "", "id = ?", id)
+	err := repo.db.Read(&bg, "", "id = ?", id)
+
+	var mr *middleware.MalformedRequest
+	if err != nil && errors.As(err, &mr) {
+		return bg, middleware.NewError(mr.GetStatus(), "Boardgame not found with id: "+id)
+	}
+
+	return bg, err
 }
 
 func (repo *BoardgameRepository) Update(boardgame model.Boardgame) error {

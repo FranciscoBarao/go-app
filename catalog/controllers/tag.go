@@ -64,6 +64,7 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 // @Summary 	Fetches all Tags
 // @Tags 		tags
 // @Produce 	json
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [get]
 func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -88,6 +89,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 // @Tags 		tags
 // @Produce 	json
 // @Param 		name path string true "The Tag name"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} model.Tag
 // @Router 		/tag/{name} [get]
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
