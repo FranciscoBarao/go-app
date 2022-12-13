@@ -14,7 +14,7 @@ The following project intends to be a learning example of a marketplace for boar
 
 The structured used in the services was based on the previous link, and intends to asbtract the different layers while allowing to "pass around" the database instance. 
 
-![Structure](doc/structure.png)
+![Structure](doc/img/structure.png)
 
 In the Controllers, which contain the REST endpoints that user interacts with, we do all functional logic which includes creating Models, invoking their validation, and redirecting the storage interactions to the Repositories. It stands to reason that in the controllers, we have Repository interfaces that abstract the implementation of these methods while allowing it to be swapped out, enforcing loose coupling.
 
@@ -66,6 +66,8 @@ For learning the testing framework, I developed Functional tests that simulate u
 ## JSON 
 [Decoding JSON Body](https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body)
 
+## Oauth2
+[Oauth with chi](https://github.com/go-chi/oauth)
 
 
 

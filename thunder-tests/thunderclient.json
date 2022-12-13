@@ -4,11 +4,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Post",
-    "url": "localhost:8080/api/boardgame",
+    "url": "localhost:8081/api/boardgame",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:30:04.902Z",
+    "modified": "2022-11-08T14:51:37.906Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -22,7 +22,7 @@
     "params": [],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\": \"ASD11\",\n  \"Publisher\": \"pub\",\n  \"Price\": 10,\n  \"PlayerNumber\": 10,\n  \"Tags\": [\n    ],\n  \"Categories\": [\n    ],\n  \"Mechanisms\": [\n    ]\n}",
+      "raw": "{\n  \"Name\": \"ASD11\",\n  \"Publisher\": \"pub\",\n  \"PlayerNumber\": 3,\n  \"Tags\": [\n    ],\n  \"Categories\": [\n    ],\n  \"Mechanisms\": [\n    ]\n}",
       "form": []
     },
     "tests": []
@@ -116,26 +116,13 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "GetAll",
-    "url": "localhost:8080/api/boardgame",
+    "url": "localhost:8081/api/boardgame",
     "method": "GET",
     "sortNum": 20000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-09T12:28:24.772Z",
+    "modified": "2022-11-08T14:31:02.979Z",
     "headers": [],
-    "params": [
-      {
-        "name": "filterBy",
-        "value": "",
-        "isDisabled": true,
-        "isPath": false
-      },
-      {
-        "name": "sortBy",
-        "value": "",
-        "isDisabled": true,
-        "isPath": false
-      }
-    ],
+    "params": [],
     "tests": []
   },
   {
@@ -491,11 +478,11 @@
     "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
     "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
     "name": "Post",
-    "url": "localhost:8081/api/offer",
+    "url": "localhost:8082/api/offer",
     "method": "POST",
     "sortNum": 20000,
     "created": "2022-09-14T10:28:32.957Z",
-    "modified": "2022-11-07T12:30:19.438Z",
+    "modified": "2022-11-15T12:52:42.783Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -509,7 +496,7 @@
     "params": [],
     "body": {
       "type": "json",
-      "raw": "{\n  \"type\": \"Boardgame\",\n  \"name\": \"name\", \n  \"price\": 10.0\n}\n\n",
+      "raw": "{\n  \"type\": \"Boardgame\",\n  \"lol\":\"lol\"\n  \"name\": \"name\", \n  \"price\": 10.0\n}\n\n",
       "form": []
     },
     "tests": []
@@ -707,6 +694,36 @@
         "isPath": true
       }
     ],
+    "tests": []
+  },
+  {
+    "_id": "5587b8e8-59c5-4627-b673-696693b47d34",
+    "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
+    "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
+    "name": "Rate",
+    "url": "localhost:8081/api/boardgame/{id}/rate",
+    "method": "POST",
+    "sortNum": 210000,
+    "created": "2022-11-08T14:29:58.021Z",
+    "modified": "2022-11-08T14:51:45.831Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "id",
+        "value": "2",
+        "isPath": true
+      }
+    ],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"value\":5\n}",
+      "form": []
+    },
     "tests": []
   }
 ]
