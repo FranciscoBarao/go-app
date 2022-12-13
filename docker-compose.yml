@@ -11,18 +11,24 @@ services:
     env_file:
       - ./catalog/environment/dev/.env
     depends_on:
-      - catalog-db
+      catalog-db:
+        condition: service_healthy
 
   catalog-db:
+    container_name: catalog-db
     image: postgres
     restart: always
-    container_name: catalog-db
     ports:
       - '5433:5432'
     env_file:
       - ./catalog/environment/dev/.env
-    volumes:
-      - catalog-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - catalog-data:/var/lib/postgresql/data
 
   marketplace:
     container_name: marketplace
@@ -35,7 +41,8 @@ services:
     env_file:
       - ./marketplace/environment/dev/.env
     depends_on:
-      - marketplace-db
+      marketplace-db:
+        condition: service_healthy
 
   marketplace-db:
     image: postgres
@@ -45,6 +52,11 @@ services:
       - '5434:5432'
     env_file:
       -  ./marketplace/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     #volumes:
     #  - marketplace-data:/var/lib/postgresql/data
 
@@ -59,7 +71,8 @@ services:
     env_file:
       - ./user-management/environment/dev/.env
     depends_on:
-      - user-management-db
+      user-management-db:
+        condition: service_healthy
 
   user-management-db:
     image: postgres
@@ -69,10 +82,15 @@ services:
       - '5432:5432'
     env_file:
       - ./user-management/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     #volumes:
     #  - user-management-data:/var/lib/postgresql/data
 
-volumes:
-  catalog-data:
+#volumes:
+  #catalog-data:
   #marketplace-data:
   #user-management-data:
