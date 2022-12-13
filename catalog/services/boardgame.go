@@ -14,6 +14,7 @@ type boardgameRepository interface {
 	GetById(id string) (model.Boardgame, error)
 	Update(boardgame model.Boardgame) error
 	DeleteById(boardgame model.Boardgame) error
+	Rate(boardgame model.Boardgame, rating *model.Rating) error
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -51,12 +52,7 @@ func (svc *BoardgameService) Create(boardgame *model.Boardgame, id string) error
 
 func (svc *BoardgameService) GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error) {
 
-	models, err := svc.repo.GetAll(sort, filterBody, filterValue)
-	if err != nil {
-		return models, err
-	}
-
-	return models, nil
+	return svc.repo.GetAll(sort, filterBody, filterValue)
 }
 
 func (svc *BoardgameService) GetById(id string) (model.Boardgame, error) {
@@ -92,6 +88,19 @@ func (svc *BoardgameService) DeleteById(id string) error {
 	}
 
 	return svc.repo.DeleteById(boardgame)
+}
+
+func (svc *BoardgameService) Rate(rating *model.Rating, id, username string) error {
+
+	// Check if boardgame exists
+	bg, err := svc.repo.GetById(id)
+	if err != nil {
+		return err
+	}
+
+	rating.SetUsername(username)
+
+	return svc.repo.Rate(bg, rating)
 }
 
 // Function that checks if we are dealing with expansions and creates connection to boardgame parent

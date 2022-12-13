@@ -12,6 +12,7 @@ type Boardgame struct {
 	Tags         []Tag       `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
 	Categories   []Category  `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
 	Mechanisms   []Mechanism `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
+	Ratings      []Rating    `gorm:"many2many:boardgame_ratings;" json:"ratings,omitempty"`
 	Expansions   []Boardgame `gorm:"foreignkey:BoardgameID" swaggerignore:"true" json:"expansions,omitempty"`
 	BoardgameID  *uint       `swaggerignore:"true" json:"boardgame_id,omitempty"`
 }

@@ -35,8 +35,10 @@ func Connect() (*PostgresqlRepository, error) {
 	log.Println("Connected to the Database")
 
 	migrate(db, &model.Boardgame{})
-
 	migrate(db, &model.Tag{})
+	migrate(db, &model.Category{})
+	migrate(db, &model.Mechanism{})
+	migrate(db, &model.Rating{})
 
 	log.Println("Database Migration Completed")
 
@@ -151,6 +153,7 @@ func (instance *PostgresqlRepository) AppendAssociatons(model interface{}, assoc
 	err := instance.db.Model(model).Association(association).Append(values)
 	if err != nil {
 		log.Println("Error while appending associations of type: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+		log.Println(err)
 		return err
 	}
 

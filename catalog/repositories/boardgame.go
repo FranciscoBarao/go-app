@@ -17,7 +17,7 @@ func NewBoardgameRepository(instance *database.PostgresqlRepository) *BoardgameR
 	}
 }
 
-var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*"}
+var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
 
 func (repo *BoardgameRepository) Create(boardgame *model.Boardgame) error {
 
@@ -57,4 +57,11 @@ func (repo *BoardgameRepository) Update(boardgame model.Boardgame) error {
 func (repo *BoardgameRepository) DeleteById(boardgame model.Boardgame) error {
 
 	return repo.db.Delete(&boardgame)
+}
+
+func (repo *BoardgameRepository) Rate(boardgame model.Boardgame, rating *model.Rating) error {
+
+	repo.db.Create(rating)
+
+	return repo.db.AppendAssociatons(&boardgame, "Ratings", rating)
 }

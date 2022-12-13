@@ -18,6 +18,7 @@ type boardgameService interface {
 	GetById(id string) (model.Boardgame, error)
 	Update(boardgame model.Boardgame, id string) error
 	DeleteById(id string) error
+	Rate(rating *model.Rating, id, username string) error
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
@@ -173,4 +174,45 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 	}
 
 	render.New().JSON(w, http.StatusNoContent, id)
+}
+
+// Rate a Boardgame godoc
+// @Summary 	Rates a Boardgame
+// @Tags 		boardgames
+// @Produce 	json
+// @Param 		id path int true "The Boardgame id"
+// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Success 	200 {object} model.Rating
+// @Router 		/boardgame/{id}/rate [post]
+func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Request) {
+
+	// Deserialize Rating input
+	var rating model.Rating
+	if err := utils.DecodeJSONBody(w, r, &rating); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	// Validate Boardgame input
+	if err := utils.ValidateStruct(&rating); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	// Get Boardgame Id from url
+	id := utils.GetFieldFromURL(r, "id")
+
+	// Get username from oauth Token
+	user, err := utils.GetUsernameFromToken(r)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	if err := controller.service.Rate(&rating, id, user); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	render.New().JSON(w, http.StatusOK, rating)
 }
