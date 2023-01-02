@@ -2,7 +2,7 @@
 BINARY_NAME=example
 SERVICE_PORT?=3000
 EXPORT_RESULT?=false 
-LIST_SERVICES=catalog marketplace user-management
+LIST_SERVICES=catalog marketplace rating-service user-management
 svc?=default
 
 .PHONY: up down swag
@@ -19,29 +19,37 @@ up: ## Builds and ups Docker services. Optional services. E.g: make up x y
 down: ## Brings Docker containers down. Requires services. E.g: make down x y
 	docker-compose rm -s -v $(filter-out $@,$(MAKECMDGOALS))
 
-# Auto builds image for swagger too
+
 swag: ## Creates Swagger files. Requires service. E.g: make swag svc=x
-ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES))) 
-# Creating 3 random files on dir. Needs fixing
-#	$(shell if [ "$(docker image inspect swagger-go)" = "" ]; then docker build . -t swagger-go -f doc/docker/dockerfile; fi); \ 
-  	docker run --rm -v $(shell pwd)/$(svc):/$(svc):ro -v $(shell pwd)/$(svc)/docs:/$(svc)/docs:rw -w /$(svc) swagger-go swag init --parseInternal --parseDependency
+ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES))) 	
+	if ! docker image inspect swagger-go >/dev/null 2>&1; then \
+		echo "Container image for swagger does not exist. Building.."; \
+		docker build . -t swagger-go -f doc/docker/dockerfile; \
+	fi
+	docker run --rm -v $(shell pwd)/$(svc):/$(svc):ro -v $(shell pwd)/$(svc)/docs:/$(svc)/docs:rw -w /$(svc) swagger-go swag init --parseInternal --parseDependency
 else
 	@echo "No service directory such as: $(svc)"
 endif
 
+swag-all: ## Creates Swagger files for all services
+	$(MAKE) swag svc=catalog
+	$(MAKE) swag svc=marketplace
+
 
 
 # ---------- Shorcuts ----------
-restart: ## Restarts one service while updating swagger (down->swagger->up). Requires service. E.g: make restart svc=x
+restart-full: ## Restarts one service while linting and updating swagger (down->lint->swagger->up). Requires service. E.g: make restart svc=x
 ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 	$(MAKE) down $(svc)
+	$(MAKE) lint-go svc=$(svc)
 	$(MAKE) swag svc=$(svc)
 	$(MAKE) up $(svc)
 else
 	@echo "No service directory such as: $(svc)"
 endif
 
-restart-all: ## Restarts all services (down->up). Optional services. E.g make restart-all x y
+
+restart: ## Restarts services (down->up). Optional services. E.g make restart-all x y
 	$(MAKE) down $(filter-out $@,$(MAKECMDGOALS))
 	$(MAKE) up $(filter-out $@,$(MAKECMDGOALS))
 

@@ -60,6 +60,38 @@ services:
     #volumes:
     #  - marketplace-data:/var/lib/postgresql/data
 
+
+  rating-service:
+    container_name: rating-service
+    build: 
+      context: rating-service/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8083:8080
+    restart: on-failure
+    env_file:
+      - ./rating-service/environment/dev/.env
+    depends_on:
+      rating-service-db:
+        condition: service_healthy
+
+  rating-service-db:
+    container_name: rating-service-db
+    image: postgres
+    restart: always
+    ports:
+      - '5435:5432'
+    env_file:
+      - ./rating-service/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - rating-service-data:/var/lib/postgresql/data
+
+
   user-management:
     container_name: user-management
     build: 
@@ -93,4 +125,5 @@ services:
 #volumes:
   #catalog-data:
   #marketplace-data:
+  #rating-service-data:
   #user-management-data:
