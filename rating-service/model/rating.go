@@ -1,14 +1,15 @@
 package model
 
-import "gorm.io/gorm"
+import "github.com/gofrs/uuid"
 
 type Rating struct {
-	gorm.Model `json:"-" swaggerignore:"true"`
-
-	Username string `json:"username,omitempty" db:"username" gorm:"unique"`
-	Value    int    `json:"value" db:"value" valid:"required, int, range(0|10)"`
+	CustomBase          `swaggerignore:"true"`
+	Username            string `json:"username" db:"username" valid:"required,alphanum,maxstringlength(50)" gorm:"index:unique_rating,unique"`
+	Reference_namespace string `json:"reference_namespace" db:"reference_namespace" gorm:"index:unique_rating,unique" valid:"required,alpha,maxstringlength(50)"`
+	Reference_id        string `json:"reference_id" db:"reference_id" gorm:"index:unique_rating,unique" valid:"required,uuid"`
+	Value               int    `json:"value" db:"value" valid:"required,int,range(0|10)"`
 }
 
-func (rating *Rating) SetUsername(username string) {
-	rating.Username = username
+func (rating *Rating) GetId() uuid.UUID {
+	return rating.ID
 }

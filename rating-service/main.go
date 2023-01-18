@@ -28,7 +28,7 @@ import (
 // @BasePath /api/
 func main() {
 	// Connect to Database
-	db, err := database.Connect()
+	db, err := database.Connect(false)
 	if err != nil {
 		log.Println("Error occurred while connecting to database")
 		return

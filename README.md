@@ -125,3 +125,16 @@ For learning the testing framework, I developed Functional tests that simulate u
 * http://www.golangbootcamp.com/book/frontmatter
 * https://golangbot.com/learn-golang-series/
 * https://go.dev/blog/slices-intro
+
+
+
+
+## Further Reading material
+
+[martin fowler - monolith first](https://martinfowler.com/bliki/MonolithFirst.html)
+[martin fowler - break-monolith-into-microservices](https://martinfowler.com/articles/break-monolith-into-microservices.html)
+[martin fowler - ](https://martinfowler.com/articles/201701-event-driven.html)
+[Architecture patterns - ](https://www.youtube.com/watch?v=lTkL1oIMiaU)
+[martin fowler - ](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://sd.blackball.lv/library/)
+[DOMAIN-DRIVEN DESIGN: Tackling Complexity in the Heart of Software](domain-driven_design_-_tackling_complexity_in_the_heart_of_software.pdf)
+[roadmap](https://roadmap.sh/)

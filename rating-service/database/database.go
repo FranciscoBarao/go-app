@@ -20,8 +20,8 @@ type PostgresqlRepository struct {
 	db *gorm.DB
 }
 
-func Connect() (*PostgresqlRepository, error) {
-	config, err := getConfig()
+func Connect(isTest bool) (*PostgresqlRepository, error) {
+	config, err := getConfig(isTest)
 	if err != nil {
 		return nil, err
 	}
@@ -51,14 +51,18 @@ func migrate(db *gorm.DB, model interface{}) error {
 	return nil
 }
 
-func getConfig() (string, error) {
+func getConfig(isTest bool) (string, error) {
 	log.Println("Fetching env vars for Database")
 
 	host, hostPresent := os.LookupEnv("DATABASE_HOST")
 	user, userPresent := os.LookupEnv("POSTGRES_USER")
 	pass, passPresent := os.LookupEnv("POSTGRES_PASSWORD")
-	dbname, dbnamePresent := os.LookupEnv("POSTGRES_DB")
 	port, portPresent := os.LookupEnv("DATABASE_PORT")
+	dbname, dbnamePresent := os.LookupEnv("POSTGRES_DB")
+
+	if isTest {
+		dbname, dbnamePresent = "test", true
+	}
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
 		log.Println("Error occurred while fetching env vars")

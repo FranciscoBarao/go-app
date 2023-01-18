@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 
 	"rating-service/middleware"
@@ -47,14 +46,6 @@ func (controller *RatingController) Create(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// Get username from oauth Token
-	user, err := utils.GetUsernameFromToken(r)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
-	log.Println(user)
-
 	// Validate Rating input
 	if err := utils.ValidateStruct(&rating); err != nil {
 		middleware.ErrorHandler(w, err)
@@ -78,7 +69,14 @@ func (controller *RatingController) Create(w http.ResponseWriter, r *http.Reques
 // @Router 		/rating [get]
 func (controller *RatingController) GetAll(w http.ResponseWriter, r *http.Request) {
 
-	ratings, err := controller.service.GetAll("")
+	sortBy := r.URL.Query().Get("sortBy")
+	sort, err := utils.GetSort(model.Rating{}, sortBy)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+
+	ratings, err := controller.service.GetAll(sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
