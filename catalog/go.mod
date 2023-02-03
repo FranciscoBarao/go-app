@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/go-chi/chi/v5 v5.0.7
+	github.com/go-chi/oauth v0.0.0-20210913085627-d937e221b3ef
 	github.com/swaggo/swag v1.8.2
 	github.com/unrolled/render v1.4.1
 	gorm.io/driver/postgres v1.3.5
@@ -12,10 +13,7 @@ require (
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/PaesslerAG/gval v1.0.0 // indirect
-	github.com/PaesslerAG/jsonpath v0.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-chi/oauth v0.0.0-20210913085627-d937e221b3ef // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/spec v0.20.6 // indirect
@@ -32,7 +30,6 @@ require (
 )
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/gddo v0.0.0-20210115222349-20d68f94ee1f
@@ -47,7 +44,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/steinfletcher/apitest v1.5.11
-	github.com/steinfletcher/apitest-jsonpath v1.7.1
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
 	github.com/swaggo/http-swagger v1.2.8
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect

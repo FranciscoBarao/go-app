@@ -10,14 +10,14 @@ svc?=default
 
 ## ---------- Docker ----------
 build: ## Builds Docker services. Optional services. E.g: make build x y
-	docker-compose build $(filter-out $@,$(MAKECMDGOALS))
+	docker compose build $(filter-out $@,$(MAKECMDGOALS))
 
 up: ## Builds and ups Docker services. Optional services. E.g: make up x y
-	docker-compose up -d --build $(filter-out $@,$(MAKECMDGOALS))
-	watch docker-compose ps
+	docker compose up -d --build $(filter-out $@,$(MAKECMDGOALS))
+	watch docker compose ps
 
 down: ## Brings Docker containers down. Requires services. E.g: make down x y
-	docker-compose rm -s -v $(filter-out $@,$(MAKECMDGOALS))
+	docker compose rm -s -v $(filter-out $@,$(MAKECMDGOALS))
 
 
 swag: ## Creates Swagger files. Requires service. E.g: make swag svc=x
@@ -26,7 +26,7 @@ ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 		echo "Container image for swagger does not exist. Building.."; \
 		docker build . -t swagger-go -f doc/docker/dockerfile; \
 	fi
-	docker run --rm -v $(shell pwd)/$(svc):/$(svc):ro -v $(shell pwd)/$(svc)/docs:/$(svc)/docs:rw -w /$(svc) swagger-go swag init --parseInternal --parseDependency
+	docker run --rm -v "$(shell pwd)/$(svc):/$(svc):ro" -v "$(shell pwd)/$(svc)/docs:/$(svc)/docs:rw" -w /$(svc) swagger-go swag init --parseInternal --parseDependency
 else
 	@echo "No service directory such as: $(svc)"
 endif
@@ -34,6 +34,7 @@ endif
 swag-all: ## Creates Swagger files for all services
 	$(MAKE) swag svc=catalog
 	$(MAKE) swag svc=marketplace
+	$(MAKE) swag svc=rating-service
 
 
 
@@ -60,7 +61,7 @@ restart: ## Restarts services (down->up). Optional services. E.g make restart-al
 lint-go: ## Use golintci-lint on your project. Requires service. E.g: make lint-go svc=x
 ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 	$(eval OUTPUT_OPTIONS = $(shell [ "${EXPORT_RESULT}" = "true" ] && echo "--out-format checkstyle ./... | tee /dev/tty > checkstyle-report.xml" || echo "" ))
-	docker run --rm -v $(shell pwd)/$(svc):/app -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
+	docker run --rm -v "$(shell pwd)/$(svc):/app" -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
 else
 	@echo "No service directory such as: $(svc)"
 endif
@@ -71,7 +72,7 @@ ifeq ($(EXPORT_RESULT), true)
 	go get -u github.com/thomaspoignant/yamllint-checkstyle
 	$(eval OUTPUT_OPTIONS = | tee /dev/tty | yamllint-checkstyle > yamllint-checkstyle.xml)
 endif
-	docker run --rm -it -v $(shell pwd):/data cytopia/yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml') $(OUTPUT_OPTIONS)
+	docker run --rm -it -v "$(shell pwd):/data" cytopia/yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml') $(OUTPUT_OPTIONS)
 
 
 help: ## Show Help Menu
