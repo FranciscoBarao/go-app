@@ -1,17 +1,16 @@
 package repositories
 
 import (
-	"catalog/database"
 	"catalog/middleware"
 	"catalog/model"
 	"errors"
 )
 
 type CategoryRepository struct {
-	db *database.PostgresqlRepository
+	db Database
 }
 
-func NewCategoryRepository(instance *database.PostgresqlRepository) *CategoryRepository {
+func NewCategoryRepository(instance Database) *CategoryRepository {
 	return &CategoryRepository{
 		db: instance,
 	}

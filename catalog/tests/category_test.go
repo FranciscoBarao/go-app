@@ -5,131 +5,146 @@ import (
 	"testing"
 
 	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestPostCategory(t *testing.T) {
+type CategorySuite struct {
+	suite.Suite
+
+	base *Base
+}
+
+func (suite *CategorySuite) SetupSuite() {
+	suite.base = NewBase(suite.T())
+}
+
+func (suite *CategorySuite) TestPostCategory(t *testing.T) {
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{"name": "test"}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Body(`{"name": "test"}`).
 		Status(http.StatusOK).
 		End()
 }
 
-func TestGetCategory(t *testing.T) {
+func (suite *CategorySuite) TestGetCategory(t *testing.T) {
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Get("/api/category/test").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		Body(`{"name": "test"}`).
 		End()
 }
 
-func TestDeleteCategory(t *testing.T) {
+func (suite *CategorySuite) TestDeleteCategory(t *testing.T) {
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Delete("/api/category/test").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusNoContent).
 		End()
 }
 
-func TestCreateCategoryFailures(t *testing.T) {
+func (suite *CategorySuite) TestCreateCategoryFailures(t *testing.T) {
 	// Several Json Objects on the body
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`[{"name":"a"},{"name":"b"}]`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
 
 	// Malformed Json
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{name:"a"}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
 
 	// Unmarshall type error
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{"name": 1}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
 
 	// Unknown Field
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{"test": "test"}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
 
 	// Empty Body
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(``).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusBadRequest).
 		End()
 
 	// Invalid Struct -> NOT maxstringlength(30)
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
 
 	// Invalid Struct -> NOT alphanum
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
 		JSON(`{"name": "test.?"}`).
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusForbidden).
 		End()
 }
 
-func TestGetCategoryFailure(t *testing.T) {
+func (suite *CategorySuite) TestGetCategoryFailure(t *testing.T) {
 	// Record not found
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Get("/api/category/test").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
 }
 
-func TestDeleteCategoryFailure(t *testing.T) {
+func (suite *CategorySuite) TestDeleteCategoryFailure(t *testing.T) {
 	// Record not found
 	apitest.New().
-		HandlerFunc(router.ServeHTTP).
+		HandlerFunc(suite.base.router.ServeHTTP).
 		Delete("/api/category/test").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusNotFound).
 		End()
+}
+
+func TestCategorySuite(t *testing.T) {
+	suite.Run(t, new(CategorySuite))
 }

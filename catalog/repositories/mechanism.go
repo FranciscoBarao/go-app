@@ -1,17 +1,16 @@
 package repositories
 
 import (
-	"catalog/database"
 	"catalog/middleware"
 	"catalog/model"
 	"errors"
 )
 
 type MechanismRepository struct {
-	db *database.PostgresqlRepository
+	db Database
 }
 
-func NewMechanismRepository(instance *database.PostgresqlRepository) *MechanismRepository {
+func NewMechanismRepository(instance Database) *MechanismRepository {
 	return &MechanismRepository{
 		db: instance,
 	}

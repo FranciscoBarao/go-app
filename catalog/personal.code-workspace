@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "go-app",
+			"path": ".."
+		},
+		{
+			"name": "catalog",
+			"path": "."
+		},
+		{
+			"name": "marketplace",
+			"path": "../marketplace"
+		},
+		{
+			"name": "rating-service",
+			"path": "../rating-service"
+		},
+		{
+			"name": "user-management",
+			"path": "../user-management"
+		}
+	],
+	"settings": {}
+}

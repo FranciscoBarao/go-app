@@ -1,8 +1,18 @@
 package repositories
 
-import (
-	"catalog/database"
-)
+//go:generate mockgen -package mock -destination=mock/repositories.go . Database
+
+type Database interface {
+	Create(value interface{}, omits ...string) error
+	Read(value interface{}, sort, search, identifier string) error
+	Update(value interface{}, omits ...string) error
+	Delete(value interface{}) error
+
+	AppendAssociatons(model interface{}, association string, values interface{}) error
+	ReplaceAssociatons(model interface{}, association string, values interface{}) error
+	//ReadAssociatons(model interface{}, association string, store interface{}) error
+	//DeleteAssociatons(model interface{}, association string) error
+}
 
 // Repositories contains all the repo structs
 type Repositories struct {
@@ -13,7 +23,7 @@ type Repositories struct {
 }
 
 // InitRepositories should be called in main.go
-func InitRepositories(db *database.PostgresqlRepository) *Repositories {
+func InitRepositories(db Database) *Repositories {
 	boardgameRepository := NewBoardgameRepository(db)
 	tagRepository := NewTagRepository(db)
 	categoryRepository := NewCategoryRepository(db)

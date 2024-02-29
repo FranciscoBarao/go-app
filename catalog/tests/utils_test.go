@@ -7,9 +7,20 @@ import (
 	"testing"
 
 	"github.com/steinfletcher/apitest"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestGetFiltersSuccess(t *testing.T) {
+type UtilSuite struct {
+	suite.Suite
+
+	base *Base
+}
+
+func (suite *UtilSuite) SetupSuite() {
+	suite.base = NewBase(suite.T())
+}
+
+func (suite *UtilSuite) TestGetFiltersSuccess(t *testing.T) {
 	apitest.New(). // name.a -> Names that contain letter a
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			body, value, err := utils.GetFilters(model.Boardgame{}, "name.a")
@@ -20,7 +31,7 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -34,7 +45,7 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -48,13 +59,13 @@ func TestGetFiltersSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
 }
 
-func TestFiltersFailure(t *testing.T) {
+func (suite *UtilSuite) TestFiltersFailure(t *testing.T) {
 
 	apitest.New(). // Different number of allowed Fields -> a.a.a.a || a
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +78,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -84,7 +95,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -99,7 +110,7 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -117,13 +128,13 @@ func TestFiltersFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
 }
 
-func TestGetSortsSuccess(t *testing.T) {
+func (suite *UtilSuite) TestGetSortsSuccess(t *testing.T) {
 	apitest.New(). //
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			sort, err := utils.GetSort(model.Boardgame{}, "name.asc")
@@ -133,7 +144,7 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -147,7 +158,7 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
@@ -161,13 +172,13 @@ func TestGetSortsSuccess(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusOK).
 		End()
 }
 
-func TestSortsFailure(t *testing.T) {
+func (suite *UtilSuite) TestSortsFailure(t *testing.T) {
 
 	apitest.New(). // Different number of allowed Fields (2) -> a.a.a || a
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -179,7 +190,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -195,7 +206,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -210,7 +221,7 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -225,8 +236,12 @@ func TestSortsFailure(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
-		Header("Authorization", "Bearer "+oauthHeader).
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(t).
 		Status(http.StatusUnprocessableEntity).
 		End()
+}
+
+func TestUtilSuite(t *testing.T) {
+	suite.Run(t, new(UtilSuite))
 }

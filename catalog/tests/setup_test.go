@@ -1,54 +1,52 @@
 package tests
 
 import (
+	"log"
+	"testing"
+
 	"catalog/controllers"
-	"catalog/database"
 	"catalog/repositories"
+	repositoriesMock "catalog/repositories/mock"
 	"catalog/route"
 	"catalog/services"
-	"log"
-	"os"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/mock/gomock"
 )
 
-var router *chi.Mux
-var oauthHeader string
+const oauthKey = "secret-key"
+
+type Base struct {
+	router      *chi.Mux
+	oauthHeader string
+	dbMock      *repositoriesMock.MockDatabase
+}
 
 // Prepares test environment
-func init() {
+func NewBase(t *testing.T) *Base {
 	log.Println("Setup Starting")
 
-	// Set Database
-	db, err := database.Connect()
-	if err != nil {
-		log.Println("Error occurred while connecting to database")
-		return
-	}
+	// Setup database mock
+	mock := repositoriesMock.NewMockDatabase(gomock.NewController(t))
 
 	// Fetch Oauth Key
-	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
-	header, oauthHeaderPresent := os.LookupEnv("OAUTH_HEADER_TEST")
-	if !oauthKeyPresent || !oauthHeaderPresent {
-		log.Println("Error occurred while fetching essential env variables")
-		return
-	}
-
-	// Defines Token header to be used in requests
-	oauthHeader = header
 
 	// Set Repositories & Controllers & Services
-	repositories := repositories.InitRepositories(db)
+	repositories := repositories.InitRepositories(mock)
 	services := services.InitServices(repositories)
 	controllers := controllers.InitControllers(services)
 
-	router = chi.NewRouter()
-
 	// Adds Routers
+	router := chi.NewRouter()
 	route.AddBoardGameRouter(router, oauthKey, controllers.BoardgameController)
 	route.AddTagRouter(router, oauthKey, controllers.TagController)
 	route.AddCategoryRouter(router, oauthKey, controllers.CategoryController)
 	route.AddMechanismRouter(router, oauthKey, controllers.MechanismController)
 
 	log.Println("Setup Complete")
+	return &Base{
+		router:      router,
+		oauthHeader: oauthKey,
+		dbMock:      mock,
+	}
 }

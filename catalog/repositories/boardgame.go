@@ -1,17 +1,16 @@
 package repositories
 
 import (
-	"catalog/database"
 	"catalog/middleware"
 	"catalog/model"
 	"errors"
 )
 
 type BoardgameRepository struct {
-	db *database.PostgresqlRepository
+	db Database
 }
 
-func NewBoardgameRepository(instance *database.PostgresqlRepository) *BoardgameRepository {
+func NewBoardgameRepository(instance Database) *BoardgameRepository {
 	return &BoardgameRepository{
 		db: instance,
 	}
