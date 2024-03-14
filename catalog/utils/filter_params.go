@@ -142,9 +142,12 @@ func operatorToString(operator string) string {
 	}
 }
 
+// Examples of filters that work:
+// name.a 		---> name LIKE ?    %a%
+// price.le.10  ---> price <= ?     10
+// name.eq.asd  ---> name == ?     asd
 // Main function of Getting the Filters
 func GetFilters(model interface{}, filterBy string) (string, string, error) {
-
 	if filterBy != "" {
 		log.Println("Filtering using %s " + filterBy)
 		err := validateFilterParameters(model, filterBy) // Validates Filters -> By length, emptiness and type
@@ -156,9 +159,4 @@ func GetFilters(model interface{}, filterBy string) (string, string, error) {
 		return filterBody, filterValue, nil
 	}
 	return "", "", nil // No filter -> No error
-
-	// Examples of filters that work:
-	// name.a 		---> name LIKE ?    %a%
-	// price.le.10  ---> price <= ?     10
-	// name.eq.asd  ---> name == ?     asd
 }

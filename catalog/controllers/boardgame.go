@@ -43,16 +43,15 @@ func InitBoardgameController(boardGameSvc *services.BoardgameService) *Boardgame
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Boardgame input
-	var boardgame *model.Boardgame
-	if err := utils.DecodeJSONBody(w, r, boardgame); err != nil {
+	var boardgame model.Boardgame
+	if err := utils.DecodeJSONBody(w, r, &boardgame); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	if err := utils.ValidateStruct(boardgame); err != nil {
+	if err := utils.ValidateStruct(&boardgame); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -60,7 +59,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 	// Get Id from url - If its an expansion
 	id := utils.GetFieldFromURL(r, "id")
 
-	if err := controller.service.Create(boardgame, id); err != nil {
+	if err := controller.service.Create(&boardgame, id); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

@@ -5,8 +5,8 @@ type Category struct {
 	Boardgames []Boardgame `gorm:"many2many:boardgame_categories;" json:"-"`
 }
 
-func NewCategory(name string) Category {
-	return Category{
+func NewCategory(name string) *Category {
+	return &Category{
 		Name: name,
 	}
 }

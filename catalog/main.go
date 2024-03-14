@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
+	"catalog/config"
 	"catalog/controllers"
 	"catalog/database"
 	_ "catalog/docs"
@@ -26,19 +27,22 @@ import (
 
 // @BasePath /api/
 func main() {
-	// Connect to Database
-	db, err := database.Connect()
+	// Fetch DB configs
+	config, err := config.NewPostgresConfig()
 	if err != nil {
-		log.Println("Error occurred while connecting to database")
-		return
+		log.Fatal(err)
+	}
+	// Connect to Database
+	db, err := database.Connect(config)
+	if err != nil {
+		log.Fatal("error occurred while connecting to database")
 	}
 
 	// Fetch Env variables
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
 	port, portPresent := os.LookupEnv("PORT")
 	if !oauthKeyPresent || !portPresent {
-		log.Println("Error occurred while fetching essential env variables")
-		return
+		log.Fatal("error occurred while fetching essential env variables")
 	}
 
 	// Initialize Repositories & Services & controllers
@@ -61,8 +65,8 @@ func main() {
 
 	// Starts server
 	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Println("Error occured while creating Server" + err.Error())
-		return
+		log.Fatalf("error occured while creating server: %s" + err.Error())
+
 	}
-	log.Println("Server is Running on localhost:" + port)
+	log.Println("server running on localhost:" + port)
 }

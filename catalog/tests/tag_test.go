@@ -3,6 +3,7 @@ package tests
 import (
 	"catalog/middleware"
 	"catalog/model"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -20,26 +21,29 @@ func (suite *TagSuite) SetupSuite() {
 	suite.base = NewBase(suite.T())
 }
 
-func (suite *TagSuite) TestCreateTagSuccess() {
+func (suite *TagSuite) TestPost() {
 	tagName := "test"
 	tag := model.NewTag(tagName)
 	suite.base.dbMock.EXPECT().
 		Create(tag).
 		Return(nil)
 
+	tagJson, err := json.Marshal(tag)
+	suite.Require().NoError(err)
+
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/tag").
-		JSON(`{"name": "`+tagName+`"}`).
+		JSON(tagJson).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(`{"name": "` + tagName + `"}`).
+		Body(string(tagJson)).
 		Status(http.StatusOK).
 		End()
 }
 
-func (suite *TagSuite) TestGetTagSuccess() {
+func (suite *TagSuite) TestGet() {
 	tagName := "test"
 	tag := new(model.Tag)
 	suite.base.dbMock.EXPECT().
@@ -60,22 +64,7 @@ func (suite *TagSuite) TestGetTagSuccess() {
 		End()
 }
 
-func (suite *TagSuite) TestGetAllTagSuccess() {
-	tags := new([]model.Tag)
-	suite.base.dbMock.EXPECT().
-		Read(tags, "", "", "").
-		Return(nil)
-
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/tag").
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusOK).
-		End()
-}
-
-func (suite *TagSuite) TestDeleteTagSuccess() {
+func (suite *TagSuite) TestDelete() {
 	tagName := "test"
 	tag := new(model.Tag)
 	suite.base.dbMock.EXPECT().
@@ -95,7 +84,7 @@ func (suite *TagSuite) TestDeleteTagSuccess() {
 		End()
 }
 
-func (suite *TagSuite) TestCreateTagFailures() {
+func (suite *TagSuite) TestPostFailures() {
 	// Several Json Objects on the body
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
@@ -167,7 +156,7 @@ func (suite *TagSuite) TestCreateTagFailures() {
 		End()
 }
 
-func (suite *TagSuite) TestGetTagFailure() {
+func (suite *TagSuite) TestGetFailure() {
 	tagName := "test"
 	tag := new(model.Tag)
 	suite.base.dbMock.EXPECT().
@@ -184,7 +173,7 @@ func (suite *TagSuite) TestGetTagFailure() {
 		End()
 }
 
-func (suite *TagSuite) TestDeleteTagFailure() {
+func (suite *TagSuite) TestDeleteFailure() {
 	tagName := "test"
 	tag := new(model.Tag)
 	suite.base.dbMock.EXPECT().

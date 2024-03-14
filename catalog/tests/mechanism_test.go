@@ -1,6 +1,9 @@
 package tests
 
 import (
+	"catalog/middleware"
+	"catalog/model"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -18,47 +21,77 @@ func (suite *MechanismSuite) SetupSuite() {
 	suite.base = NewBase(suite.T())
 }
 
-func (suite *MechanismSuite) TestPostMechanism(t *testing.T) {
+func (suite *MechanismSuite) TestPostMechanism() {
+	mechName := "test"
+	mech := model.NewMechanism(mechName)
+	suite.base.dbMock.EXPECT().
+		Create(mech).
+		Return(nil)
+
+	mechJson, err := json.Marshal(mech)
+	suite.Require().NoError(err)
+
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/mechanism").
-		JSON(`{"name": "test"}`).
+		JSON(mechJson).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
-		Body(`{"name": "test"}`).
+		Expect(suite.T()).
+		Body(string(mechJson)).
 		Status(http.StatusOK).
 		End()
 }
 
-func (suite *MechanismSuite) TestGetMechanism(t *testing.T) {
+func (suite *MechanismSuite) TestGetMechanism() {
+	mechName := "test"
+	mech := new(model.Mechanism)
+	suite.base.dbMock.EXPECT().
+		Read(mech, "", "name = ?", mechName).
+		Do(func(mech *model.Mechanism, sort, query, field string) error {
+			mech.Name = mechName
+			return nil
+		}).
+		Return(nil)
+
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/mechanism/test").
+		Get("/api/mechanism/"+mechName).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusOK).
-		Body(`{"name": "test"}`).
+		Body(`{ "name": "` + mechName + `" }`).
 		End()
 }
 
-func (suite *MechanismSuite) TestDeleteMechanism(t *testing.T) {
+func (suite *MechanismSuite) TestDeleteMechanism() {
+
+	mechName := "test"
+	mech := new(model.Mechanism)
+	suite.base.dbMock.EXPECT().
+		Read(mech, "", "name = ?", mechName).
+		Return(nil)
+
+	suite.base.dbMock.EXPECT().
+		Delete(new(model.Mechanism)).
+		Return(nil)
+
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/mechanism/test").
+		Delete("/api/mechanism/"+mechName).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusNoContent).
 		End()
 }
 
-func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
+func (suite *MechanismSuite) TestPostMechanismFailures() {
 	// Several Json Objects on the body
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/mechanism").
 		JSON(`[{"name":"a"},{"name":"b"}]`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusBadRequest).
 		End()
 
@@ -68,7 +101,7 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(`{name:"a"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusBadRequest).
 		End()
 
@@ -78,7 +111,7 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(`{"name": 1}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusBadRequest).
 		End()
 
@@ -88,7 +121,7 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(`{"test": "test"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusBadRequest).
 		End()
 
@@ -98,7 +131,7 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(``).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusBadRequest).
 		End()
 
@@ -108,7 +141,7 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusForbidden).
 		End()
 
@@ -118,29 +151,41 @@ func (suite *MechanismSuite) TestCreateMechanismFailures(t *testing.T) {
 		Post("/api/mechanism").
 		JSON(`{"name": "test.?"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusForbidden).
 		End()
 }
 
-func (suite *MechanismSuite) TestGetMechanismFailure(t *testing.T) {
+func (suite *MechanismSuite) TestGetMechanismFailure() {
+	mechName := "test"
+	mech := new(model.Mechanism)
+	suite.base.dbMock.EXPECT().
+		Read(mech, "", "name = ?", mechName).
+		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))
+
 	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/mechanism/test").
+		Get("/api/mechanism/"+mechName).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusNotFound).
 		End()
 }
 
-func (suite *MechanismSuite) TestDeleteMechanismFailure(t *testing.T) {
+func (suite *MechanismSuite) TestDeleteMechanismFailure() {
+	mechName := "test"
+	mech := new(model.Mechanism)
+	suite.base.dbMock.EXPECT().
+		Read(mech, "", "name = ?", mechName).
+		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))
+
 	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/mechanism/test").
+		Delete("/api/mechanism/"+mechName).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(t).
+		Expect(suite.T()).
 		Status(http.StatusNotFound).
 		End()
 }

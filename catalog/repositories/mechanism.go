@@ -18,7 +18,7 @@ func NewMechanismRepository(instance Database) *MechanismRepository {
 
 func (repo *MechanismRepository) Create(mechanism *model.Mechanism) error {
 
-	return repo.db.Create(&mechanism)
+	return repo.db.Create(mechanism)
 }
 
 func (repo *MechanismRepository) GetAll(sort string) ([]model.Mechanism, error) {

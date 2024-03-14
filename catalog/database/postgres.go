@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"reflect"
 
+	"catalog/config"
 	"catalog/middleware"
 	"catalog/model"
 
@@ -16,23 +16,18 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type PostgresqlRepository struct {
+type Postgres struct {
 	db *gorm.DB
 }
 
-func Connect() (*PostgresqlRepository, error) {
-	config, err := getConfig()
+func Connect(config *config.PostgresConfig) (*Postgres, error) {
+	db, err := gorm.Open(postgres.Open(config.String()), &gorm.Config{})
 	if err != nil {
+		log.Println("error connecting to database: " + err.Error())
 		return nil, err
 	}
 
-	db, err := gorm.Open(postgres.Open(config), &gorm.Config{})
-	if err != nil {
-		log.Println("Error Connecting to the database: " + err.Error())
-		return nil, err
-	}
-
-	log.Println("Connected to the Database")
+	log.Println("connected to the database")
 
 	migrate(db, &model.Boardgame{})
 	migrate(db, &model.Tag{})
@@ -40,9 +35,9 @@ func Connect() (*PostgresqlRepository, error) {
 	migrate(db, &model.Mechanism{})
 	migrate(db, &model.Rating{})
 
-	log.Println("Database Migration Completed")
+	log.Println("database migration completed")
 
-	return &PostgresqlRepository{db}, nil
+	return &Postgres{db}, nil
 }
 
 func migrate(db *gorm.DB, model interface{}) error {
@@ -55,29 +50,11 @@ func migrate(db *gorm.DB, model interface{}) error {
 	return nil
 }
 
-func getConfig() (string, error) {
-	log.Println("Fetching env vars for Database")
-
-	host, hostPresent := os.LookupEnv("DATABASE_HOST")
-	user, userPresent := os.LookupEnv("POSTGRES_USER")
-	pass, passPresent := os.LookupEnv("POSTGRES_PASSWORD")
-	dbname, dbnamePresent := os.LookupEnv("POSTGRES_DB")
-	port, portPresent := os.LookupEnv("DATABASE_PORT")
-
-	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
-		log.Println("Error occurred while fetching env vars")
-		return "", middleware.NewError(http.StatusInternalServerError, "Error occurred while fetching env vars")
-	}
-
-	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port, nil
-}
-
 func isSliceOrArray(value interface{}) bool {
 	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
 }
 
-func (instance *PostgresqlRepository) Create(value interface{}, omits ...string) error {
-
+func (instance *Postgres) Create(value interface{}, omits ...string) error {
 	result := instance.db.Omit(omits...).Create(value)
 	if result.Error != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
@@ -91,7 +68,7 @@ func (instance *PostgresqlRepository) Create(value interface{}, omits ...string)
 	return nil
 }
 
-func (instance *PostgresqlRepository) Read(value interface{}, sort, search, identifier string) error {
+func (instance *Postgres) Read(value interface{}, sort, search, identifier string) error {
 
 	var result *gorm.DB
 	if isSliceOrArray(value) {
@@ -117,7 +94,7 @@ func (instance *PostgresqlRepository) Read(value interface{}, sort, search, iden
 	return nil
 }
 
-func (instance *PostgresqlRepository) Update(value interface{}, omits ...string) error {
+func (instance *Postgres) Update(value interface{}, omits ...string) error {
 	result := instance.db.Omit(omits...).Save(value)
 	if result.Error != nil {
 		log.Println("Error while updating a database entry: " + fmt.Sprintf("%v", value))
@@ -128,7 +105,7 @@ func (instance *PostgresqlRepository) Update(value interface{}, omits ...string)
 	return nil
 }
 
-func (instance *PostgresqlRepository) Delete(value interface{}) error {
+func (instance *Postgres) Delete(value interface{}) error {
 
 	// Delete BG and all its associations (E.g Tags associations)
 	result := instance.db.Select(clause.Associations).Delete(value)
@@ -148,7 +125,7 @@ func (instance *PostgresqlRepository) Delete(value interface{}) error {
 // The following section presents the associations generic methods. This section is up for debate and will possibly change in the future.
 
 // Method that Adds certain associations to a certain model (E.g Add Tags to a Boardgame)
-func (instance *PostgresqlRepository) AppendAssociatons(model interface{}, association string, values interface{}) error {
+func (instance *Postgres) AppendAssociatons(model interface{}, association string, values interface{}) error {
 
 	err := instance.db.Model(model).Association(association).Append(values)
 	if err != nil {
@@ -162,7 +139,7 @@ func (instance *PostgresqlRepository) AppendAssociatons(model interface{}, assoc
 }
 
 // Method that Gets associations of a type of a certain model (E.g Get Tags of a Boardgame)
-func (instance *PostgresqlRepository) ReadAssociatons(model interface{}, association string, store interface{}) error {
+func (instance *Postgres) ReadAssociatons(model interface{}, association string, store interface{}) error {
 
 	err := instance.db.Model(model).Association(association).Find(store)
 	if err != nil {
@@ -175,7 +152,7 @@ func (instance *PostgresqlRepository) ReadAssociatons(model interface{}, associa
 }
 
 // Method that Replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
-func (instance *PostgresqlRepository) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
+func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
 
 	err := instance.db.Model(model).Association(association).Replace(values)
 	if err != nil {
@@ -188,7 +165,7 @@ func (instance *PostgresqlRepository) ReplaceAssociatons(model interface{}, asso
 }
 
 // Method that Deletes all values of a certain association of a certain model (E.g Delete all Tags of a Boardgame)
-func (instance *PostgresqlRepository) DeleteAssociatons(model interface{}, association string) error {
+func (instance *Postgres) DeleteAssociatons(model interface{}, association string) error {
 
 	err := instance.db.Model(model).Association(association).Clear()
 	if err != nil {

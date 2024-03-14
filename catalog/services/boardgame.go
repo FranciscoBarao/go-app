@@ -36,7 +36,6 @@ func InitBoardgameService(boardgameRepo *repositories.BoardgameRepository, tagSe
 }
 
 func (svc *BoardgameService) Create(boardgame *model.Boardgame, id string) error {
-
 	// Check if Expansion -> Connect if needed
 	if err := svc.connectBoardgameToExpansion(boardgame, id); err != nil {
 		return err
@@ -51,17 +50,14 @@ func (svc *BoardgameService) Create(boardgame *model.Boardgame, id string) error
 }
 
 func (svc *BoardgameService) GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error) {
-
 	return svc.repo.GetAll(sort, filterBody, filterValue)
 }
 
 func (svc *BoardgameService) GetById(id string) (model.Boardgame, error) {
-
 	return svc.repo.GetById(id)
 }
 
 func (svc *BoardgameService) Update(input model.Boardgame, id string) error {
-
 	// Check if Tags & Categories & Mechanisms exist
 	if err := svc.validateAssociations(&input); err != nil {
 		return err
@@ -80,7 +76,6 @@ func (svc *BoardgameService) Update(input model.Boardgame, id string) error {
 }
 
 func (svc *BoardgameService) DeleteById(id string) error {
-
 	// Get Boardgame
 	boardgame, err := svc.repo.GetById(id)
 	if err != nil {
@@ -91,7 +86,6 @@ func (svc *BoardgameService) DeleteById(id string) error {
 }
 
 func (svc *BoardgameService) Rate(rating *model.Rating, id, username string) error {
-
 	// Check if boardgame exists
 	bg, err := svc.repo.GetById(id)
 	if err != nil {
@@ -123,7 +117,6 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardg
 
 // Function that validates if tags, categories and mechanisms exist when boardgames are created
 func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) error {
-
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.IsTags() {
 		for _, tempTag := range boardgame.GetTags() {

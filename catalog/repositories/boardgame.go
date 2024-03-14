@@ -19,18 +19,15 @@ func NewBoardgameRepository(instance Database) *BoardgameRepository {
 var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
 
 func (repo *BoardgameRepository) Create(boardgame *model.Boardgame) error {
-
 	return repo.db.Create(boardgame, omits...)
 }
 
 func (repo *BoardgameRepository) GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error) {
-
 	var bg []model.Boardgame
 	return bg, repo.db.Read(&bg, sort, filterBody, filterValue)
 }
 
 func (repo *BoardgameRepository) GetById(id string) (model.Boardgame, error) {
-
 	var bg model.Boardgame
 	err := repo.db.Read(&bg, "", "id = ?", id)
 
@@ -43,7 +40,6 @@ func (repo *BoardgameRepository) GetById(id string) (model.Boardgame, error) {
 }
 
 func (repo *BoardgameRepository) Update(boardgame model.Boardgame) error {
-
 	if err := repo.db.Update(&boardgame, omits...); err != nil {
 		return err
 	}
@@ -54,12 +50,10 @@ func (repo *BoardgameRepository) Update(boardgame model.Boardgame) error {
 }
 
 func (repo *BoardgameRepository) DeleteById(boardgame model.Boardgame) error {
-
 	return repo.db.Delete(&boardgame)
 }
 
 func (repo *BoardgameRepository) Rate(boardgame model.Boardgame, rating *model.Rating) error {
-
 	repo.db.Create(rating)
 
 	return repo.db.AppendAssociatons(&boardgame, "Ratings", rating)

@@ -18,8 +18,8 @@ type Boardgame struct {
 }
 
 // Constructors
-func NewBoardgame(name, publisher string, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) Boardgame {
-	return Boardgame{
+func NewBoardgame(name, publisher string, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) *Boardgame {
+	return &Boardgame{
 		Name:         name,
 		Publisher:    publisher,
 		PlayerNumber: playerNumber,

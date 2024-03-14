@@ -17,7 +17,6 @@ func NewCategoryRepository(instance Database) *CategoryRepository {
 }
 
 func (repo *CategoryRepository) Create(category *model.Category) error {
-
 	return repo.db.Create(category)
 }
 

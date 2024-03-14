@@ -23,22 +23,18 @@ func InitCategoryService(tagRepo *repositories.CategoryRepository) *CategoryServ
 }
 
 func (svc *CategoryService) Create(category *model.Category) error {
-
 	return svc.repo.Create(category)
 }
 
 func (svc *CategoryService) GetAll(sort string) ([]model.Category, error) {
-
 	return svc.repo.GetAll(sort)
 }
 
 func (svc *CategoryService) Get(name string) (model.Category, error) {
-
 	return svc.repo.Get(name)
 }
 
 func (svc *CategoryService) Delete(name string) error {
-
 	// Get category by name
 	category, err := svc.repo.Get(name)
 	if err != nil {

@@ -30,6 +30,7 @@ func NewBase(t *testing.T) *Base {
 	mock := repositoriesMock.NewMockDatabase(gomock.NewController(t))
 
 	// Fetch Oauth Key
+	//oauthKey, _ := os.LookupEnv("OAUTH_KEY")
 
 	// Set Repositories & Controllers & Services
 	repositories := repositories.InitRepositories(mock)
