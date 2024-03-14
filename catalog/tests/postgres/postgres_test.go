@@ -1,7 +1,8 @@
-package database
+package tests
 
 import (
 	"catalog/config"
+	"catalog/database"
 	"catalog/model"
 	"fmt"
 	"testing"
@@ -12,7 +13,7 @@ import (
 type PostgresSuite struct {
 	suite.Suite
 	db       *TestPostgres
-	postgres *Postgres
+	postgres *database.Postgres
 }
 
 func (suite *PostgresSuite) SetupSuite() {
@@ -29,7 +30,7 @@ func (suite *PostgresSuite) SetupSuite() {
 		Database: "postgres",
 	}
 	// Connect to Database
-	suite.postgres, err = Connect(config)
+	suite.postgres, err = database.Connect(config)
 	suite.Require().NoError(err)
 }
 

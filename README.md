@@ -56,21 +56,14 @@ For the documentation of the application, [Swag](https://github.com/swaggo/swag#
 For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
 
 ## Testing
-[Framework](https://apitest.dev/)
-
-Command to test   
-Godotenv -> Initializes with .env   
-./... -> Tests all directories   
-DATABASE_HOST -> Overwrites host since tests are not running in docker
-```
-DATABASE_HOST=localhost godotenv -f .env go test ./... -v
-```
-
-For learning the testing framework, I developed Functional tests that simulate user behaviour on the catalog to trigger success and failure scenarios. 
+* [Framework](https://apitest.dev/)
+* [mock-gen](https://github.com/uber-go/mock)
+* [embedded-postgres](https://github.com/fergusstrange/embedded-postgres)
 
 < Better describe the Tests implemented >
 
 < Implement and describe the Unit tests on the utils >
+
 
 
 
@@ -92,49 +85,27 @@ For learning the testing framework, I developed Functional tests that simulate u
 
 
 
-
-# Support Suff
-
-## Blogs, workshops, etc
-​
-## [Francesc Campoy Flores](https://www.campoy.cat) 
-​
-* Workshop @CERN "An Introduction to Go": [Pt 1](https://www.youtube.com/watch?v=xi8732QO33Y&t=2475s), [Pt 2](https://www.youtube.com/watch?v=wCU4g0kVZ8Y&t=647s), [Pt 3](https://www.youtube.com/watch?v=axXuYFA80QM&t=4s)
+# Support source
+* [Francesc Campoy Flores](https://www.campoy.cat) 
 * [Youtube channel](https://www.youtube.com/channel/UC_BzFbxG2za3bp5NRRRXJSw/)
-​
-## [Dave Cheney](https://dave.cheney.net/about)
-​
+* [Dave Cheney](https://dave.cheney.net/about)
 * [Blog](https://dave.cheney.net/)
 * [Practical Go: Real world advice for writing maintainable Go programs](https://dave.cheney.net/practical-go/presentations/qcon-china.html)
-​
-## [Rob Pike](https://research.google/people/r/)
-​
+* [Rob Pike](https://research.google/people/r/)
 * [Presentation "Concurrency Is Not Parallelism"](https://www.youtube.com/watch?v=cN_DpYBzKso)
-​
-### [Russ Cox](https://swtch.com/~rsc/)
-​
+* [Russ Cox](https://swtch.com/~rsc/)
 * [A Tour of Go](https://www.youtube.com/watch?v=ytEkHepK08c)
-​
-### [Jaana Dogan](https://rakyll.org/about/)
-​
-* [Blog](https://rakyll.org/)
-​
-## Ebooks & tutorials
-​
+* [Jaana Dogan](https://rakyll.org/about/)
+​​
 * https://go101.org/
 * http://www.golangbootcamp.com/book/frontmatter
 * https://golangbot.com/learn-golang-series/
 * https://go.dev/blog/slices-intro
 
-
-
-
-## Further Reading material
-
-[martin fowler - monolith first](https://martinfowler.com/bliki/MonolithFirst.html)
-[martin fowler - break-monolith-into-microservices](https://martinfowler.com/articles/break-monolith-into-microservices.html)
-[martin fowler - ](https://martinfowler.com/articles/201701-event-driven.html)
-[Architecture patterns - ](https://www.youtube.com/watch?v=lTkL1oIMiaU)
-[martin fowler - ](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://sd.blackball.lv/library/)
-[DOMAIN-DRIVEN DESIGN: Tackling Complexity in the Heart of Software](domain-driven_design_-_tackling_complexity_in_the_heart_of_software.pdf)
-[roadmap](https://roadmap.sh/)
+* [martin fowler - monolith first](https://martinfowler.com/bliki/MonolithFirst.html)
+* [martin fowler - break-monolith-into-microservices](https://martinfowler.com/articles/break-monolith-into-microservices.html)
+* [martin fowler - ](https://martinfowler.com/articles/201701-event-driven.html)
+* [Architecture patterns - ](https://www.youtube.com/watch?v=lTkL1oIMiaU)
+* [martin fowler - ](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://sd.blackball.lv/library/)
+* [DOMAIN-DRIVEN DESIGN: Tackling Complexity in the Heart of Software](domain-driven_design_-_tackling_complexity_in_the_heart_of_software.pdf)
+* [roadmap](https://roadmap.sh/)
