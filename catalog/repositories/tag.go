@@ -1,9 +1,10 @@
 package repositories
 
 import (
-	"catalog/middleware"
-	"catalog/model"
 	"errors"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/model"
 )
 
 type TagRepository struct {

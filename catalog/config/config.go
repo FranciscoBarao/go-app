@@ -2,9 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
-	"strconv"
 )
 
 type PostgresConfig struct {
@@ -16,8 +14,6 @@ type PostgresConfig struct {
 }
 
 func NewPostgresConfig() (*PostgresConfig, error) {
-	log.Println("fetching env vars for database")
-
 	host, hostPresent := os.LookupEnv("DATABASE_HOST")
 	user, userPresent := os.LookupEnv("POSTGRES_USER")
 	pass, passPresent := os.LookupEnv("POSTGRES_PASSWORD")
@@ -25,7 +21,6 @@ func NewPostgresConfig() (*PostgresConfig, error) {
 	port, portPresent := os.LookupEnv("DATABASE_PORT")
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
-		log.Println("error occurred while fetching env vars")
 		return nil, fmt.Errorf("failed to fetch postgres env vars")
 	}
 
@@ -40,12 +35,4 @@ func NewPostgresConfig() (*PostgresConfig, error) {
 
 func (p *PostgresConfig) String() string {
 	return "host=" + p.Host + " user=" + p.Username + " password=" + p.Password + " dbname=" + p.Database + " port=" + p.Port
-}
-
-func (p *PostgresConfig) GetPort() (int, error) {
-	port, err := strconv.Atoi(p.Port) // string to int
-	if err != nil {
-		return -1, err
-	}
-	return port, nil
 }

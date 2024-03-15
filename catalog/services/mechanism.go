@@ -1,8 +1,8 @@
 package services
 
 import (
-	"catalog/model"
-	"catalog/repositories"
+	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/repositories"
 )
 
 type mechanismRepository interface {

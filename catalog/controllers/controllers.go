@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"catalog/services"
+	"github.com/FranciscoBarao/catalog/services"
 )
 
 // Controllers contains all the controllers

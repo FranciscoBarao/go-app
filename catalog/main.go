@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"context"
 	"net/http"
 	"os"
 
@@ -9,40 +9,41 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"catalog/config"
-	"catalog/controllers"
-	"catalog/database"
-	_ "catalog/docs"
-	"catalog/repositories"
-	"catalog/route"
-	"catalog/services"
+	"github.com/FranciscoBarao/catalog/config"
+	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/database"
+	_ "github.com/FranciscoBarao/catalog/docs"
+	logging "github.com/FranciscoBarao/catalog/middleware/logging"
+	"github.com/FranciscoBarao/catalog/repositories"
+	"github.com/FranciscoBarao/catalog/route"
+	"github.com/FranciscoBarao/catalog/services"
 )
 
 // @title Catalog App Swagger
 // @version 1.0
 // @description This microservice is a catalog for holding the possibly objects that can be used to create offers in the marketplace.
-
 // @contact.name Francisco Barao
 // @contact.email s.franciscobarao@gmail.com
-
 // @BasePath /api/
 func main() {
+	ctx := context.Background()
+	log := logging.FromCtx(ctx)
 	// Fetch DB configs
 	config, err := config.NewPostgresConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("failed to fetch database env variables")
 	}
 	// Connect to Database
 	db, err := database.Connect(config)
 	if err != nil {
-		log.Fatal("error occurred while connecting to database")
+		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 
 	// Fetch Env variables
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
 	port, portPresent := os.LookupEnv("PORT")
 	if !oauthKeyPresent || !portPresent {
-		log.Fatal("error occurred while fetching essential env variables")
+		log.Fatal().Msg("failed to fetch essential env variables")
 	}
 
 	// Initialize Repositories & Services & controllers
@@ -65,8 +66,8 @@ func main() {
 
 	// Starts server
 	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Fatalf("error occured while creating server: %s" + err.Error())
+		log.Fatal().Err(err).Msg("failed to create http server")
 
 	}
-	log.Println("server running on localhost:" + port)
+	log.Debug().Str("port", port).Str("ip", "localhost").Msg("server running")
 }

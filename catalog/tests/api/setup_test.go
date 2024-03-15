@@ -1,17 +1,17 @@
 package tests
 
 import (
-	"log"
+	"context"
 	"testing"
 
-	"catalog/controllers"
-	"catalog/repositories"
-	repositoriesMock "catalog/repositories/mock"
-	"catalog/route"
-	"catalog/services"
-
 	"github.com/go-chi/chi/v5"
-	"go.uber.org/mock/gomock"
+	"github.com/golang/mock/gomock"
+
+	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
+	"github.com/FranciscoBarao/catalog/repositories"
+	"github.com/FranciscoBarao/catalog/route"
+	"github.com/FranciscoBarao/catalog/services"
 )
 
 const oauthKey = "secret-key"
@@ -19,15 +19,16 @@ const oauthKey = "secret-key"
 type Base struct {
 	router      *chi.Mux
 	oauthHeader string
-	dbMock      *repositoriesMock.MockDatabase
+	dbMock      *repositories.MockDatabase
 }
 
 // Prepares test environment
 func NewBase(t *testing.T) *Base {
-	log.Println("Setup Starting")
+	log := logging.FromCtx(context.Background())
+	log.Debug().Msg("setup starting..")
 
 	// Setup database mock
-	mock := repositoriesMock.NewMockDatabase(gomock.NewController(t))
+	mock := repositories.NewMockDatabase(gomock.NewController(t))
 
 	// Fetch Oauth Key
 	//oauthKey, _ := os.LookupEnv("OAUTH_KEY")
@@ -44,7 +45,7 @@ func NewBase(t *testing.T) *Base {
 	route.AddCategoryRouter(router, oauthKey, controllers.CategoryController)
 	route.AddMechanismRouter(router, oauthKey, controllers.MechanismController)
 
-	log.Println("Setup Complete")
+	log.Debug().Msg("setup complete")
 	return &Base{
 		router:      router,
 		oauthHeader: oauthKey,

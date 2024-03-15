@@ -3,12 +3,12 @@ package controllers
 import (
 	"net/http"
 
-	"catalog/middleware"
-	"catalog/model"
-	"catalog/services"
-	"catalog/utils"
-
 	"github.com/unrolled/render"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/services"
+	"github.com/FranciscoBarao/catalog/utils"
 )
 
 type categoryService interface {

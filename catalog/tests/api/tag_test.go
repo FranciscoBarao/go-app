@@ -1,14 +1,15 @@
 package tests
 
 import (
-	"catalog/middleware"
-	"catalog/model"
 	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/model"
 )
 
 type TagSuite struct {

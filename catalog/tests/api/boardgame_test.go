@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"testing"
 
-	"catalog/middleware"
-	"catalog/model"
-
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/model"
 )
 
 type BoardGameSuite struct {
@@ -24,7 +24,7 @@ func (suite *BoardGameSuite) SetupSuite() {
 
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 	omits := []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-	bg := model.NewBoardgame("test", "test", 1, nil, nil, nil)
+	bg := model.NewBoardgame("test", "test", 1)
 
 	suite.base.dbMock.EXPECT().
 		Create(bg, omits).
@@ -56,7 +56,7 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 
 	// Boardgame expansion creation Mock
 	omits := []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-	expansion := model.NewBoardgame("expansion", "expansion", 1, nil, nil, nil)
+	expansion := model.NewBoardgame("expansion", "expansion", 1)
 	expansion.SetBoardgameID(&parentID)
 	suite.base.dbMock.EXPECT().
 		Create(expansion, omits).

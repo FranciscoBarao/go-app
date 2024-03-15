@@ -1,14 +1,16 @@
 package utils
 
 import (
-	"catalog/middleware"
-	"log"
+	"context"
 	"net/http"
 	"regexp"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/oauth"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 func StringInSlice(value string, list []string) bool {
@@ -27,8 +29,8 @@ func IsAlphanumeric(word string) bool {
 
 func ValidateStruct(value interface{}) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
-		log.Println("Error - Model validation failed: " + err.Error())
-		return middleware.NewError(http.StatusForbidden, "Error occurred, model validation failed")
+		logging.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
+		return middleware.NewError(http.StatusForbidden, "Error - Model validation failed")
 	}
 	return nil
 }

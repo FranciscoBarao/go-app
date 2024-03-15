@@ -1,11 +1,12 @@
 package tests
 
 import (
-	"catalog/config"
-	"catalog/database"
-	"catalog/model"
 	"fmt"
 	"testing"
+
+	"github.com/FranciscoBarao/catalog/config"
+	"github.com/FranciscoBarao/catalog/database"
+	"github.com/FranciscoBarao/catalog/model"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -39,7 +40,7 @@ func (suite *PostgresSuite) TearDownSuite() {
 }
 
 func (suite *PostgresSuite) TestGetBoardgame() {
-	insertBg := model.NewBoardgame("name", "publsiher", 1, []model.Tag{}, []model.Category{}, []model.Mechanism{})
+	insertBg := model.NewBoardgame("name", "publsiher", 1)
 
 	var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
 

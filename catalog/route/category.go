@@ -1,10 +1,10 @@
 package route
 
 import (
-	"catalog/controllers"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/oauth"
+
+	"github.com/FranciscoBarao/catalog/controllers"
 )
 
 func AddCategoryRouter(router chi.Router, oauthKey string, categoryController *controllers.CategoryController) {

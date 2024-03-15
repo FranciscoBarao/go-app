@@ -1,14 +1,14 @@
-module catalog
+module github.com/FranciscoBarao/catalog
 
 go 1.21
 
 require (
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/oauth v0.0.0-20210913085627-d937e221b3ef
+	github.com/golang/mock v1.6.0
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/swag v1.8.2
 	github.com/unrolled/render v1.4.1
-	go.uber.org/mock v0.4.0
 	gorm.io/driver/postgres v1.3.5
 	gorm.io/gorm v1.23.5
 )
@@ -25,9 +25,11 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/lib/pq v1.10.4 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
+	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.1.0 // indirect
 	golang.org/x/tools v0.2.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
@@ -46,13 +48,14 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.11.0 // indirect
-	github.com/jackc/pgx/v4 v4.16.0
+	github.com/jackc/pgx/v4 v4.16.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.4 // indirect
+	github.com/rs/zerolog v1.32.0
 	github.com/steinfletcher/apitest v1.5.11
 	github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2 // indirect
 	github.com/swaggo/http-swagger v1.2.8
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
-	golang.org/x/sys v0.1.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 )

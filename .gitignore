@@ -14,6 +14,9 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+# ignore mock files
+*_mock.go
+
 TODO.md
 docs/
 /.kanbn

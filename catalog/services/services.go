@@ -1,6 +1,6 @@
 package services
 
-import "catalog/repositories"
+import "github.com/FranciscoBarao/catalog/repositories"
 
 // Repositories contains all the repo structs
 type Services struct {

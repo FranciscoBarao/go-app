@@ -1,13 +1,14 @@
 package tests
 
 import (
-	"catalog/model"
-	"catalog/utils"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+
+	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/utils"
 )
 
 type UtilSuite struct {

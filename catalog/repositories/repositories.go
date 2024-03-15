@@ -1,6 +1,6 @@
 package repositories
 
-//go:generate mockgen -package mock -destination=mock/repositories.go . Database
+//go:generate mockgen --build_flags=--mod=mod -package repositories -destination=database_mock.go . Database
 
 type Database interface {
 	Create(value interface{}, omits ...string) error
@@ -10,8 +10,6 @@ type Database interface {
 
 	AppendAssociatons(model interface{}, association string, values interface{}) error
 	ReplaceAssociatons(model interface{}, association string, values interface{}) error
-	//ReadAssociatons(model interface{}, association string, store interface{}) error
-	//DeleteAssociatons(model interface{}, association string) error
 }
 
 // Repositories contains all the repo structs

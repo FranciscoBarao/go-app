@@ -18,30 +18,30 @@ type Boardgame struct {
 }
 
 // Constructors
-func NewBoardgame(name, publisher string, playerNumber int, tags []Tag, categories []Category, mechanisms []Mechanism) *Boardgame {
+func NewBoardgame(name, publisher string, playerNumber int) *Boardgame {
 	return &Boardgame{
 		Name:         name,
 		Publisher:    publisher,
 		PlayerNumber: playerNumber,
-		Tags:         tags,
-		Categories:   categories,
-		Mechanisms:   mechanisms,
+		Tags:         []Tag{},
+		Categories:   []Category{},
+		Mechanisms:   []Mechanism{},
 	}
 }
 
-func NewExpansion(name, publisher string, playerNumber int, tags []Tag, categories []Category, boardgameId *uint) Boardgame {
+func NewExpansion(name, publisher string, playerNumber int, boardgameId *uint) Boardgame {
 	return Boardgame{
 		Name:         name,
 		Publisher:    publisher,
 		PlayerNumber: playerNumber,
-		Tags:         tags,
-		Categories:   categories,
+		Tags:         []Tag{},
+		Categories:   []Category{},
 		BoardgameID:  boardgameId,
 	}
 }
 
 // Update
-func (bg *Boardgame) UpdateBoardgame(boardgame Boardgame) {
+func (bg *Boardgame) UpdateBoardgame(boardgame *Boardgame) {
 	bg.Name = boardgame.GetName()
 
 	bg.Publisher = boardgame.GetPublisher()
@@ -54,19 +54,19 @@ func (bg *Boardgame) UpdateBoardgame(boardgame Boardgame) {
 }
 
 // Existence functions
-func (bg Boardgame) IsTags() bool {
+func (bg Boardgame) HasTags() bool {
 	return len(bg.Tags) > 0
 }
 
-func (bg Boardgame) IsCategories() bool {
+func (bg Boardgame) HasCategories() bool {
 	return len(bg.Categories) > 0
 }
 
-func (bg Boardgame) IsMechanisms() bool {
+func (bg Boardgame) HasMechanisms() bool {
 	return len(bg.Mechanisms) > 0
 }
 
-func (bg Boardgame) IsExpansions() bool {
+func (bg Boardgame) HasExpansions() bool {
 	return len(bg.Expansions) > 0
 }
 

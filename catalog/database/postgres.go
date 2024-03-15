@@ -1,19 +1,19 @@
 package database
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"reflect"
-
-	"catalog/config"
-	"catalog/middleware"
-	"catalog/model"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+
+	"github.com/FranciscoBarao/catalog/config"
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
+	"github.com/FranciscoBarao/catalog/model"
 )
 
 type Postgres struct {
@@ -21,33 +21,44 @@ type Postgres struct {
 }
 
 func Connect(config *config.PostgresConfig) (*Postgres, error) {
+	log := logging.FromCtx(context.Background())
+
 	db, err := gorm.Open(postgres.Open(config.String()), &gorm.Config{})
 	if err != nil {
-		log.Println("error connecting to database: " + err.Error())
+		log.Error().Err(err).Msg("failed to connect to database")
 		return nil, err
 	}
 
-	log.Println("connected to the database")
+	log.Debug().Msg("connected to database")
 
-	migrate(db, &model.Boardgame{})
-	migrate(db, &model.Tag{})
-	migrate(db, &model.Category{})
-	migrate(db, &model.Mechanism{})
-	migrate(db, &model.Rating{})
+	if err = migrate(db, &model.Boardgame{}); err != nil {
+		return nil, err
+	}
+	if err = migrate(db, &model.Tag{}); err != nil {
+		return nil, err
+	}
+	if err = migrate(db, &model.Category{}); err != nil {
+		return nil, err
+	}
+	if err = migrate(db, &model.Mechanism{}); err != nil {
+		return nil, err
+	}
+	if err = migrate(db, &model.Rating{}); err != nil {
+		return nil, err
+	}
 
-	log.Println("database migration completed")
+	log.Debug().Msg("database migration completed")
 
 	return &Postgres{db}, nil
 }
 
 func migrate(db *gorm.DB, model interface{}) error {
-	if err := db.AutoMigrate(model); err != nil {
-		log.Println("Error migrating database: " + fmt.Sprintf("%v", model))
-		return err
+	log := logging.FromCtx(context.Background())
+	err := db.AutoMigrate(model)
+	if err != nil {
+		log.Error().Err(err).Interface("model", model).Msg("failed to migrate model")
 	}
-
-	log.Println("Migrated " + fmt.Sprintf("%v", model))
-	return nil
+	return err
 }
 
 func isSliceOrArray(value interface{}) bool {
@@ -55,124 +66,129 @@ func isSliceOrArray(value interface{}) bool {
 }
 
 func (instance *Postgres) Create(value interface{}, omits ...string) error {
-	result := instance.db.Omit(omits...).Create(value)
-	if result.Error != nil {
-		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", value))
-		if errors.Is(result.Error, gorm.ErrRegistered) {
+	log := logging.FromCtx(context.Background())
+
+	err := instance.db.Omit(omits...).Create(value).Error
+	if err != nil {
+		log.Error().Err(err).Interface("value", value).Msg("failed to create database entry")
+		if errors.Is(err, gorm.ErrRegistered) {
 			return middleware.NewError(http.StatusConflict, "Entry already registered")
 		}
-		return result.Error
+		return err
 	}
 
-	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
+	log.Debug().Interface("value", value).Msg("created database entry")
 	return nil
 }
 
 func (instance *Postgres) Read(value interface{}, sort, search, identifier string) error {
+	log := logging.FromCtx(context.Background())
 
-	var result *gorm.DB
+	var err error
 	if isSliceOrArray(value) {
 		if search == "" {
-			result = instance.db.Preload(clause.Associations).Order(sort).Find(value) // Find all with sort and NO filters
+			err = instance.db.Preload(clause.Associations).Order(sort).Find(value).Error // Find all with sort and NO filters
 		} else {
-			result = instance.db.Preload(clause.Associations).Order(sort).Find(value, search, identifier) // Find all with filters and sort
+			err = instance.db.Preload(clause.Associations).Order(sort).Find(value, search, identifier).Error // Find all with filters and sort
 		}
 	} else {
-		result = instance.db.Preload(clause.Associations).First(value, search, identifier) // Find 1 Specific
+		err = instance.db.Preload(clause.Associations).First(value, search, identifier).Error // Find 1 Specific
 	}
 
-	if result.Error != nil {
-		log.Println("Error while reading a database entry: " + search + " " + identifier)
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Println("Error Record not found: " + search + " " + identifier)
+	if err != nil {
+		log.Error().Err(err).Str("search", search).Str("identifier", identifier).Msg("failed to read database entry")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return middleware.NewError(http.StatusNotFound, "Record not found")
 		}
-		return result.Error
+		return err
 	}
 
-	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
+	log.Debug().Interface("value", value).Msg("fetched database entry")
 	return nil
 }
 
 func (instance *Postgres) Update(value interface{}, omits ...string) error {
-	result := instance.db.Omit(omits...).Save(value)
-	if result.Error != nil {
-		log.Println("Error while updating a database entry: " + fmt.Sprintf("%v", value))
-		return result.Error
+	log := logging.FromCtx(context.Background())
+
+	err := instance.db.Omit(omits...).Save(value).Error
+	if err != nil {
+		log.Error().Err(err).Interface("value", value).Msg("failed to update database entry")
+		return err
 	}
 
-	log.Println("Updated database entry: " + fmt.Sprintf("%v", value))
+	log.Debug().Interface("value", value).Msg("updated database entry")
 	return nil
 }
 
 func (instance *Postgres) Delete(value interface{}) error {
+	log := logging.FromCtx(context.Background())
 
 	// Delete BG and all its associations (E.g Tags associations)
-	result := instance.db.Select(clause.Associations).Delete(value)
-	if result.Error != nil {
-		log.Println("Error while deleting a database entry: " + fmt.Sprintf("%v", value))
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	err := instance.db.Select(clause.Associations).Delete(value).Error
+	if err != nil {
+		log.Error().Err(err).Interface("value", value).Msg("failed to delete database entry")
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return middleware.NewError(http.StatusNotFound, "Record Not found")
 		}
-		return result.Error
+		return err
 	}
-
-	log.Println("Deleted database entry: " + fmt.Sprintf("%v", value))
+	log.Debug().Interface("value", value).Msg("deleted database entry")
 	return nil
 }
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ASSOCIATIONS        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// The following section presents the associations generic methods. This section is up for debate and will possibly change in the future.
-
-// Method that Adds certain associations to a certain model (E.g Add Tags to a Boardgame)
+// AppendAssociatons adds certain associations to a certain model (E.g Add Tags to a Boardgame)
 func (instance *Postgres) AppendAssociatons(model interface{}, association string, values interface{}) error {
+	log := logging.FromCtx(context.Background())
 
 	err := instance.db.Model(model).Association(association).Append(values)
 	if err != nil {
-		log.Println("Error while appending associations of type: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
-		log.Println(err)
+		log.Error().Err(err).Interface("model", model).Str("association", association).Interface("values", values).Msg("failed to append associations")
 		return err
 	}
 
-	log.Println("Associated: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+	log.Debug().Interface("model", model).Str("association", association).Interface("values", values).Msg("associated")
 	return nil
 }
 
-// Method that Gets associations of a type of a certain model (E.g Get Tags of a Boardgame)
+// ReadAssociatons gets associations of a type of a certain model (E.g Get Tags of a Boardgame)
 func (instance *Postgres) ReadAssociatons(model interface{}, association string, store interface{}) error {
+	log := logging.FromCtx(context.Background())
 
 	err := instance.db.Model(model).Association(association).Find(store)
 	if err != nil {
-		log.Println("Error while Reading associations of type: " + association + " of model: " + fmt.Sprintf("%v", model))
+		log.Error().Err(err).Interface("model", model).Str("association", association).Msg("failed to read associations")
 		return err
 	}
 
-	log.Println("Fetched: " + association + " og model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", store))
+	log.Debug().Interface("model", model).Str("association", association).Interface("store", store).Msg("fetched associations")
 	return nil
 }
 
-// Method that Replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
+// ReplaceAssociatons replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
 func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
+	log := logging.FromCtx(context.Background())
 
 	err := instance.db.Model(model).Association(association).Replace(values)
 	if err != nil {
-		log.Println("Error while replacing associations type: " + association + " from model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+		log.Error().Err(err).Interface("model", model).Str("association", association).Interface("values", values).Msg("failed to replace associations")
 		return err
 	}
 
-	log.Println("Associated: " + association + " to model: " + fmt.Sprintf("%v", model) + " with values: " + fmt.Sprintf("%v", values))
+	log.Debug().Interface("model", model).Str("association", association).Interface("values", values).Msg("replaced association")
 	return nil
 }
 
-// Method that Deletes all values of a certain association of a certain model (E.g Delete all Tags of a Boardgame)
+// MDeleteAssociatons deletes all values of a certain association of a certain model (E.g Delete all Tags of a Boardgame)
 func (instance *Postgres) DeleteAssociatons(model interface{}, association string) error {
+	log := logging.FromCtx(context.Background())
 
 	err := instance.db.Model(model).Association(association).Clear()
 	if err != nil {
-		log.Println("Error while deleting associations type: " + association + " from model: " + fmt.Sprintf("%v", model))
+		log.Error().Err(err).Interface("model", model).Str("association", association).Msg("failed to delete associations")
 		return err
 	}
 
-	log.Println("Deleted Associations: " + association + " to model: " + fmt.Sprintf("%v", model))
+	log.Debug().Interface("model", model).Str("association", association).Msg("deleted associations")
 	return nil
 }

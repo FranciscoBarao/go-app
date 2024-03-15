@@ -1,47 +1,41 @@
 package utils
 
 import (
-	"catalog/middleware"
-	"log"
+	"context"
 	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 // Function that validates if Filter Parameters are Correct
 func validateFilterParameters(model interface{}, filterBy string) error {
-	splits := strings.Split(filterBy, ".")
+	log := logging.FromCtx(context.Background())
 
-	if len(splits) < 2 || len(splits) > 3 { // can be 2 or 3 fields
-		log.Printf("Error - Malformed filterBy query parameter, should be field.value or field.operator.value")
+	var field, operator, value string
+
+	splits := strings.Split(filterBy, ".")
+	switch size := len(splits); {
+	case size == 2:
+		field, value = splits[0], splits[1]
+
+	case size == 3:
+		field, operator, value = splits[0], splits[1], splits[2]
+		if err := validateOperator(operator); err != nil {
+			return err
+		}
+
+	default:
+		log.Error().Str("filter_by", filterBy).Msg("malformed query parameter, should be field.value or field.operator.value")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, should be field.value or field.operator.value")
 	}
 
-	// Get field, operator, value
-	var field, operator, value string
-	field = splits[0]
-
-	if len(splits) == 2 {
-		if splits[0] == "" || splits[1] == "" {
-			log.Printf("Error - Filter malformed, empty parameters")
-			return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
-		}
-		value = splits[1]
-	}
-	if len(splits) == 3 {
-		if splits[0] == "" || splits[1] == "" || splits[2] == "" {
-			log.Printf("Error - Filter malformed, empty parameters")
-			return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
-		}
-
-		operator = splits[1]
-		// Validate Operator
-		err := validateOperator(operator)
-		if err != nil {
-			return err
-		}
-		value = splits[2]
+	if field == "" || value == "" {
+		log.Error().Msg("filter malformed, empty parameters")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed filterBy query parameter, can't be empty")
 	}
 
 	// Validate Field & Value
@@ -50,25 +44,24 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 
 // Function that checks if the field exists in the struct and if the value is of the correct type
 func validateFieldAndValueType(model interface{}, fieldName, value, operator string) error {
+	log := logging.FromCtx(context.Background())
 
 	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
 	for _, field := range fields {
 		if strings.ToLower(field.Name) == fieldName { // If there is a Field with this name
-
 			if operator == "" && field.Type.String() != "string" { // If there are only 2 field params and its not a string -> error -> E.g price.10
-				log.Printf("Error - Filter malformed, %s had to be a String", fieldName)
+				log.Error().Str("field_name", fieldName).Msg("filter malformed, expected string")
 				return middleware.NewError(http.StatusUnprocessableEntity, "Filter Malformed, field not a string")
 			}
 			if operator != "" && field.Type.String() == "string" { // If there are 3 field params and its a string -> error -> E.g name.gt.asd
-				log.Printf("Error - Filter malformed, %s can't be a String", fieldName)
+				log.Error().Str("field_name", fieldName).Msg("filter malformed, expected non string")
 				return middleware.NewError(http.StatusUnprocessableEntity, "Filter Malformed, field can't be a string")
 			}
-
 			return isValidType(field.Type.String(), value) // Field exists and is of the correct type
 		}
 	}
-	log.Printf("Error - No filterable field in struct %v with name %s", model, fieldName)
-	return middleware.NewError(http.StatusUnprocessableEntity, "No filterable field with this name")
+	log.Error().Str("field_name", fieldName).Interface("model", model).Msg("no filterable field in struct")
+	return middleware.NewError(http.StatusUnprocessableEntity, "No filterable field with the provided name")
 }
 
 // Function that receives a value and validates if it is of the provided type.
@@ -91,22 +84,21 @@ func isValidType(typ, value string) error {
 			return nil
 		}
 	}
-	log.Printf("Error - Field convertion faile due to Mistype")
-	return middleware.NewError(http.StatusUnprocessableEntity, "Field not of the correct type")
+	logging.FromCtx(context.Background()).Error().Msg("field convertion faile due to mistype")
+	return middleware.NewError(http.StatusUnprocessableEntity, "Incorrect field type")
 }
 
-// Function that validates the operator in the URL parameter
+// validateOperator validates the operator in the URL parameter
 func validateOperator(operator string) error {
-
 	var allowedOperators = []string{"lt", "le", "gt", "ge", "eq"}
 	if StringInSlice(operator, allowedOperators) {
 		return nil
 	}
-	log.Printf("Error - No such Operator: %s", operator)
+	logging.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
 	return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 }
 
-// Function that gets FilterBody and Value for GetFilters
+// getFilterBodyAndValue gets FilterBody and Value for GetFilters
 func getFilterBodyAndValue(filterBy string) (string, string) {
 	splits := strings.Split(filterBy, ".")
 
@@ -124,7 +116,7 @@ func getFilterBodyAndValue(filterBy string) (string, string) {
 	}
 }
 
-// Converts operator language to string literal (eq -> ==)
+// operatorToString converts operator language to string literal (eq -> ==)
 func operatorToString(operator string) string {
 	switch operator {
 	case "lt":
@@ -146,10 +138,10 @@ func operatorToString(operator string) string {
 // name.a 		---> name LIKE ?    %a%
 // price.le.10  ---> price <= ?     10
 // name.eq.asd  ---> name == ?     asd
-// Main function of Getting the Filters
+// GetFilters gets the filters
 func GetFilters(model interface{}, filterBy string) (string, string, error) {
 	if filterBy != "" {
-		log.Println("Filtering using %s " + filterBy)
+		logging.FromCtx(context.Background()).Debug().Str("filter_by", filterBy).Msg("filtering..")
 		err := validateFilterParameters(model, filterBy) // Validates Filters -> By length, emptiness and type
 		if err != nil {
 			return "", "", err

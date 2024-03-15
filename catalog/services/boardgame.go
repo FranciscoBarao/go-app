@@ -1,11 +1,13 @@
 package services
 
 import (
-	"catalog/middleware"
-	"catalog/model"
-	"catalog/repositories"
-	"log"
+	"context"
 	"net/http"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
+	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/repositories"
 )
 
 type boardgameRepository interface {
@@ -17,7 +19,7 @@ type boardgameRepository interface {
 	Rate(boardgame model.Boardgame, rating *model.Rating) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
+// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic
 type BoardgameService struct {
 	repo         boardgameRepository
 	tagSvc       *TagService
@@ -25,7 +27,7 @@ type BoardgameService struct {
 	mechanismSvc *MechanismService
 }
 
-// InitController initializes the boargame and the associations controller.
+// InitBoardgameService initializes the boardgame and the associations controller
 func InitBoardgameService(boardgameRepo *repositories.BoardgameRepository, tagService *TagService, categoryService *CategoryService, mechanismService *MechanismService) *BoardgameService {
 	return &BoardgameService{
 		repo:         boardgameRepo,
@@ -57,9 +59,9 @@ func (svc *BoardgameService) GetById(id string) (model.Boardgame, error) {
 	return svc.repo.GetById(id)
 }
 
-func (svc *BoardgameService) Update(input model.Boardgame, id string) error {
+func (svc *BoardgameService) Update(input *model.Boardgame, id string) error {
 	// Check if Tags & Categories & Mechanisms exist
-	if err := svc.validateAssociations(&input); err != nil {
+	if err := svc.validateAssociations(input); err != nil {
 		return err
 	}
 
@@ -106,7 +108,7 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardg
 		}
 
 		if boardgameParent.IsExpansion() {
-			log.Println("Error -> An expansion cannot have other expansions")
+			logging.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
 			return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 		}
 
@@ -118,7 +120,7 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardg
 // Function that validates if tags, categories and mechanisms exist when boardgames are created
 func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) error {
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
-	if boardgame.IsTags() {
+	if boardgame.HasTags() {
 		for _, tempTag := range boardgame.GetTags() {
 			if _, err := svc.tagSvc.Get(tempTag.GetName()); err != nil { // Get tag by name
 				return err // That tag does not exist -> Return Error
@@ -126,7 +128,7 @@ func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) er
 		}
 	}
 
-	if boardgame.IsCategories() {
+	if boardgame.HasCategories() {
 		for _, tempCategory := range boardgame.GetCategories() {
 			if _, err := svc.categorySvc.Get(tempCategory.GetName()); err != nil { // Get category by name
 				return err // That category does not exist -> Return Error
@@ -134,7 +136,7 @@ func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) er
 		}
 	}
 
-	if boardgame.IsMechanisms() {
+	if boardgame.HasMechanisms() {
 		for _, tempMechanism := range boardgame.GetMechanisms() {
 			if _, err := svc.mechanismSvc.Get(tempMechanism.GetName()); err != nil { // Get mechanism by name
 				return err // That mechanism does not exist -> Return Error

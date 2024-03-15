@@ -3,30 +3,30 @@ package controllers
 import (
 	"net/http"
 
-	"catalog/middleware"
-	"catalog/model"
-	"catalog/services"
-	"catalog/utils"
-
 	"github.com/unrolled/render"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/services"
+	"github.com/FranciscoBarao/catalog/utils"
 )
 
-// Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling.
+// Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling
 type boardgameService interface {
 	Create(boardgame *model.Boardgame, id string) error
 	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
-	Update(boardgame model.Boardgame, id string) error
+	Update(boardgame *model.Boardgame, id string) error
 	DeleteById(id string) error
 	Rate(rating *model.Rating, id, username string) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic.
+// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic
 type BoardgameController struct {
 	service boardgameService
 }
 
-// InitController initializes the boargame and the associations controller.
+// InitBoardgameController initializes the boardgame and the associations controller
 func InitBoardgameController(boardGameSvc *services.BoardgameService) *BoardgameController {
 	return &BoardgameController{
 		service: boardGameSvc,
@@ -44,14 +44,14 @@ func InitBoardgameController(boardGameSvc *services.BoardgameService) *Boardgame
 // @Router 		/boardgame [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Boardgame input
-	var boardgame model.Boardgame
-	if err := utils.DecodeJSONBody(w, r, &boardgame); err != nil {
+	var boardgame *model.Boardgame
+	if err := utils.DecodeJSONBody(w, r, boardgame); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	if err := utils.ValidateStruct(&boardgame); err != nil {
+	if err := utils.ValidateStruct(boardgame); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -59,7 +59,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 	// Get Id from url - If its an expansion
 	id := utils.GetFieldFromURL(r, "id")
 
-	if err := controller.service.Create(&boardgame, id); err != nil {
+	if err := controller.service.Create(boardgame, id); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -75,7 +75,6 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame [get]
 func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
-
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Boardgame{}, sortBy)
 	if err != nil {
@@ -108,7 +107,6 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame/{id} [get]
 func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Request) {
-
 	id := utils.GetFieldFromURL(r, "id")
 
 	boardgame, err := controller.service.GetById(id)
@@ -129,16 +127,15 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 // @Success 	200 {object} model.Boardgame
 // @Router 		/boardgame/{id} [patch]
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Boardgame input
-	var input model.Boardgame
-	if err := utils.DecodeJSONBody(w, r, &input); err != nil {
+	var input *model.Boardgame
+	if err := utils.DecodeJSONBody(w, r, input); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	if err := utils.ValidateStruct(&input); err != nil {
+	if err := utils.ValidateStruct(input); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -163,7 +160,6 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 // @Success 	204
 // @Router 		/boardgame/{id} [delete]
 func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Request) {
-
 	id := utils.GetFieldFromURL(r, "id")
 
 	// Delete by Id
@@ -184,7 +180,6 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} model.Rating
 // @Router 		/boardgame/{id}/rate [post]
 func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Rating input
 	var rating model.Rating
 	if err := utils.DecodeJSONBody(w, r, &rating); err != nil {
