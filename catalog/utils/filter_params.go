@@ -11,8 +11,27 @@ import (
 	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
-// Function that validates if Filter Parameters are Correct
-func validateFilterParameters(model interface{}, filterBy string) error {
+// Examples of filters that work:
+// name.a 		---> name LIKE ?    %a%
+// price.le.10  ---> price <= ?     10
+// name.eq.asd  ---> name == ?     asd
+// GetFilters gets the filters
+func GetFilters(model interface{}, filterBy string) (string, string, error) {
+	if filterBy == "" {
+		return "", "", nil // No filter -> No error
+	}
+
+	logging.FromCtx(context.Background()).Debug().Str("filter_by", filterBy).Msg("filtering")
+	if err := validateFilter(model, filterBy); err != nil { // Validates Filters
+		return "", "", err
+	}
+
+	filterBody, filterValue := getFilterBodyAndValue(filterBy) // After validating, constructs Body and Value to be used in GetAll
+	return filterBody, filterValue, nil
+}
+
+// validateFilter validates if filter parameters are correct by length, emptiness and type
+func validateFilter(model interface{}, filterBy string) error {
 	log := logging.FromCtx(context.Background())
 
 	var field, operator, value string
@@ -39,11 +58,11 @@ func validateFilterParameters(model interface{}, filterBy string) error {
 	}
 
 	// Validate Field & Value
-	return validateFieldAndValueType(model, field, value, operator)
+	return validateFieldAndValue(model, field, value, operator)
 }
 
-// Function that checks if the field exists in the struct and if the value is of the correct type
-func validateFieldAndValueType(model interface{}, fieldName, value, operator string) error {
+// validateFieldAndValue checks if the field exists in the struct and if the value is of the correct type
+func validateFieldAndValue(model interface{}, fieldName, value, operator string) error {
 	log := logging.FromCtx(context.Background())
 
 	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
@@ -64,11 +83,11 @@ func validateFieldAndValueType(model interface{}, fieldName, value, operator str
 	return middleware.NewError(http.StatusUnprocessableEntity, "No filterable field with the provided name")
 }
 
-// Function that receives a value and validates if it is of the provided type.
+// isValidType receives a value and validates if it reflects the provided type.
 func isValidType(typ, value string) error {
 	switch typ {
 	case "string":
-		if IsAlphanumeric(value) { // If String is alphanumeric
+		if isAlphanumeric(value) { // If String is alphanumeric
 			return nil
 		}
 	case "int":
@@ -91,11 +110,11 @@ func isValidType(typ, value string) error {
 // validateOperator validates the operator in the URL parameter
 func validateOperator(operator string) error {
 	var allowedOperators = []string{"lt", "le", "gt", "ge", "eq"}
-	if StringInSlice(operator, allowedOperators) {
-		return nil
+	if !stringInSlice(operator, allowedOperators) {
+		logging.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 	}
-	logging.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
-	return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
+	return nil
 }
 
 // getFilterBodyAndValue gets FilterBody and Value for GetFilters
@@ -132,23 +151,4 @@ func operatorToString(operator string) string {
 	default:
 		return ""
 	}
-}
-
-// Examples of filters that work:
-// name.a 		---> name LIKE ?    %a%
-// price.le.10  ---> price <= ?     10
-// name.eq.asd  ---> name == ?     asd
-// GetFilters gets the filters
-func GetFilters(model interface{}, filterBy string) (string, string, error) {
-	if filterBy != "" {
-		logging.FromCtx(context.Background()).Debug().Str("filter_by", filterBy).Msg("filtering..")
-		err := validateFilterParameters(model, filterBy) // Validates Filters -> By length, emptiness and type
-		if err != nil {
-			return "", "", err
-		}
-
-		filterBody, filterValue := getFilterBodyAndValue(filterBy) // After validating, constructs Body and Value to be used in GetAll
-		return filterBody, filterValue, nil
-	}
-	return "", "", nil // No filter -> No error
 }

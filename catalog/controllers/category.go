@@ -38,21 +38,20 @@ func InitCategoryController(categorySvc *services.CategoryService) *CategoryCont
 // @Success 	200 {object} model.Category
 // @Router 		/category [post]
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Category input
-	var category model.Category
-	if err := utils.DecodeJSONBody(w, r, &category); err != nil {
+	var category = &model.Category{}
+	if err := utils.DecodeJSONBody(w, r, category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Category input
-	if err := utils.ValidateStruct(&category); err != nil {
+	if err := utils.ValidateStruct(category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(&category); err != nil {
+	if err := controller.service.Create(category); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -68,7 +67,6 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 // @Success 	200 {object} model.Category
 // @Router 		/category [get]
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
-
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Category{}, sortBy)
 	if err != nil {
@@ -93,9 +91,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 // @Success 	200 {object} model.Category
 // @Router 		/category/{name} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
-
 	category, err := controller.service.Get(name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
@@ -113,7 +109,6 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 // @Success 	204
 // @Router 		/category/{name} [delete]
 func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id

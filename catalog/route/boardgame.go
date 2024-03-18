@@ -2,7 +2,6 @@ package route
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/oauth"
 
 	"github.com/FranciscoBarao/catalog/controllers"
 )
@@ -11,7 +10,7 @@ func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *
 	// Protected layer
 	router.Group(func(router chi.Router) {
 		// Use the Bearer Authentication middleware
-		router.Use(oauth.Authorize(oauthKey, nil))
+		//router.Use(oauth.Authorize(oauthKey, nil))
 
 		router.Post("/api/boardgame", boardGameControler.Create)
 		router.Patch("/api/boardgame/{id}", boardGameControler.Update)

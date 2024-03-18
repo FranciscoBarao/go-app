@@ -65,10 +65,10 @@ func isSliceOrArray(value interface{}) bool {
 	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
 }
 
-func (instance *Postgres) Create(value interface{}, omits ...string) error {
+func (instance *Postgres) Create(value interface{}) error {
 	log := logging.FromCtx(context.Background())
 
-	err := instance.db.Omit(omits...).Create(value).Error
+	err := instance.db.Omit(clause.Associations).Create(value).Error
 	if err != nil {
 		log.Error().Err(err).Interface("value", value).Msg("failed to create database entry")
 		if errors.Is(err, gorm.ErrRegistered) {
@@ -107,10 +107,10 @@ func (instance *Postgres) Read(value interface{}, sort, search, identifier strin
 	return nil
 }
 
-func (instance *Postgres) Update(value interface{}, omits ...string) error {
+func (instance *Postgres) Update(value interface{}) error {
 	log := logging.FromCtx(context.Background())
 
-	err := instance.db.Omit(omits...).Save(value).Error
+	err := instance.db.Omit(clause.Associations).Save(value).Error
 	if err != nil {
 		log.Error().Err(err).Interface("value", value).Msg("failed to update database entry")
 		return err
@@ -137,34 +137,6 @@ func (instance *Postgres) Delete(value interface{}) error {
 }
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ASSOCIATIONS        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// AppendAssociatons adds certain associations to a certain model (E.g Add Tags to a Boardgame)
-func (instance *Postgres) AppendAssociatons(model interface{}, association string, values interface{}) error {
-	log := logging.FromCtx(context.Background())
-
-	err := instance.db.Model(model).Association(association).Append(values)
-	if err != nil {
-		log.Error().Err(err).Interface("model", model).Str("association", association).Interface("values", values).Msg("failed to append associations")
-		return err
-	}
-
-	log.Debug().Interface("model", model).Str("association", association).Interface("values", values).Msg("associated")
-	return nil
-}
-
-// ReadAssociatons gets associations of a type of a certain model (E.g Get Tags of a Boardgame)
-func (instance *Postgres) ReadAssociatons(model interface{}, association string, store interface{}) error {
-	log := logging.FromCtx(context.Background())
-
-	err := instance.db.Model(model).Association(association).Find(store)
-	if err != nil {
-		log.Error().Err(err).Interface("model", model).Str("association", association).Msg("failed to read associations")
-		return err
-	}
-
-	log.Debug().Interface("model", model).Str("association", association).Interface("store", store).Msg("fetched associations")
-	return nil
-}
-
 // ReplaceAssociatons replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
 func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
 	log := logging.FromCtx(context.Background())
@@ -176,19 +148,5 @@ func (instance *Postgres) ReplaceAssociatons(model interface{}, association stri
 	}
 
 	log.Debug().Interface("model", model).Str("association", association).Interface("values", values).Msg("replaced association")
-	return nil
-}
-
-// MDeleteAssociatons deletes all values of a certain association of a certain model (E.g Delete all Tags of a Boardgame)
-func (instance *Postgres) DeleteAssociatons(model interface{}, association string) error {
-	log := logging.FromCtx(context.Background())
-
-	err := instance.db.Model(model).Association(association).Clear()
-	if err != nil {
-		log.Error().Err(err).Interface("model", model).Str("association", association).Msg("failed to delete associations")
-		return err
-	}
-
-	log.Debug().Interface("model", model).Str("association", association).Msg("deleted associations")
 	return nil
 }

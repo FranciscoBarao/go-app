@@ -20,6 +20,8 @@ down: ## Brings Docker containers down. Requires services. E.g: make down x y
 	docker compose rm -s -v $(filter-out $@,$(MAKECMDGOALS))
 
 
+
+# ---------- Swagger ----------
 swag: ## Creates Swagger files. Requires service. E.g: make swag svc=x
 ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES))) 	
 	if ! docker image inspect swagger-go >/dev/null 2>&1; then \
@@ -35,26 +37,6 @@ swag-all: ## Creates Swagger files for all services
 	$(MAKE) swag svc=catalog
 	$(MAKE) swag svc=marketplace
 	$(MAKE) swag svc=rating-service
-
-
-
-# ---------- Shorcuts ----------
-restart-full: ## Restarts one service while linting and updating swagger (down->lint->swagger->up). Requires service. E.g: make restart svc=x
-ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
-	$(MAKE) down $(svc)
-	$(MAKE) lint-go svc=$(svc)
-	$(MAKE) swag svc=$(svc)
-	$(MAKE) up $(svc)
-else
-	@echo "No service directory such as: $(svc)"
-endif
-
-
-restart: ## Restarts services (down->up). Optional services. E.g make restart-all x y
-	$(MAKE) down $(filter-out $@,$(MAKECMDGOALS))
-	$(MAKE) up $(filter-out $@,$(MAKECMDGOALS))
-
-
 
 
 ## ---------- Linting ----------
@@ -73,6 +55,24 @@ ifeq ($(EXPORT_RESULT), true)
 	$(eval OUTPUT_OPTIONS = | tee /dev/tty | yamllint-checkstyle > yamllint-checkstyle.xml)
 endif
 	docker run --rm -it -v "$(shell pwd):/data" cytopia/yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml') $(OUTPUT_OPTIONS)
+
+
+
+# ---------- Shorcuts ----------
+restart-full: ## Restarts one service while linting and updating swagger (down->lint->swagger->up). Requires service. E.g: make restart svc=x
+ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
+	$(MAKE) down $(svc)
+	$(MAKE) lint-go svc=$(svc)
+	$(MAKE) swag svc=$(svc)
+	$(MAKE) up $(svc)
+else
+	@echo "No service directory such as: $(svc)"
+endif
+
+
+restart: ## Restarts services (down->up). Optional services. E.g make restart x y
+	$(MAKE) down $(filter-out $@,$(MAKECMDGOALS))
+	$(MAKE) up $(filter-out $@,$(MAKECMDGOALS))
 
 
 help: ## Show Help Menu

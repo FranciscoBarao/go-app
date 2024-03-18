@@ -30,12 +30,13 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields() // Dont allow any extra unexpected fields in the JSON
 
-	err := decoder.Decode(&dst)
+	err := decoder.Decode(dst)
 	if err == nil {
 		if err = decoder.Decode(&struct{}{}); err != io.EOF { // Don't allow several JSON objects
 			log.Error().Err(err).Msg("request body must only contain a single json object")
 			return middleware.NewError(http.StatusBadRequest, "Request body must only contain a single JSON object")
 		}
+		return nil // Success exit
 	}
 
 	var syntaxError *json.SyntaxError

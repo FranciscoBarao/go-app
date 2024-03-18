@@ -39,18 +39,34 @@ func (suite *PostgresSuite) TearDownSuite() {
 	suite.db.Shutdown()
 }
 
-func (suite *PostgresSuite) TestGetBoardgame() {
-	insertBg := model.NewBoardgame("name", "publsiher", 1)
-
-	var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-
-	err := suite.postgres.Create(insertBg, omits...)
+func (suite *PostgresSuite) InsertEntry(model interface{}) {
+	err := suite.postgres.Create(model)
 	suite.Require().NoError(err)
+}
+
+func (suite *PostgresSuite) TestGetBoardgames() {
+	insertBg := &model.Boardgame{Name: "name-01", Publisher: "publisher", PlayerNumber: 1}
+	suite.InsertEntry(insertBg)
+
+	insertBg = &model.Boardgame{Name: "name-02", Publisher: "publisher", PlayerNumber: 2}
+	suite.InsertEntry(insertBg)
 
 	var readBg []model.Boardgame
-	err = suite.postgres.Read(&readBg, "", "", "")
+	err := suite.postgres.Read(&readBg, "", "", "")
 	suite.Assert().NoError(err)
-	suite.Assert().Len(readBg, 1)
+	suite.Assert().Len(readBg, 2)
+}
+
+func (suite *PostgresSuite) TestDeleteBoardgame() {
+	name := "deleteName"
+	insertBg := &model.Boardgame{Name: name, Publisher: "publisher", PlayerNumber: 1}
+	suite.InsertEntry(insertBg)
+
+	var readBg *model.Boardgame
+	err := suite.postgres.Read(&readBg, "", "name = ?", name)
+	suite.Assert().NoError(err)
+
+	suite.postgres.Delete(readBg)
 }
 
 func TestPostgresSuite(t *testing.T) {

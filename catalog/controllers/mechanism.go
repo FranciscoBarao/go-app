@@ -38,21 +38,20 @@ func InitMechanismController(mechanismSvc *services.MechanismService) *Mechanism
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [post]
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Mechanism input
-	var mechanism model.Mechanism
-	if err := utils.DecodeJSONBody(w, r, &mechanism); err != nil {
+	var mechanism = &model.Mechanism{}
+	if err := utils.DecodeJSONBody(w, r, mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Mechanism input
-	if err := utils.ValidateStruct(&mechanism); err != nil {
+	if err := utils.ValidateStruct(mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(&mechanism); err != nil {
+	if err := controller.service.Create(mechanism); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -68,7 +67,6 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
-
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Mechanism{}, sortBy)
 	if err != nil {
@@ -93,7 +91,6 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} model.Mechanism
 // @Router 		/mechanism/{name} [get]
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
 
 	mechanism, err := controller.service.Get(name)
@@ -114,7 +111,6 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 // @Success 	204
 // @Router 		/mechanism/{name} [delete]
 func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id

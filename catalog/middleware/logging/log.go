@@ -2,13 +2,13 @@ package logging
 
 import (
 	"context"
+	"os"
 
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 )
 
 func init() {
-	l := log.With().Logger()
+	l := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
 	zerolog.DefaultContextLogger = &l
 }
 

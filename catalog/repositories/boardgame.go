@@ -17,10 +17,8 @@ func NewBoardgameRepository(instance Database) *BoardgameRepository {
 	}
 }
 
-var omits = []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-
 func (repo *BoardgameRepository) Create(boardgame *model.Boardgame) error {
-	return repo.db.Create(boardgame, omits...)
+	return repo.db.Create(boardgame)
 }
 
 func (repo *BoardgameRepository) GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error) {
@@ -40,22 +38,16 @@ func (repo *BoardgameRepository) GetById(id string) (model.Boardgame, error) {
 	return bg, err
 }
 
-func (repo *BoardgameRepository) Update(boardgame model.Boardgame) error {
-	if err := repo.db.Update(&boardgame, omits...); err != nil {
+func (repo *BoardgameRepository) Update(boardgame *model.Boardgame) error {
+	if err := repo.db.Update(boardgame); err != nil {
 		return err
 	}
 
 	// Replace associations -> Easy fix? I dont like this approach -> Not modular
 	tags := boardgame.GetTags()
-	return repo.db.ReplaceAssociatons(&boardgame, "Tags", &tags)
+	return repo.db.ReplaceAssociatons(boardgame, "Tags", &tags)
 }
 
-func (repo *BoardgameRepository) DeleteById(boardgame model.Boardgame) error {
-	return repo.db.Delete(&boardgame)
-}
-
-func (repo *BoardgameRepository) Rate(boardgame model.Boardgame, rating *model.Rating) error {
-	repo.db.Create(rating)
-
-	return repo.db.AppendAssociatons(&boardgame, "Ratings", rating)
+func (repo *BoardgameRepository) DeleteById(boardgame *model.Boardgame) error {
+	return repo.db.Delete(boardgame)
 }

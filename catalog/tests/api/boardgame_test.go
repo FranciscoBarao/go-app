@@ -23,11 +23,9 @@ func (suite *BoardGameSuite) SetupSuite() {
 }
 
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
-	omits := []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-	bg := model.NewBoardgame("test", "test", 1)
-
+	bg := &model.Boardgame{Name: "test", Publisher: "test", PlayerNumber: 1}
 	suite.base.dbMock.EXPECT().
-		Create(bg, omits).
+		Create(bg).
 		Return(nil)
 
 	bgJson, err := json.Marshal(bg)
@@ -55,11 +53,10 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 		Return(nil)
 
 	// Boardgame expansion creation Mock
-	omits := []string{"Tags.*", "Categories.*", "Mechanisms.*", "Ratings.*"}
-	expansion := model.NewBoardgame("expansion", "expansion", 1)
+	expansion := &model.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
 	expansion.SetBoardgameID(&parentID)
 	suite.base.dbMock.EXPECT().
-		Create(expansion, omits).
+		Create(expansion).
 		Return(nil)
 	expansionJson, err := json.Marshal(expansion)
 	suite.Require().NoError(err)

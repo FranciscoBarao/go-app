@@ -38,21 +38,20 @@ func InitTagController(tagSvc *services.TagService) *TagController {
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [post]
 func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) {
-
 	// Deserialize Tag input
-	var tag model.Tag
-	if err := utils.DecodeJSONBody(w, r, &tag); err != nil {
+	var tag = &model.Tag{}
+	if err := utils.DecodeJSONBody(w, r, tag); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Tag input
-	if err := utils.ValidateStruct(&tag); err != nil {
+	if err := utils.ValidateStruct(tag); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(&tag); err != nil {
+	if err := controller.service.Create(tag); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -68,7 +67,6 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 // @Success 	200 {object} model.Tag
 // @Router 		/tag [get]
 func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
-
 	sortBy := r.URL.Query().Get("sortBy")
 	sort, err := utils.GetSort(model.Tag{}, sortBy)
 	if err != nil {
@@ -93,7 +91,6 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 // @Success 	200 {object} model.Tag
 // @Router 		/tag/{name} [get]
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
 	tag, err := controller.service.Get(name)
 	if err != nil {
@@ -113,7 +110,6 @@ func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 // @Success 	204
 // @Router 		/tag/{name} [delete]
 func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) {
-
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id

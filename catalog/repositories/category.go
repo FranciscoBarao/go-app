@@ -22,13 +22,11 @@ func (repo *CategoryRepository) Create(category *model.Category) error {
 }
 
 func (repo *CategoryRepository) GetAll(sort string) ([]model.Category, error) {
-
 	var categories []model.Category
 	return categories, repo.db.Read(&categories, sort, "", "")
 }
 
 func (repo *CategoryRepository) Get(name string) (model.Category, error) {
-
 	var category model.Category
 	err := repo.db.Read(&category, "", "name = ?", name)
 
@@ -41,6 +39,5 @@ func (repo *CategoryRepository) Get(name string) (model.Category, error) {
 }
 
 func (repo *CategoryRepository) Delete(category *model.Category) error {
-
 	return repo.db.Delete(category)
 }

@@ -17,29 +17,6 @@ type Boardgame struct {
 	BoardgameID  *uint       `swaggerignore:"true" json:"boardgame_id,omitempty"`
 }
 
-// Constructors
-func NewBoardgame(name, publisher string, playerNumber int) *Boardgame {
-	return &Boardgame{
-		Name:         name,
-		Publisher:    publisher,
-		PlayerNumber: playerNumber,
-		Tags:         []Tag{},
-		Categories:   []Category{},
-		Mechanisms:   []Mechanism{},
-	}
-}
-
-func NewExpansion(name, publisher string, playerNumber int, boardgameId *uint) Boardgame {
-	return Boardgame{
-		Name:         name,
-		Publisher:    publisher,
-		PlayerNumber: playerNumber,
-		Tags:         []Tag{},
-		Categories:   []Category{},
-		BoardgameID:  boardgameId,
-	}
-}
-
 // Update
 func (bg *Boardgame) UpdateBoardgame(boardgame *Boardgame) {
 	bg.Name = boardgame.GetName()

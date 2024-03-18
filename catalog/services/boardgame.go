@@ -14,9 +14,8 @@ type boardgameRepository interface {
 	Create(boardgame *model.Boardgame) error
 	GetAll(sort, filterBody, filterValue string) ([]model.Boardgame, error)
 	GetById(id string) (model.Boardgame, error)
-	Update(boardgame model.Boardgame) error
-	DeleteById(boardgame model.Boardgame) error
-	Rate(boardgame model.Boardgame, rating *model.Rating) error
+	Update(boardgame *model.Boardgame) error
+	DeleteById(boardgame *model.Boardgame) error
 }
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic
@@ -74,7 +73,7 @@ func (svc *BoardgameService) Update(input *model.Boardgame, id string) error {
 	// Updates Boardgame
 	boardgame.UpdateBoardgame(input)
 
-	return svc.repo.Update(boardgame)
+	return svc.repo.Update(&boardgame)
 }
 
 func (svc *BoardgameService) DeleteById(id string) error {
@@ -84,40 +83,44 @@ func (svc *BoardgameService) DeleteById(id string) error {
 		return err
 	}
 
-	return svc.repo.DeleteById(boardgame)
+	return svc.repo.DeleteById(&boardgame)
 }
 
 func (svc *BoardgameService) Rate(rating *model.Rating, id, username string) error {
 	// Check if boardgame exists
-	bg, err := svc.repo.GetById(id)
+	_, err := svc.repo.GetById(id)
 	if err != nil {
 		return err
 	}
 
 	rating.SetUsername(username)
 
-	return svc.repo.Rate(bg, rating)
-}
+	// TODO - Redirect rating to another service
 
-// Function that checks if we are dealing with expansions and creates connection to boardgame parent
-func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardgame, id string) error {
-	if id != "" { // This is an expansion
-		boardgameParent, err := svc.repo.GetById(id) // Get Parent BG
-		if err != nil {
-			return err
-		}
-
-		if boardgameParent.IsExpansion() {
-			logging.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
-			return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
-		}
-
-		boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
-	}
 	return nil
 }
 
-// Function that validates if tags, categories and mechanisms exist when boardgames are created
+// connectBoardgameToExpansion checks if we are dealing with expansions and creates connection to boardgame parent
+func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *model.Boardgame, id string) error {
+	if id == "" { // This is an expansion
+		return nil
+	}
+
+	boardgameParent, err := svc.repo.GetById(id) // Get Parent BG
+	if err != nil {
+		return err
+	}
+
+	if boardgameParent.IsExpansion() {
+		logging.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
+		return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
+	}
+
+	boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
+	return nil
+}
+
+// validateAssociations validates if tags, categories and mechanisms exist when boardgames are created
 func (svc *BoardgameService) validateAssociations(boardgame *model.Boardgame) error {
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.HasTags() {

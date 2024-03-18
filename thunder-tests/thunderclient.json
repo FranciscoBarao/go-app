@@ -8,7 +8,7 @@
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-08T14:51:37.906Z",
+    "modified": "2024-03-18T17:21:35.236Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -19,10 +19,16 @@
         "value": "Bearer {{token}}"
       }
     ],
-    "params": [],
+    "params": [
+      {
+        "name": "port",
+        "value": "",
+        "isPath": true
+      }
+    ],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\": \"ASD11\",\n  \"Publisher\": \"pub\",\n  \"PlayerNumber\": 3,\n  \"Tags\": [\n    ],\n  \"Categories\": [\n    ],\n  \"Mechanisms\": [\n    ]\n}",
+      "raw": "{\n  \"Name\": \"B\",\n  \"Publisher\": \"pub\",\n  \"PlayerNumber\": 3,\n  \"Tags\":[\n    ]\n}",
       "form": []
     },
     "tests": []
@@ -32,11 +38,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Patch",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "localhost:8081/api/boardgame/{id}",
     "method": "PATCH",
     "sortNum": 40000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:30:56.674Z",
+    "modified": "2024-03-18T16:40:13.629Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -50,13 +56,13 @@
     "params": [
       {
         "name": "id",
-        "value": "29",
+        "value": "1",
         "isPath": true
       }
     ],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\": \"a\",\n  \"Publisher\": \"a\",\n  \"Price\": 10.0,\n  \"PlayerNumber\": 1,\n  \"Tags\": [\n    {\n      \"Name\": \"B\"\n    }\n  ]\n}\n\n\n",
+      "raw": "{\n  \"Name\": \"a\",\n  \"Publisher\": \"a\",\n  \"PlayerNumber\": 1,\n  \"Tags\": [\n    {\n      \"Name\": \"B\"\n    }\n  ]\n}\n\n\n",
       "form": []
     },
     "tests": []
@@ -66,11 +72,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "Delete",
-    "url": "localhost:8080/api/tag/{name}",
+    "url": "localhost:8081/api/tag/{name}",
     "method": "DELETE",
     "sortNum": 100000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:31:39.267Z",
+    "modified": "2024-03-18T17:20:59.810Z",
     "headers": [
       {
         "name": "Authorization",
@@ -91,11 +97,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "GetAll",
-    "url": "localhost:8080/api/tag?sortBy",
+    "url": "localhost:8081/api/tag?sortBy",
     "method": "GET",
     "sortNum": 90000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:31:34.205Z",
+    "modified": "2024-03-18T12:01:55.397Z",
     "headers": [
       {
         "name": "Authorization",
@@ -130,11 +136,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Delete",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "localhost:8081/api/boardgame/{id}",
     "method": "DELETE",
     "sortNum": 50000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:31:04.528Z",
+    "modified": "2024-03-18T17:20:28.907Z",
     "headers": [
       {
         "name": "Authorization",
@@ -183,11 +189,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "Get",
-    "url": "localhost:8080/api/tag/{name}",
+    "url": "localhost:8081/api/tag/{name}",
     "method": "GET",
     "sortNum": 80000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-11-07T12:31:27.827Z",
+    "modified": "2024-03-18T17:20:54.308Z",
     "headers": [
       {
         "name": "Authorization",
@@ -208,11 +214,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Get",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "localhost:8081/api/boardgame/{id}",
     "method": "GET",
     "sortNum": 30000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-08T11:36:41.712Z",
+    "modified": "2024-03-18T17:20:23.976Z",
     "headers": [],
     "params": [
       {
@@ -228,11 +234,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Post Expansion",
-    "url": "localhost:8080/api/boardgame/{id}/expansion",
+    "url": "localhost:8081/api/boardgame/{id}/expansion",
     "method": "POST",
     "sortNum": 120000,
     "created": "2022-06-03T10:10:11.900Z",
-    "modified": "2022-11-07T12:31:12.349Z",
+    "modified": "2024-03-18T17:20:32.758Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -262,11 +268,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Post",
-    "url": "localhost:8080/api/category",
+    "url": "localhost:8081/api/category",
     "method": "POST",
     "sortNum": 130000,
     "created": "2022-06-06T14:29:15.067Z",
-    "modified": "2022-11-07T12:31:46.602Z",
+    "modified": "2024-03-18T17:21:42.615Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -290,11 +296,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Get",
-    "url": "localhost:8080/api/category/{name}",
+    "url": "localhost:8081/api/category/{name}",
     "method": "GET",
     "sortNum": 140000,
     "created": "2022-06-06T14:29:19.240Z",
-    "modified": "2022-11-07T12:31:51.665Z",
+    "modified": "2024-03-18T17:21:45.293Z",
     "headers": [
       {
         "name": "Authorization",
@@ -315,11 +321,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "GetAll",
-    "url": "localhost:8080/api/category?sortBy&filterBy",
+    "url": "localhost:8081/api/category?sortBy&filterBy",
     "method": "GET",
     "sortNum": 150000,
     "created": "2022-06-06T14:29:23.130Z",
-    "modified": "2022-11-07T12:31:56.830Z",
+    "modified": "2024-03-18T12:02:06.923Z",
     "headers": [
       {
         "name": "Authorization",
@@ -345,11 +351,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Delete",
-    "url": "localhost:8080/api/category/{name}",
+    "url": "localhost:8081/api/category/{name}",
     "method": "DELETE",
     "sortNum": 160000,
     "created": "2022-06-06T14:29:26.812Z",
-    "modified": "2022-11-07T12:32:01.655Z",
+    "modified": "2024-03-18T17:21:49.399Z",
     "headers": [
       {
         "name": "Authorization",
@@ -370,11 +376,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Post",
-    "url": "localhost:8080/api/mechanism",
+    "url": "localhost:8081/api/mechanism",
     "method": "POST",
     "sortNum": 170000,
     "created": "2022-06-06T15:47:26.562Z",
-    "modified": "2022-11-07T12:32:10.362Z",
+    "modified": "2024-03-18T17:21:52.003Z",
     "headers": [
       {
         "name": "Content-Type",
@@ -398,11 +404,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Get",
-    "url": "localhost:8080/api/mechanism/{name}",
+    "url": "localhost:8081/api/mechanism/{name}",
     "method": "GET",
     "sortNum": 180000,
     "created": "2022-06-06T15:47:29.964Z",
-    "modified": "2022-11-07T12:32:19.183Z",
+    "modified": "2024-03-18T17:21:54.714Z",
     "headers": [
       {
         "name": "Authorization",
@@ -423,11 +429,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "GetAll",
-    "url": "localhost:8080/api/mechanism?sortBy&filterBy",
+    "url": "localhost:8081/api/mechanism?sortBy&filterBy",
     "method": "GET",
     "sortNum": 190000,
     "created": "2022-06-06T15:47:34.105Z",
-    "modified": "2022-11-07T12:32:26.214Z",
+    "modified": "2024-03-18T12:02:15.320Z",
     "headers": [
       {
         "name": "Authorization",
@@ -453,11 +459,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Delete",
-    "url": "localhost:8080/api/mechanism/{name}",
+    "url": "localhost:8081/api/mechanism/{name}",
     "method": "DELETE",
     "sortNum": 200000,
     "created": "2022-06-06T15:47:38.004Z",
-    "modified": "2022-11-07T12:32:30.658Z",
+    "modified": "2024-03-18T17:21:59.547Z",
     "headers": [
       {
         "name": "Authorization",

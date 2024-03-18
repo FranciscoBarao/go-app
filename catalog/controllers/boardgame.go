@@ -44,7 +44,7 @@ func InitBoardgameController(boardGameSvc *services.BoardgameService) *Boardgame
 // @Router 		/boardgame [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Boardgame input
-	var boardgame *model.Boardgame
+	var boardgame = &model.Boardgame{}
 	if err := utils.DecodeJSONBody(w, r, boardgame); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -128,7 +128,7 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 // @Router 		/boardgame/{id} [patch]
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Boardgame input
-	var input *model.Boardgame
+	var input = &model.Boardgame{}
 	if err := utils.DecodeJSONBody(w, r, input); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -181,14 +181,14 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 // @Router 		/boardgame/{id}/rate [post]
 func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Rating input
-	var rating model.Rating
-	if err := utils.DecodeJSONBody(w, r, &rating); err != nil {
+	var rating = &model.Rating{}
+	if err := utils.DecodeJSONBody(w, r, rating); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Boardgame input
-	if err := utils.ValidateStruct(&rating); err != nil {
+	if err := utils.ValidateStruct(rating); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -203,7 +203,7 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := controller.service.Rate(&rating, id, user); err != nil {
+	if err := controller.service.Rate(rating, id, user); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

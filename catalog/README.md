@@ -13,7 +13,7 @@ Each product can be classified with:
 - Categories
 
 
-**Future -** This repository is to be handled exclusively by admins and possible have some integration with BoardGameGeeks. 
+**Future -** This repository is to be handled exclusively by admins and possibly have some integration with BoardGameGeeks. 
 ## Entity Relationship
 
 ![Entity Relationship](doc/Catalog_ER.drawio.png)
@@ -25,7 +25,6 @@ Boardgame JSON
 {
     "Name": "name",
 	"Publisher": "publisher",
-	"Price": 10.0,
 	"PlayerNumber": 1,
 	"Tags": [
 		{ "Name": "A" }
@@ -42,14 +41,15 @@ Boardgame JSON
 
 Create
 ```
-curl -X POST localhost:8080/api/boardgame -H 'Content-Type: application/json' -d '{ "Name": "DS", "Publisher": "pub", "Price": 10.0, "PlayerNumber": 1, "Tags": [], "Categories: [], "Mechanisms: []}'
+curl -X POST localhost:8081/api/boardgame -H 'Content-Type: application/json' -d '{ "Name": "DS", "Publisher": "pub", "PlayerNumber": 1}'
 ```
 
 ReadAll
 ```
-curl -X GET localhost:8080/api/boardgame
+curl -X GET localhost:8081/api/boardgame
 ```
-ReadAll can be filtered and sorted. The filters can have 2 formats, depending on what is being evaluated.
+
+ReadAll can be filtered and sorted. Filters can have 2 formats, depending on what is being evaluated.
 ```
 filterBy -> Field.Value 
 filterBy -> Field.Operator.Value 	
@@ -74,24 +74,24 @@ Examples of sorts that work:
 
 Read
 ```
-curl -X GET localhost:8080/api/boardgame/<id>
+curl -X GET localhost:8081/api/boardgame/<id>
 ```
 
 Update
 ```
-curl -X PATCH localhost:8080/api/boardgame/<id> -H 'Content-Type: application/json' -d '{ "Name": "O", "Publisher": "pub", "Price": 10.0, "PlayerNumber": 1, "Tags": [], "Categories: [], "Mechanisms: []}'
+curl -X PATCH localhost:8081/api/boardgame/<id> -H 'Content-Type: application/json' -d '{ "Name": "O", "Publisher": "pub",  "PlayerNumber": 1}'
 ```
 
 Delete
 ```
-curl -X DELETE localhost:8080/api/boardgame/<id>
+curl -X DELETE localhost:8081/api/boardgame/<id>
 ```
 
 
 
 ## Tag/Mechanism/Catagory API
 
-The following three many2many relations all consist of a unique string. These fields are not created in Upscale, which means that when a boardgame is being created, if these fields are added, they must previously exist or the BG creation will fail. The following endpoint description is similar to all three and just vary on the url endpoint possibly being:
+The following three many2many relations all consist of a unique string. These fields are **NOT** created in Upscale, which means that when a boardgame is being created, if these fields are added, they must previously exist or the BG creation will fail. The following endpoint description is similar to all three and just vary on the url endpoint possibly being:
 ```
 /tag/
 /category/
@@ -108,12 +108,12 @@ JSON
 
 Create
 ```
-curl -X POST localhost:8080/api/tag -H 'Content-Type: application/json' -d '{ "Name": "name" }'
+curl -X POST localhost:8081/api/tag -H 'Content-Type: application/json' -d '{ "Name": "name" }'
 ```
 
 ReadAll
 ```
-curl -X GET localhost:8080/api/tag
+curl -X GET localhost:8081/api/tag
 ```
 
 ReadAll can be sorted. 
@@ -130,12 +130,12 @@ Examples of sorts that work:
 
 Read
 ```
-curl -X GET localhost:8080/api/tag/<name>
+curl -X GET localhost:8081/api/tag/<name>
 ```
 
 Delete
 ```
-curl -X DELETE localhost:8080/api/tag/<name>
+curl -X DELETE localhost:8081/api/tag/<name>
 ```
 
 
@@ -152,16 +152,10 @@ Finds Boardgame with everything using Eager Loading
 instance.db.Preload(clause.Associations).First(&bg, "name = ?", "bg")
 ```
 
-Create while skipping all associations (Just creates boardgame and not tags/relations) --> Works but have to specify which Omits
+Create while skipping all associations (Just creates boardgame and not relations)
 ```
-err := instance.db.Omit("Tags.*").Create(&temp) 
+err := instance.db.Omit(clause.Associations).Create(&bg) 
 ```
-
-value and not &value ->  You want to pass a pointer of the struct not the interface  
-Omit() 				 -> skip the upserting of associations  
-omits... 			 -> Pass each omit value as a separate argument  
-Goal of omits 		 -> To receive many2many relations like 'tags.*' or 'expansions.*' and it should not create them but just add them to relational table  
-
 
 
 ## Difference between many2many on 1 table or on both

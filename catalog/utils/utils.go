@@ -13,20 +13,7 @@ import (
 	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
-func StringInSlice(value string, list []string) bool {
-	for _, element := range list {
-		if element == value {
-			return true
-		}
-	}
-	return false
-}
-
-// Method that checks if a string is alphanumeric
-func IsAlphanumeric(word string) bool {
-	return regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(word)
-}
-
+// ValidateStruct executes govalidator to check if sturct fields have the correct, previously defined values
 func ValidateStruct(value interface{}) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
 		logging.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
@@ -35,16 +22,32 @@ func ValidateStruct(value interface{}) error {
 	return nil
 }
 
+// GetFieldFromURL extracts a field from URL
 func GetFieldFromURL(r *http.Request, field string) string {
 	return chi.URLParam(r, field)
 }
 
+// GetUsernameFromToken extracts the username from context
 func GetUsernameFromToken(r *http.Request) (string, error) {
 	claims := r.Context().Value(oauth.ClaimsContext).(map[string]string)
-
-	if username, ok := claims["username"]; ok {
-		return username, nil
+	username, ok := claims["username"]
+	if !ok {
+		return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
 	}
+	return username, nil
+}
 
-	return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
+// stringInSlice checks if a specific string exists in a slice of strings
+func stringInSlice(value string, list []string) bool {
+	for _, element := range list {
+		if element == value {
+			return true
+		}
+	}
+	return false
+}
+
+// isAlphanumeric checks if a string is alphanumeric
+func isAlphanumeric(word string) bool {
+	return regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(word)
 }

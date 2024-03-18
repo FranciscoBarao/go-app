@@ -3,12 +3,10 @@ package repositories
 //go:generate mockgen --build_flags=--mod=mod -package repositories -destination=database_mock.go . Database
 
 type Database interface {
-	Create(value interface{}, omits ...string) error
+	Create(value interface{}) error
 	Read(value interface{}, sort, search, identifier string) error
-	Update(value interface{}, omits ...string) error
+	Update(value interface{}) error
 	Delete(value interface{}) error
-
-	AppendAssociatons(model interface{}, association string, values interface{}) error
 	ReplaceAssociatons(model interface{}, association string, values interface{}) error
 }
 
