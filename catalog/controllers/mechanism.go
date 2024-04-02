@@ -56,7 +56,10 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, mechanism)
+	if err := render.New().JSON(w, http.StatusOK, mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Mechanisms godoc
@@ -79,7 +82,11 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	render.New().JSON(w, http.StatusOK, mechanisms)
+
+	if err := render.New().JSON(w, http.StatusOK, mechanisms); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Mechanism godoc
@@ -99,7 +106,10 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, mechanism)
+	if err := render.New().JSON(w, http.StatusOK, mechanism); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Delete Mechanism godoc
@@ -119,5 +129,8 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusNoContent, name)
+	if err := render.New().JSON(w, http.StatusNoContent, name); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }

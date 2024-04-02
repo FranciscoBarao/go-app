@@ -56,7 +56,10 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, category)
+	if err := render.New().JSON(w, http.StatusOK, category); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Categories godoc
@@ -79,7 +82,11 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	render.New().JSON(w, http.StatusOK, categories)
+
+	if err := render.New().JSON(w, http.StatusOK, categories); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Category godoc
@@ -97,7 +104,11 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	render.New().JSON(w, http.StatusOK, category)
+
+	if err := render.New().JSON(w, http.StatusOK, category); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Delete Category godoc
@@ -117,5 +128,8 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	render.New().JSON(w, http.StatusNoContent, name)
+	if err := render.New().JSON(w, http.StatusNoContent, name); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }

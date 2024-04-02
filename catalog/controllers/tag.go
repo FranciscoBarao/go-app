@@ -56,7 +56,10 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, tag)
+	if err := render.New().JSON(w, http.StatusOK, tag); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Tags godoc
@@ -79,7 +82,11 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	render.New().JSON(w, http.StatusOK, tags)
+
+	if err := render.New().JSON(w, http.StatusOK, tags); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Tag godoc
@@ -98,7 +105,10 @@ func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, tag)
+	if err := render.New().JSON(w, http.StatusOK, tag); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Delete Tag godoc
@@ -118,5 +128,8 @@ func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	render.New().JSON(w, http.StatusNoContent, name)
+	if err := render.New().JSON(w, http.StatusNoContent, name); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }

@@ -124,14 +124,16 @@ func (instance *Postgres) Delete(value interface{}) error {
 	log := logging.FromCtx(context.Background())
 
 	// Delete BG and all its associations (E.g Tags associations)
-	err := instance.db.Select(clause.Associations).Delete(value).Error
-	if err != nil {
-		log.Error().Err(err).Interface("value", value).Msg("failed to delete database entry")
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return middleware.NewError(http.StatusNotFound, "Record Not found")
-		}
-		return err
+	obj := instance.db.Select(clause.Associations).Delete(value)
+	if obj.Error != nil {
+		log.Error().Err(obj.Error).Interface("value", value).Msg("failed to delete database entry")
+		return obj.Error
 	}
+	if obj.RowsAffected != 1 {
+		log.Error().Err(obj.Error).Interface("value", value).Msg("failed to delete database entry")
+		return middleware.NewError(http.StatusNotFound, "Record Not found")
+	}
+
 	log.Debug().Interface("value", value).Msg("deleted database entry")
 	return nil
 }

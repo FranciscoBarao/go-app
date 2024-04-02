@@ -64,7 +64,10 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgame)
+	if err := render.New().JSON(w, http.StatusOK, boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Boardgames godoc
@@ -95,8 +98,10 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, boardgames)
-
+	if err := render.New().JSON(w, http.StatusOK, boardgames); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Get Boardgame by id godoc
@@ -114,7 +119,10 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	render.New().JSON(w, http.StatusOK, boardgame)
+	if err := render.New().JSON(w, http.StatusOK, boardgame); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Update Boardgame by id godoc
@@ -148,7 +156,10 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, input)
+	if err := render.New().JSON(w, http.StatusOK, input); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Delete Boardgame by id godoc
@@ -168,7 +179,10 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	render.New().JSON(w, http.StatusNoContent, id)
+	if err := render.New().JSON(w, http.StatusNoContent, id); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
 
 // Rate a Boardgame godoc
@@ -208,5 +222,8 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	render.New().JSON(w, http.StatusOK, rating)
+	if err := render.New().JSON(w, http.StatusOK, rating); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
 }
