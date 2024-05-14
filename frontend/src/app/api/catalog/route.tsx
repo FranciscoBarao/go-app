@@ -1,3 +1,5 @@
+import { Boardgame } from '@/app/api/catalog/model'
+
 const baseURL = process.env.CATALOG_HOST as string
 
 export async function Post(bg: Boardgame) {
@@ -6,15 +8,15 @@ export async function Post(bg: Boardgame) {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(bg)
+        body: JSON.stringify(bg),
+        cache: 'no-store'
     })
 
-    console.log(res.status)
     if(res.ok){
-        const data = await res.json()
-        return data
+        return res.json()
       }
-      return <p>error</p>
+    
+    return <p>error</p>
 }
 
 export async function Get() {
@@ -37,8 +39,12 @@ export async function GetAll() {
         headers: {
             'Content-Type': 'application/json',
         },
+        cache: 'no-store'
     })
+
+    
     const data = await res.json()
+    console.log(data)
 
     return (
     <div> 
@@ -53,8 +59,7 @@ export async function GetAll() {
         })}
     </div>
     )
-};
-
+}
 
 export async function Delete() {
     const res = await fetch(baseURL + '/1', {
