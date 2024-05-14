@@ -5,8 +5,8 @@ type Mechanism struct {
 	Boardgames []Boardgame `gorm:"many2many:boardgame_mechanisms;" json:"-"`
 }
 
-func NewMechanism(name string) Mechanism {
-	return Mechanism{
+func NewMechanism(name string) *Mechanism {
+	return &Mechanism{
 		Name: name,
 	}
 }

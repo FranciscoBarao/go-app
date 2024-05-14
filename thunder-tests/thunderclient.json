@@ -4,21 +4,31 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Post",
-    "url": "localhost:8080/api/boardgame",
+    "url": "localhost:8081/api/boardgame",
     "method": "POST",
     "sortNum": 10000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-09T11:01:40.789Z",
+    "modified": "2024-03-18T17:21:35.236Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
-    "params": [],
+    "params": [
+      {
+        "name": "port",
+        "value": "",
+        "isPath": true
+      }
+    ],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\": \"ASD11\",\n  \"Publisher\": \"pub\",\n  \"Price\": 10,\n  \"PlayerNumber\": 10,\n  \"Tags\": [\n    ],\n  \"Categories\": [\n    ],\n  \"Mechanisms\": [\n    ]\n}",
+      "raw": "{\n  \"Name\": \"B\",\n  \"Publisher\": \"pub\",\n  \"PlayerNumber\": 3,\n  \"Tags\":[\n    ]\n}",
       "form": []
     },
     "tests": []
@@ -28,27 +38,31 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Patch",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "localhost:8081/api/boardgame/{id}",
     "method": "PATCH",
     "sortNum": 40000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-08T14:04:28.931Z",
+    "modified": "2024-03-18T16:40:13.629Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
     "params": [
       {
         "name": "id",
-        "value": "29",
+        "value": "1",
         "isPath": true
       }
     ],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\": \"a\",\n  \"Publisher\": \"a\",\n  \"Price\": 10.0,\n  \"PlayerNumber\": 1,\n  \"Tags\": [\n    {\n      \"Name\": \"B\"\n    }\n  ]\n}\n\n\n",
+      "raw": "{\n  \"Name\": \"a\",\n  \"Publisher\": \"a\",\n  \"PlayerNumber\": 1,\n  \"Tags\": [\n    {\n      \"Name\": \"B\"\n    }\n  ]\n}\n\n\n",
       "form": []
     },
     "tests": []
@@ -58,12 +72,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "Delete",
-    "url": "localhost:8080/api/tag/{name}",
+    "url": "localhost:8081/api/tag/{name}",
     "method": "DELETE",
     "sortNum": 100000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-03T10:08:26.970Z",
-    "headers": [],
+    "modified": "2024-03-18T17:20:59.810Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -78,12 +97,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "GetAll",
-    "url": "localhost:8080/api/tag?sortBy",
+    "url": "localhost:8081/api/tag?sortBy",
     "method": "GET",
     "sortNum": 90000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-08T11:24:01.634Z",
-    "headers": [],
+    "modified": "2024-03-18T12:01:55.397Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "sortBy",
@@ -98,26 +122,13 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "GetAll",
-    "url": "localhost:8080/api/boardgame",
+    "url": "localhost:8081/api/boardgame",
     "method": "GET",
     "sortNum": 20000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-09T12:28:24.772Z",
+    "modified": "2022-11-08T14:31:02.979Z",
     "headers": [],
-    "params": [
-      {
-        "name": "filterBy",
-        "value": "",
-        "isDisabled": true,
-        "isPath": false
-      },
-      {
-        "name": "sortBy",
-        "value": "",
-        "isDisabled": true,
-        "isPath": false
-      }
-    ],
+    "params": [],
     "tests": []
   },
   {
@@ -125,12 +136,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Delete",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "localhost:8081/api/boardgame/{id}",
     "method": "DELETE",
     "sortNum": 50000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-09T12:28:00.887Z",
-    "headers": [],
+    "modified": "2024-03-18T17:20:28.907Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "id",
@@ -145,15 +161,19 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "Post",
-    "url": "localhost:8080/api/tag",
+    "url": "localhost:8081/api/tag",
     "method": "POST",
     "sortNum": 70000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-02T11:09:32.606Z",
+    "modified": "2024-02-29T14:23:05.986Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
     "params": [],
@@ -169,12 +189,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "199dab79-b855-4c21-bcb5-7a3adf55ecd3",
     "name": "Get",
-    "url": "localhost:8080/api/tag/{name}",
+    "url": "localhost:8081/api/tag/{name}",
     "method": "GET",
     "sortNum": 80000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-07T13:53:26.379Z",
-    "headers": [],
+    "modified": "2024-03-18T17:20:54.308Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -189,11 +214,11 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Get",
-    "url": "localhost:8080/api/boardgame/{id}",
+    "url": "127.0.0.1:8081/api/boardgame/{id}",
     "method": "GET",
     "sortNum": 30000,
     "created": "2022-05-31T12:22:26.583Z",
-    "modified": "2022-06-08T11:36:41.712Z",
+    "modified": "2024-05-13T16:02:16.656Z",
     "headers": [],
     "params": [
       {
@@ -209,15 +234,19 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
     "name": "Post Expansion",
-    "url": "localhost:8080/api/boardgame/{id}/expansion",
+    "url": "localhost:8081/api/boardgame/{id}/expansion",
     "method": "POST",
     "sortNum": 120000,
     "created": "2022-06-03T10:10:11.900Z",
-    "modified": "2022-06-03T10:32:20.754Z",
+    "modified": "2024-03-18T17:20:32.758Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
     "params": [
@@ -239,15 +268,19 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Post",
-    "url": "localhost:8080/api/category",
+    "url": "localhost:8081/api/category",
     "method": "POST",
     "sortNum": 130000,
     "created": "2022-06-06T14:29:15.067Z",
-    "modified": "2022-06-06T14:31:10.890Z",
+    "modified": "2024-03-18T17:21:42.615Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
     "params": [],
@@ -263,12 +296,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Get",
-    "url": "localhost:8080/api/category/{name}",
+    "url": "localhost:8081/api/category/{name}",
     "method": "GET",
     "sortNum": 140000,
     "created": "2022-06-06T14:29:19.240Z",
-    "modified": "2022-06-06T14:30:16.730Z",
-    "headers": [],
+    "modified": "2024-03-18T17:21:45.293Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -283,12 +321,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "GetAll",
-    "url": "localhost:8080/api/category?sortBy&filterBy",
+    "url": "localhost:8081/api/category?sortBy&filterBy",
     "method": "GET",
     "sortNum": 150000,
     "created": "2022-06-06T14:29:23.130Z",
-    "modified": "2022-06-06T14:30:48.898Z",
-    "headers": [],
+    "modified": "2024-03-18T12:02:06.923Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "sortBy",
@@ -308,12 +351,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "e7415c63-6505-4932-b9e3-9b7a22604b6c",
     "name": "Delete",
-    "url": "localhost:8080/api/category/{name}",
+    "url": "localhost:8081/api/category/{name}",
     "method": "DELETE",
     "sortNum": 160000,
     "created": "2022-06-06T14:29:26.812Z",
-    "modified": "2022-06-06T14:31:04.537Z",
-    "headers": [],
+    "modified": "2024-03-18T17:21:49.399Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -328,15 +376,19 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Post",
-    "url": "localhost:8080/api/mechanism",
+    "url": "localhost:8081/api/mechanism",
     "method": "POST",
     "sortNum": 170000,
     "created": "2022-06-06T15:47:26.562Z",
-    "modified": "2022-06-06T15:48:56.534Z",
+    "modified": "2024-03-18T17:21:52.003Z",
     "headers": [
       {
         "name": "Content-Type",
         "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
       }
     ],
     "params": [],
@@ -352,12 +404,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Get",
-    "url": "localhost:8080/api/mechanism/{name}",
+    "url": "localhost:8081/api/mechanism/{name}",
     "method": "GET",
     "sortNum": 180000,
     "created": "2022-06-06T15:47:29.964Z",
-    "modified": "2022-06-06T15:49:03.696Z",
-    "headers": [],
+    "modified": "2024-03-18T17:21:54.714Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -372,12 +429,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "GetAll",
-    "url": "localhost:8080/api/mechanism?sortBy&filterBy",
+    "url": "localhost:8081/api/mechanism?sortBy&filterBy",
     "method": "GET",
     "sortNum": 190000,
     "created": "2022-06-06T15:47:34.105Z",
-    "modified": "2022-06-06T15:48:33.082Z",
-    "headers": [],
+    "modified": "2024-03-18T12:02:15.320Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "sortBy",
@@ -397,12 +459,17 @@
     "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
     "containerId": "c42bdcab-1706-40da-9a3d-e2ef9969bae0",
     "name": "Delete",
-    "url": "localhost:8080/api/mechanism/{name}",
+    "url": "localhost:8081/api/mechanism/{name}",
     "method": "DELETE",
     "sortNum": 200000,
     "created": "2022-06-06T15:47:38.004Z",
-    "modified": "2022-06-06T15:49:13.735Z",
-    "headers": [],
+    "modified": "2024-03-18T17:21:59.547Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [
       {
         "name": "name",
@@ -417,16 +484,25 @@
     "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
     "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
     "name": "Post",
-    "url": "localhost:8081/api/offer",
+    "url": "localhost:8082/api/offer",
     "method": "POST",
     "sortNum": 20000,
     "created": "2022-09-14T10:28:32.957Z",
-    "modified": "2022-09-14T11:25:13.097Z",
-    "headers": [],
+    "modified": "2022-11-15T12:52:42.783Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [],
     "body": {
       "type": "json",
-      "raw": "{\n  \"Name\":\"asddd\"\n}",
+      "raw": "{\n  \"type\": \"Boardgame\",\n  \"lol\":\"lol\"\n  \"name\": \"name\", \n  \"price\": 10.0\n}\n\n",
       "form": []
     },
     "tests": []
@@ -440,9 +516,220 @@
     "method": "GET",
     "sortNum": 30000,
     "created": "2022-09-14T11:19:19.040Z",
-    "modified": "2022-09-14T11:19:29.946Z",
-    "headers": [],
+    "modified": "2022-11-03T10:12:30.298Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
     "params": [],
+    "tests": []
+  },
+  {
+    "_id": "64446b73-b955-4d2c-9d21-db77dc4aaf35",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Register User",
+    "url": "localhost:8080/api/register",
+    "method": "POST",
+    "sortNum": 10000,
+    "created": "2022-10-27T16:39:31.194Z",
+    "modified": "2022-10-28T09:43:14.490Z",
+    "headers": [
+      {
+        "name": "'Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": " { \"username\": \"lala\", \"email\": \"email@s.com\", \"password\":\"123\"}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "b135fdb9-0d9d-4298-bfcf-93ec55280f0d",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Login",
+    "url": "localhost:8080/api/login?grant_type=password&username=lala&password=123",
+    "method": "POST",
+    "sortNum": 20000,
+    "created": "2022-10-27T16:50:14.365Z",
+    "modified": "2022-11-02T14:36:38.258Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/x-www-form-urlencoded"
+      }
+    ],
+    "params": [
+      {
+        "name": "grant_type",
+        "value": "password",
+        "isPath": false
+      },
+      {
+        "name": "username",
+        "value": "lala",
+        "isPath": false
+      },
+      {
+        "name": "password",
+        "value": "123",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "b2c1617e-3d21-4265-a927-0b6e8601183d",
+    "colId": "29b706e5-6ad3-47e2-b0ee-9ef82f6b1581",
+    "containerId": "",
+    "name": "Generate Token id/secret",
+    "url": "localhost:8080/auth?grant_type=client_credentials&client_id=abcdef&client_secret=12345",
+    "method": "POST",
+    "sortNum": 30000,
+    "created": "2022-10-27T16:51:37.410Z",
+    "modified": "2022-10-27T16:51:52.246Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/x-www-form-urlencoded"
+      }
+    ],
+    "params": [
+      {
+        "name": "grant_type",
+        "value": "client_credentials",
+        "isPath": false
+      },
+      {
+        "name": "client_id",
+        "value": "abcdef",
+        "isPath": false
+      },
+      {
+        "name": "client_secret",
+        "value": "12345",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "a55695a3-be7d-484e-990f-05330502c6d3",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Get",
+    "url": "localhost:8081/api/offer/{id}",
+    "method": "GET",
+    "sortNum": 40000,
+    "created": "2022-11-02T15:28:19.341Z",
+    "modified": "2022-11-03T10:12:35.663Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}",
+        "isDisabled": true
+      }
+    ],
+    "params": [
+      {
+        "name": "id",
+        "value": "asd",
+        "isPath": true
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "50da4590-1e68-472a-9b32-574e5691e996",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Update",
+    "url": "localhost:8081/api/offer/{uuid}",
+    "method": "PATCH",
+    "sortNum": 50000,
+    "created": "2022-11-02T15:28:23.789Z",
+    "modified": "2022-11-03T10:12:41.938Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}",
+        "isDisabled": true
+      }
+    ],
+    "params": [
+      {
+        "name": "uuid",
+        "value": "sd",
+        "isPath": true
+      }
+    ],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"name\": \"osd\", \n  \"price\": 20.0\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "8dd42786-367a-41e0-a3a7-87de29e99e77",
+    "colId": "ec6603fd-ad68-4be1-8181-281f284fdf15",
+    "containerId": "5c52a577-e13f-446d-aff3-d2ecc633b6a5",
+    "name": "Delete",
+    "url": "localhost:8081/api/offer/{uuid}",
+    "method": "DELETE",
+    "sortNum": 60000,
+    "created": "2022-11-02T15:28:27.252Z",
+    "modified": "2022-11-02T16:19:32.267Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "uuid",
+        "value": "a",
+        "isPath": true
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "5587b8e8-59c5-4627-b673-696693b47d34",
+    "colId": "73bbb4d8-fcaf-4636-9beb-c8aee8f6cb4a",
+    "containerId": "a976c2a3-08b2-4719-b3b6-0de7c9fd4c95",
+    "name": "Rate",
+    "url": "localhost:8081/api/boardgame/{id}/rate",
+    "method": "POST",
+    "sortNum": 210000,
+    "created": "2022-11-08T14:29:58.021Z",
+    "modified": "2022-11-08T14:51:45.831Z",
+    "headers": [
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "id",
+        "value": "2",
+        "isPath": true
+      }
+    ],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"value\":5\n}",
+      "form": []
+    },
     "tests": []
   }
 ]

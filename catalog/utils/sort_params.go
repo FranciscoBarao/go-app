@@ -1,95 +1,78 @@
 package utils
 
 import (
-	"log"
+	"context"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
-// Function that checks if the sort parameters are valid for use
-func validateSortParameters(model interface{}, sortBy string) error {
+// GetSort constructs the whole sort
+func GetSort(model interface{}, sortBy string) (string, error) {
+	log := logging.FromCtx(context.Background())
+	if sortBy == "" {
+		return "", nil // No sort -> No error
+	}
 
+	log.Debug().Str("sort_by", sortBy).Msg("sorting")
+	if err := validateSort(model, sortBy); err != nil {
+		return "", err
+	}
+
+	return constructSort(sortBy), nil
+}
+
+// validateSort checks if the sort parameters are valid for use by length, emptiness, order and field existence
+func validateSort(model interface{}, sortBy string) error {
 	splits := strings.Split(sortBy, ".")
 
 	if len(splits) != 2 { // Validate if there are only 2 parameters
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
 	}
 
-	field := splits[0]
-	order := splits[1]
-
+	field, order := splits[0], splits[1]
 	if field == "" || order == "" { // Validate if there are no empty parameters
-		log.Printf("Error - Filter malformed, empty parameters")
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
+		logging.FromCtx(context.Background()).Error().Msg("sort malformed with empty parameters")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
 	}
 
 	if order != "desc" && order != "asc" { // Validate if order is valid
-		return NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
+		logging.FromCtx(context.Background()).Error().Str("order", order).Msg("sort malformed with incorrect parameters")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
 	}
 
-	err := validateField(model, field) // Validate if field exists
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return validateField(model, field) // Validate if field exists
 }
 
-// Function that checks if the field exists in the struct
+// validateField checks if a field exists in the struct
 func validateField(model interface{}, fieldName string) error {
-
 	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
 	for _, field := range fields {
 		if strings.ToLower(field.Name) == fieldName { // If there is a Field with this name
-
-			err := isTypeSortable(field.Type.String()) // Checks if field is sortable
-			if err != nil {
-				return err
-			}
-			return nil // Field exists
+			return isTypeSortable(field.Type.String()) // Checks if field is sortable
 		}
 	}
-	log.Printf("Error - No field in struct %v with name %s", model, fieldName)
-	return NewError(http.StatusUnprocessableEntity, "No field with this name")
+	logging.FromCtx(context.Background()).Error().Interface("model", model).Str("field_name", fieldName).Msg("unknown field in struct")
+	return middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
 }
 
-// Function that verifies if the field is sortable (E.g We cant sort by Tags)
+// isTypeSortable verifies if the field is sortable (E.g We cant sort by Tags)
 func isTypeSortable(typ string) error {
 	switch typ {
 	case "string", "int", "float64", "float32":
 		return nil
+	default:
+		logging.FromCtx(context.Background()).Error().Str("type", typ).Msg("field is not sortable")
+		return middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
 	}
-	log.Printf("Error - Field of type %s is not sortable", typ)
-	return NewError(http.StatusUnprocessableEntity, "Field not sortable")
 }
 
-// Function that constructs sort query
+// constructSort constructs the sort query
 func constructSort(sortBy string) string {
 	splits := strings.Split(sortBy, ".")
-	field := splits[0]
-	order := splits[1]
-
+	field, order := splits[0], splits[1]
 	return field + " " + order
-
-}
-
-// Main function of constructing the Sort
-func GetSort(model interface{}, sortBy string) (string, error) {
-
-	if sortBy != "" {
-		log.Println("Sorting using %s " + sortBy)
-		err := validateSortParameters(model, sortBy) // Validates Sort -> By length, emptiness and by order and field existence
-		if err != nil {
-			return "", err
-		}
-
-		sort := constructSort(sortBy) // After validating, constructs sort to be used in GetAll
-		return sort, nil
-	}
-	return "", nil // No sort -> No error
-
-	// Examples of sorts that work:
-	// name.asc      --->  ordered by name in alphabetical ascending order
-	// price.desc    --->  ordered by price in numerical descending order
 }

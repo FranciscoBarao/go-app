@@ -1,0 +1,129 @@
+version: '3'
+services:
+  catalog:
+    container_name: catalog
+    build: 
+      context: catalog/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8081:8080
+    restart: on-failure
+    env_file:
+      - ./catalog/environment/dev/.env
+    depends_on:
+      catalog-db:
+        condition: service_healthy
+
+  catalog-db:
+    container_name: catalog-db
+    image: postgres
+    restart: always
+    ports:
+      - '5433:5432'
+    env_file:
+      - ./catalog/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - catalog-data:/var/lib/postgresql/data
+
+  marketplace:
+    container_name: marketplace
+    build: 
+      context: marketplace/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8082:8080
+    restart: on-failure
+    env_file:
+      - ./marketplace/environment/dev/.env
+    depends_on:
+      marketplace-db:
+        condition: service_healthy
+
+  marketplace-db:
+    image: postgres
+    restart: always
+    container_name: marketplace-db
+    ports:
+      - '5434:5432'
+    env_file:
+      -  ./marketplace/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - marketplace-data:/var/lib/postgresql/data
+
+
+  rating-service:
+    container_name: rating-service
+    build: 
+      context: rating-service/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8083:8080
+    restart: on-failure
+    env_file:
+      - ./rating-service/environment/dev/.env
+    depends_on:
+      rating-service-db:
+        condition: service_healthy
+
+  rating-service-db:
+    container_name: rating-service-db
+    image: postgres
+    restart: always
+    ports:
+      - '5435:5432'
+    env_file:
+      - ./rating-service/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - rating-service-data:/var/lib/postgresql/data
+
+
+  user-management:
+    container_name: user-management
+    build: 
+      context: user-management/.
+      dockerfile: ./dockerfile/dev/dockerfile
+    ports:
+      - 8080:8080
+    restart: on-failure
+    env_file:
+      - ./user-management/environment/dev/.env
+    depends_on:
+      user-management-db:
+        condition: service_healthy
+
+  user-management-db:
+    image: postgres
+    restart: always
+    container_name: user-management-db
+    ports:
+      - '5432:5432'
+    env_file:
+      - ./user-management/environment/dev/.env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    #volumes:
+    #  - user-management-data:/var/lib/postgresql/data
+
+#volumes:
+  #catalog-data:
+  #marketplace-data:
+  #rating-service-data:
+  #user-management-data:

@@ -1,10 +1,11 @@
 package main
 
 import (
-	"marketplace/controller"
+	"marketplace/controllers"
 	"marketplace/database"
-	"marketplace/repository"
+	"marketplace/repositories"
 	"marketplace/route"
+	"marketplace/services"
 
 	"log"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	_ "marketplace/docs"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -31,27 +35,30 @@ func main() {
 		return
 	}
 
+	// Fetch Env variables
+	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
+	port, portPresent := os.LookupEnv("PORT")
+	if !oauthKeyPresent || !portPresent {
+		log.Println("Error occurred while fetching essential env variables")
+		return
+	}
+
 	// Initialize Repositories and controllers
-	repos := repository.InitRepositories(db)
-	controllers := controller.InitControllers(repos)
+	repositories := repositories.InitRepositories(db)
+	services := services.InitServices(repositories)
+	controllers := controllers.InitControllers(services)
 
 	// Creates routing
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
 	// Adds Routers
-	route.AddOfferRouter(router, controllers.OfferController)
+	route.AddOfferRouter(router, oauthKey, controllers.OfferController)
 
 	// documentation for developers
 	router.Get("/swagger/*", httpSwagger.Handler())
 
 	// Starts server
-	port, portPresent := os.LookupEnv("PORT")
-	if !portPresent {
-		log.Println("Error occurred while fetching Port")
-		return
-	}
-
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Println("Error occured while creating Server" + err.Error())
 		return

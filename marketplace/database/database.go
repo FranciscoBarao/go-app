@@ -1,11 +1,13 @@
 package database
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 
+	"marketplace/middleware"
 	"marketplace/model"
 
 	"github.com/jmoiron/sqlx"
@@ -27,7 +29,7 @@ func getConfig() (string, error) {
 
 	if !hostPresent || !userPresent || !passPresent || !dbnamePresent || !portPresent {
 		log.Println("Error occurred while fetching env vars")
-		return "", errors.New("Error occurred while fetching env vars")
+		return "", middleware.NewError(http.StatusInternalServerError, "Error occurred while fetching env vars")
 	}
 
 	return "host=" + host + " user=" + user + " password=" + pass + " dbname=" + dbname + " port=" + port + " sslmode=disable", nil
@@ -53,8 +55,7 @@ func Connect() (*PostgresqlRepository, error) {
 	var schemas model.Schema = model.SchemaAgregator{}
 	createSchemas := schemas.GetCreateSchemas()
 
-	_, err = db.Exec(createSchemas)
-	if err != nil {
+	if _, err = db.Exec(createSchemas); err != nil {
 		log.Println("Error Creating schemas " + err.Error())
 		return nil, err
 	}
@@ -64,27 +65,58 @@ func Connect() (*PostgresqlRepository, error) {
 	return &PostgresqlRepository{db}, nil
 }
 
-func (instance *PostgresqlRepository) Create(query string, value ...interface{}) error {
+func (instance *PostgresqlRepository) GetDB() *sqlx.DB {
+	return instance.db
+}
 
-	_, err := instance.db.Exec(query, value...)
+func (instance *PostgresqlRepository) Create(query string, value ...interface{}) (string, error) {
+
+	var uuid string
+	err := instance.db.QueryRow(query, value...).Scan(&uuid)
+
 	if err != nil {
 		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", query))
-		log.Println(err)
-		return err
+		return "", err
 	}
 
 	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
-	return nil
+	return uuid, nil
 }
 
-func (instance *PostgresqlRepository) ReadAll(query string, value interface{}) error {
+func (instance *PostgresqlRepository) GetAll(query string, value interface{}, args ...interface{}) error {
 
-	err := instance.db.Select(value, query)
+	err := instance.db.Select(value, query, args...)
 	if err != nil {
 		log.Println("Error fetching database entries: " + fmt.Sprintf("%v", query))
 		log.Println(err)
 		return err
 	}
 	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+func (instance *PostgresqlRepository) Get(query string, value interface{}, args ...interface{}) error {
+
+	err := instance.db.Get(value, query, args...)
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Println("Error Record not found with query: " + query)
+			return middleware.NewError(http.StatusNotFound, "Error - Record not found")
+		}
+		return err
+	}
+	log.Println("Fetched database entry: " + fmt.Sprintf("%v", value))
+	return nil
+}
+
+func (instance *PostgresqlRepository) ExecuteQuery(query string, value ...interface{}) error {
+
+	_, err := instance.db.Exec(query, value...)
+	if err != nil {
+		log.Println("Error while creating a database entry: " + fmt.Sprintf("%v", query))
+		return err
+	}
+
+	log.Println("Created database entry: " + fmt.Sprintf("%v", value))
 	return nil
 }
