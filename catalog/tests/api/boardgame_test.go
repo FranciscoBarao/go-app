@@ -31,13 +31,13 @@ func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 		Create(bg).
 		Return(nil)
 
-	bgJson, err := json.Marshal(bg)
+	bgJSON, err := json.Marshal(bg)
 	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(bgJson).
+		JSON(bgJSON).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
@@ -61,13 +61,13 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 	suite.base.dbMock.EXPECT().
 		Create(expansion).
 		Return(nil)
-	expansionJson, err := json.Marshal(expansion)
+	expansionJSON, err := json.Marshal(expansion)
 	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame/"+parentIDStr+"/expansion").
-		JSON(expansionJson).
+		JSON(expansionJSON).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).

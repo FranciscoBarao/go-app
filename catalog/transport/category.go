@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+// CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(c *category.Category) error
 	GetAll(sort string) ([]category.Category, error)
@@ -17,12 +18,13 @@ type CategoryService interface {
 	Delete(name string) error
 }
 
+// CategoryController handles HTTP requests for category operations.
 type CategoryController struct {
 	service CategoryService
 }
 
 // NewCategoryController initializes the category controller.
-func NewCategoryController(categorySvc *category.CategoryService) *CategoryController {
+func NewCategoryController(categorySvc *category.Service) *CategoryController {
 	return &CategoryController{
 		service: categorySvc,
 	}
@@ -61,7 +63,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 	}
 }
 
-// Get Categories godoc
+// GetAll Categories godoc
 // @Summary 	Fetches all Categories
 // @Tags 		categories
 // @Produce 	json

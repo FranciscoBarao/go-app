@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+// TagService defines the interface for tag business logic.
 type TagService interface {
 	Create(t *tag.Tag) error
 	GetAll(sort string) ([]tag.Tag, error)
@@ -17,12 +18,13 @@ type TagService interface {
 	Delete(name string) error
 }
 
+// TagController handles HTTP requests for tag operations.
 type TagController struct {
 	service TagService
 }
 
 // NewTagController initializes the tag controller.
-func NewTagController(tagSvc *tag.TagService) *TagController {
+func NewTagController(tagSvc *tag.Service) *TagController {
 	return &TagController{
 		service: tagSvc,
 	}
@@ -61,7 +63,7 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-// Get Tags godoc
+// GetAll Tags godoc
 // @Summary 	Fetches all Tags
 // @Tags 		tags
 // @Produce 	json

@@ -35,10 +35,10 @@ func NewBase(t *testing.T) *Base {
 	mock := database.NewMockDatabase(ctrl)
 
 	// Initialize Services
-	tagSvc := tag.NewTagService(mock)
-	categorySvc := category.NewCategoryService(mock)
-	mechanismSvc := mechanism.NewMechanismService(mock)
-	boardgameSvc := boardgame.NewBoardgameService(mock, tagSvc, categorySvc, mechanismSvc)
+	tagSvc := tag.NewService(mock)
+	categorySvc := category.NewService(mock)
+	mechanismSvc := mechanism.NewService(mock)
+	boardgameSvc := boardgame.NewService(mock, tagSvc, categorySvc, mechanismSvc)
 
 	// Initialize Controllers
 	bgController := transport.NewBoardgameController(boardgameSvc)

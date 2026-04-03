@@ -27,18 +27,18 @@ type MechanismGetter interface {
 	Get(name string) (mechanism.Mechanism, error)
 }
 
-// BoardgameService merges the old BoardgameRepository and BoardgameService into a single struct
+// Service merges the old BoardgameRepository and Service into a single struct
 // that holds a database.Database directly and uses local getter interfaces for association validation.
-type BoardgameService struct {
+type Service struct {
 	db           database.Database
 	tagSvc       TagGetter
 	categorySvc  CategoryGetter
 	mechanismSvc MechanismGetter
 }
 
-// NewBoardgameService creates a new BoardgameService with the given dependencies.
-func NewBoardgameService(db database.Database, tagSvc TagGetter, catSvc CategoryGetter, mechSvc MechanismGetter) *BoardgameService {
-	return &BoardgameService{
+// NewService creates a new boardgame Service with the given dependencies.
+func NewService(db database.Database, tagSvc TagGetter, catSvc CategoryGetter, mechSvc MechanismGetter) *Service {
+	return &Service{
 		db:           db,
 		tagSvc:       tagSvc,
 		categorySvc:  catSvc,
@@ -47,7 +47,7 @@ func NewBoardgameService(db database.Database, tagSvc TagGetter, catSvc Category
 }
 
 // Create validates associations, connects expansions if needed, and persists a new Boardgame.
-func (svc *BoardgameService) Create(boardgame *Boardgame, id string) error {
+func (svc *Service) Create(boardgame *Boardgame, id string) error {
 	// Check if Expansion -> Connect if needed
 	if err := svc.connectBoardgameToExpansion(boardgame, id); err != nil {
 		return err
@@ -62,13 +62,13 @@ func (svc *BoardgameService) Create(boardgame *Boardgame, id string) error {
 }
 
 // GetAll retrieves all Boardgames from the database with optional sort and filter.
-func (svc *BoardgameService) GetAll(sort, filterBody, filterValue string) ([]Boardgame, error) {
+func (svc *Service) GetAll(sort, filterBody, filterValue string) ([]Boardgame, error) {
 	var bg []Boardgame
 	return bg, svc.db.Read(&bg, sort, filterBody, filterValue)
 }
 
-// GetById retrieves a single Boardgame by its ID.
-func (svc *BoardgameService) GetById(id string) (Boardgame, error) {
+// GetByID retrieves a single Boardgame by its ID.
+func (svc *Service) GetByID(id string) (Boardgame, error) {
 	var bg Boardgame
 	err := svc.db.Read(&bg, "", "id = ?", id)
 
@@ -81,14 +81,14 @@ func (svc *BoardgameService) GetById(id string) (Boardgame, error) {
 }
 
 // Update validates associations, fetches the existing boardgame, applies changes, and persists.
-func (svc *BoardgameService) Update(input *Boardgame, id string) error {
+func (svc *Service) Update(input *Boardgame, id string) error {
 	// Check if Tags & Categories & Mechanisms exist
 	if err := svc.validateAssociations(input); err != nil {
 		return err
 	}
 
 	// Get Boardgame by id
-	boardgame, err := svc.GetById(id)
+	boardgame, err := svc.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -105,10 +105,10 @@ func (svc *BoardgameService) Update(input *Boardgame, id string) error {
 	return svc.db.ReplaceAssociatons(&boardgame, "Tags", &tags)
 }
 
-// DeleteById fetches a boardgame by ID and deletes it.
-func (svc *BoardgameService) DeleteById(id string) error {
+// DeleteByID fetches a boardgame by ID and deletes it.
+func (svc *Service) DeleteByID(id string) error {
 	// Get Boardgame
-	boardgame, err := svc.GetById(id)
+	boardgame, err := svc.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -117,9 +117,9 @@ func (svc *BoardgameService) DeleteById(id string) error {
 }
 
 // Rate validates the boardgame exists and sets the username on the rating.
-func (svc *BoardgameService) Rate(rating *Rating, id, username string) error {
+func (svc *Service) Rate(rating *Rating, id, username string) error {
 	// Check if boardgame exists
-	_, err := svc.GetById(id)
+	_, err := svc.GetByID(id)
 	if err != nil {
 		return err
 	}
@@ -132,12 +132,12 @@ func (svc *BoardgameService) Rate(rating *Rating, id, username string) error {
 }
 
 // connectBoardgameToExpansion checks if we are dealing with expansions and creates connection to boardgame parent.
-func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *Boardgame, id string) error {
+func (svc *Service) connectBoardgameToExpansion(boardgame *Boardgame, id string) error {
 	if id == "" { // This is an expansion
 		return nil
 	}
 
-	boardgameParent, err := svc.GetById(id) // Get Parent BG
+	boardgameParent, err := svc.GetByID(id) // Get Parent BG
 	if err != nil {
 		return err
 	}
@@ -147,12 +147,12 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *Boardgame, i
 		return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 	}
 
-	boardgame.SetBoardgameID(boardgameParent.GetId()) // Set the Parents Id in the expansion
+	boardgame.SetBoardgameID(boardgameParent.GetID()) // Set the Parents Id in the expansion
 	return nil
 }
 
 // validateAssociations validates if tags, categories and mechanisms exist when boardgames are created.
-func (svc *BoardgameService) validateAssociations(boardgame *Boardgame) error {
+func (svc *Service) validateAssociations(boardgame *Boardgame) error {
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.HasTags() {
 		for _, tempTag := range boardgame.GetTags() {

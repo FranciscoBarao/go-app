@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+// MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(mechanism *mechanism.Mechanism) error
 	GetAll(sort string) ([]mechanism.Mechanism, error)
@@ -17,12 +18,13 @@ type MechanismService interface {
 	Delete(name string) error
 }
 
+// MechanismController handles HTTP requests for mechanism operations.
 type MechanismController struct {
 	service MechanismService
 }
 
 // NewMechanismController initializes the mechanism controller.
-func NewMechanismController(mechanismSvc *mechanism.MechanismService) *MechanismController {
+func NewMechanismController(mechanismSvc *mechanism.Service) *MechanismController {
 	return &MechanismController{
 		service: mechanismSvc,
 	}
@@ -61,7 +63,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// Get Mechanisms godoc
+// GetAll Mechanisms godoc
 // @Summary 	Fetches all Mechanisms
 // @Tags 	mechanisms
 // @Produce 	json

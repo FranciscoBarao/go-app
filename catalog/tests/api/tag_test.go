@@ -29,17 +29,17 @@ func (suite *TagSuite) TestPost() {
 		Create(tagObj).
 		Return(nil)
 
-	tagJson, err := json.Marshal(tagObj)
+	tagJSON, err := json.Marshal(tagObj)
 	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/tag").
-		JSON(tagJson).
+		JSON(tagJSON).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(tagJson)).
+		Body(string(tagJSON)).
 		Status(http.StatusOK).
 		End()
 }

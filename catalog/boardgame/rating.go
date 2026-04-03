@@ -2,6 +2,7 @@ package boardgame
 
 import "gorm.io/gorm"
 
+// Rating represents a user's rating for a boardgame.
 type Rating struct {
 	gorm.Model `json:"-" swaggerignore:"true"`
 
@@ -9,6 +10,7 @@ type Rating struct {
 	Value    int    `json:"value" db:"value" valid:"required, int, range(0|10)"`
 }
 
+// SetUsername sets the rating's username.
 func (rating *Rating) SetUsername(username string) {
 	rating.Username = username
 }

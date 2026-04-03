@@ -6,6 +6,7 @@ import (
 	"github.com/FranciscoBarao/catalog/transport"
 )
 
+// AddBoardGameRouter registers boardgame routes on the given router.
 func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *transport.BoardgameController) {
 	// Protected layer
 	router.Group(func(router chi.Router) {

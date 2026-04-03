@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/middleware"
 )
 
+// GetFilters parses and validates filter query parameters.
 // Examples of filters that work:
 // name.a 		---> name LIKE ?    %a%
 // price.le.10  ---> price <= ?     10
@@ -36,11 +37,11 @@ func validateFilter(model interface{}, filterBy string) error {
 	var field, operator, value string
 
 	splits := strings.Split(filterBy, ".")
-	switch size := len(splits); {
-	case size == 2:
+	switch len(splits) {
+	case 2:
 		field, value = splits[0], splits[1]
 
-	case size == 3:
+	case 3:
 		field, operator, value = splits[0], splits[1], splits[2]
 		if err := validateOperator(operator); err != nil {
 			return err
@@ -127,11 +128,11 @@ func getFilterBodyAndValue(filterBy string) (string, string) {
 	if len(splits) == 2 {
 		value = splits[1]
 		return field + " LIKE ?", "%" + value + "%"
-	} else {
-		operator = splits[1]
-		value = splits[2]
-		return field + " " + operatorToString(operator) + " ?", value
 	}
+
+	operator = splits[1]
+	value = splits[2]
+	return field + " " + operatorToString(operator) + " ?", value
 }
 
 // operatorToString converts operator language to string literal (eq -> ==)

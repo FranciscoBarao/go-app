@@ -10,23 +10,23 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
-// Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling
+// BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(bg *boardgame.Boardgame, id string) error
 	GetAll(sort, filterBody, filterValue string) ([]boardgame.Boardgame, error)
-	GetById(id string) (boardgame.Boardgame, error)
+	GetByID(id string) (boardgame.Boardgame, error)
 	Update(bg *boardgame.Boardgame, id string) error
-	DeleteById(id string) error
+	DeleteByID(id string) error
 	Rate(rating *boardgame.Rating, id, username string) error
 }
 
-// Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic
+// BoardgameController handles HTTP requests for boardgame operations.
 type BoardgameController struct {
 	service BoardgameService
 }
 
 // NewBoardgameController initializes the boardgame and the associations controller
-func NewBoardgameController(boardGameSvc *boardgame.BoardgameService) *BoardgameController {
+func NewBoardgameController(boardGameSvc *boardgame.Service) *BoardgameController {
 	return &BoardgameController{
 		service: boardGameSvc,
 	}
@@ -69,7 +69,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// Get Boardgames godoc
+// GetAll Boardgames godoc
 // @Summary 	Fetches all Boardgames
 // @Tags 		boardgames
 // @Produce 	json
@@ -113,7 +113,7 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Request) {
 	id := utils.GetFieldFromURL(r, "id")
 
-	boardgame, err := controller.service.GetById(id)
+	boardgame, err := controller.service.GetByID(id)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -173,7 +173,7 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 	id := utils.GetFieldFromURL(r, "id")
 
 	// Delete by Id
-	if err := controller.service.DeleteById(id); err != nil {
+	if err := controller.service.DeleteByID(id); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

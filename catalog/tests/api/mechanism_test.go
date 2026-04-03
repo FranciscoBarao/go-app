@@ -29,16 +29,16 @@ func (suite *MechanismSuite) TestPostMechanism() {
 		Create(mech).
 		Return(nil)
 
-	mechJson, err := json.Marshal(mech)
+	mechJSON, err := json.Marshal(mech)
 	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/mechanism").
-		JSON(mechJson).
+		JSON(mechJSON).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(mechJson)).
+		Body(string(mechJSON)).
 		Status(http.StatusOK).
 		End()
 }

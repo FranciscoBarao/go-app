@@ -6,6 +6,7 @@ import (
 	"github.com/FranciscoBarao/catalog/transport"
 )
 
+// AddTagRouter registers tag routes on the given router.
 func AddTagRouter(router chi.Router, oauthKey string, tagController *transport.TagController) {
 	// Protected layer
 	router.Route("/api/tag", func(router chi.Router) {

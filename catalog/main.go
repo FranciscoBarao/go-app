@@ -52,10 +52,10 @@ func main() {
 	}
 
 	// Initialize Services
-	tagSvc := tag.NewTagService(db)
-	categorySvc := category.NewCategoryService(db)
-	mechanismSvc := mechanism.NewMechanismService(db)
-	boardgameSvc := boardgame.NewBoardgameService(db, tagSvc, categorySvc, mechanismSvc)
+	tagSvc := tag.NewService(db)
+	categorySvc := category.NewService(db)
+	mechanismSvc := mechanism.NewService(db)
+	boardgameSvc := boardgame.NewService(db, tagSvc, categorySvc, mechanismSvc)
 
 	// Initialize Controllers
 	bgController := transport.NewBoardgameController(boardgameSvc)

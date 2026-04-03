@@ -6,6 +6,7 @@ import (
 	"github.com/FranciscoBarao/catalog/transport"
 )
 
+// AddMechanismRouter registers mechanism routes on the given router.
 func AddMechanismRouter(router chi.Router, oauthKey string, mechanismController *transport.MechanismController) {
 	// Protected layer
 	router.Route("/api/mechanism", func(router chi.Router) {

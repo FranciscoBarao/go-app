@@ -6,6 +6,7 @@ import (
 	"github.com/FranciscoBarao/catalog/transport"
 )
 
+// AddCategoryRouter registers category routes on the given router.
 func AddCategoryRouter(router chi.Router, oauthKey string, categoryController *transport.CategoryController) {
 	// Protected layer
 	router.Route("/api/category", func(router chi.Router) {

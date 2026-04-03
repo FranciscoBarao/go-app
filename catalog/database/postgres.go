@@ -26,10 +26,12 @@ type Database interface {
 	ReplaceAssociatons(model interface{}, association string, values interface{}) error
 }
 
+// Postgres wraps a gorm.DB connection.
 type Postgres struct {
 	db *gorm.DB
 }
 
+// Connect opens a PostgreSQL connection and runs migrations for the given models.
 func Connect(config *config.PostgresConfig, models ...interface{}) (*Postgres, error) {
 	log := middleware.FromCtx(context.Background())
 
@@ -65,6 +67,7 @@ func isSliceOrArray(value interface{}) bool {
 	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
 }
 
+// Create persists a new record to the database.
 func (instance *Postgres) Create(value interface{}) error {
 	log := middleware.FromCtx(context.Background())
 
@@ -107,6 +110,7 @@ func (instance *Postgres) Read(value interface{}, sort, search, identifier strin
 	return nil
 }
 
+// Update saves changes to an existing record.
 func (instance *Postgres) Update(value interface{}) error {
 	log := middleware.FromCtx(context.Background())
 
@@ -120,6 +124,7 @@ func (instance *Postgres) Update(value interface{}) error {
 	return nil
 }
 
+// Delete removes a record and its associations from the database.
 func (instance *Postgres) Delete(value interface{}) error {
 	log := middleware.FromCtx(context.Background())
 
@@ -138,8 +143,7 @@ func (instance *Postgres) Delete(value interface{}) error {
 	return nil
 }
 
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ASSOCIATIONS        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-// ReplaceAssociatons replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
+// ReplaceAssociatons replaces the values of a certain association of a certain model.
 func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
 	log := middleware.FromCtx(context.Background())
 

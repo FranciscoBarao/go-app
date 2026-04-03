@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+// ErrorHandler writes an appropriate HTTP error response based on the error type.
 func ErrorHandler(w http.ResponseWriter, err error) {
 	if err != nil {
 		var mr *MalformedRequest

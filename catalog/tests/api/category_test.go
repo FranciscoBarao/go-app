@@ -29,16 +29,16 @@ func (suite *CategorySuite) TestPostCategory() {
 		Create(categoryObj).
 		Return(nil)
 
-	categoryJson, err := json.Marshal(categoryObj)
+	categoryJSON, err := json.Marshal(categoryObj)
 	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
-		JSON(categoryJson).
+		JSON(categoryJSON).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(categoryJson)).
+		Body(string(categoryJSON)).
 		Status(http.StatusOK).
 		End()
 }
