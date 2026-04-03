@@ -8,8 +8,8 @@ import (
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
 )
 
 type CategorySuite struct {
@@ -24,12 +24,12 @@ func (suite *CategorySuite) SetupSuite() {
 
 func (suite *CategorySuite) TestPostCategory() {
 	categoryName := "test"
-	category := model.NewCategory(categoryName)
+	categoryObj := category.NewCategory(categoryName)
 	suite.base.dbMock.EXPECT().
-		Create(category).
+		Create(categoryObj).
 		Return(nil)
 
-	categoryJson, err := json.Marshal(category)
+	categoryJson, err := json.Marshal(categoryObj)
 	suite.Require().NoError(err)
 
 	apitest.New().
@@ -45,11 +45,11 @@ func (suite *CategorySuite) TestPostCategory() {
 
 func (suite *CategorySuite) TestGetCategory() {
 	categoryName := "test"
-	category := new(model.Category)
+	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Do(func(category *model.Category, sort, query, field string) error {
-			category.Name = categoryName
+		Read(categoryObj, "", "name = ?", categoryName).
+		Do(func(categoryObj *category.Category, sort, query, field string) error {
+			categoryObj.Name = categoryName
 			return nil
 		}).
 		Return(nil)
@@ -66,13 +66,13 @@ func (suite *CategorySuite) TestGetCategory() {
 
 func (suite *CategorySuite) TestDeleteCategory() {
 	categoryName := "test"
-	category := new(model.Category)
+	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
+		Read(categoryObj, "", "name = ?", categoryName).
 		Return(nil)
 
 	suite.base.dbMock.EXPECT().
-		Delete(new(model.Category)).
+		Delete(new(category.Category)).
 		Return(nil)
 
 	apitest.New().
@@ -158,9 +158,9 @@ func (suite *CategorySuite) TestPostCategoryFailures() {
 
 func (suite *CategorySuite) TestGetCategoryFailure() {
 	categoryName := "test"
-	category := new(model.Category)
+	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
+		Read(categoryObj, "", "name = ?", categoryName).
 		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
 
 	// Record not found
@@ -175,9 +175,9 @@ func (suite *CategorySuite) TestGetCategoryFailure() {
 
 func (suite *CategorySuite) TestDeleteCategoryFailure() {
 	categoryName := "test"
-	category := new(model.Category)
+	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
+		Read(categoryObj, "", "name = ?", categoryName).
 		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
 
 	// Record not found

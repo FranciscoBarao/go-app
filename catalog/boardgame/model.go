@@ -1,0 +1,105 @@
+package boardgame
+
+import (
+	"github.com/FranciscoBarao/catalog/category"
+	"github.com/FranciscoBarao/catalog/mechanism"
+	"github.com/FranciscoBarao/catalog/tag"
+	"gorm.io/gorm"
+)
+
+type Boardgame struct {
+	gorm.Model   `swaggerignore:"true"`
+	Name         string                `json:"name" valid:"alphanum, maxstringlength(100)"`
+	Publisher    string                `json:"publisher" valid:"alphanum, maxstringlength(100)"`
+	PlayerNumber int                   `json:"playerNumber" valid:"int, range(1|16)"`
+	Tags         []tag.Tag             `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
+	Categories   []category.Category   `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
+	Mechanisms   []mechanism.Mechanism  `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
+	Ratings      []Rating              `gorm:"many2many:boardgame_ratings;" json:"ratings,omitempty"`
+	Expansions   []Boardgame           `gorm:"foreignkey:BoardgameID" swaggerignore:"true" json:"expansions,omitempty"`
+	BoardgameID  *uint                 `swaggerignore:"true" json:"boardgame_id,omitempty"`
+}
+
+// Update
+func (bg *Boardgame) UpdateBoardgame(boardgame *Boardgame) {
+	bg.Name = boardgame.GetName()
+	bg.Publisher = boardgame.GetPublisher()
+	bg.PlayerNumber = boardgame.GetPlayerNumber()
+	bg.Tags = boardgame.GetTags()
+	bg.Categories = boardgame.GetCategories()
+}
+
+// Existence functions
+func (bg Boardgame) HasTags() bool {
+	return len(bg.Tags) > 0
+}
+
+func (bg Boardgame) HasCategories() bool {
+	return len(bg.Categories) > 0
+}
+
+func (bg Boardgame) HasMechanisms() bool {
+	return len(bg.Mechanisms) > 0
+}
+
+func (bg Boardgame) HasExpansions() bool {
+	return len(bg.Expansions) > 0
+}
+
+func (bg Boardgame) IsExpansion() bool {
+	return bg.BoardgameID != nil
+}
+
+// Getters
+func (bg Boardgame) GetId() *uint {
+	return &bg.Model.ID
+}
+
+func (bg Boardgame) GetName() string {
+	return bg.Name
+}
+
+func (bg Boardgame) GetPublisher() string {
+	return bg.Publisher
+}
+
+func (bg Boardgame) GetPlayerNumber() int {
+	return bg.PlayerNumber
+}
+
+func (bg Boardgame) GetTags() []tag.Tag {
+	return bg.Tags
+}
+
+func (bg Boardgame) GetCategories() []category.Category {
+	return bg.Categories
+}
+
+func (bg Boardgame) GetMechanisms() []mechanism.Mechanism {
+	return bg.Mechanisms
+}
+
+func (bg Boardgame) GetExpansions() []Boardgame {
+	return bg.Expansions
+}
+
+func (bg Boardgame) GetBoardgameID() *uint {
+	return bg.BoardgameID
+}
+
+// Setters
+func (bg *Boardgame) SetBoardgameID(id *uint) {
+	bg.BoardgameID = id
+}
+
+// Rating struct - co-located since Rating is boardgame-only
+type Rating struct {
+	gorm.Model `json:"-" swaggerignore:"true"`
+
+	Username string `json:"username,omitempty" db:"username" gorm:"unique"`
+	Value    int    `json:"value" db:"value" valid:"required, int, range(0|10)"`
+}
+
+func (rating *Rating) SetUsername(username string) {
+	rating.Username = username
+}

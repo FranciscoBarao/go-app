@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/tag"
 )
 
 type TagSuite struct {
@@ -24,12 +24,12 @@ func (suite *TagSuite) SetupSuite() {
 
 func (suite *TagSuite) TestPost() {
 	tagName := "test"
-	tag := model.NewTag(tagName)
+	tagObj := tag.NewTag(tagName)
 	suite.base.dbMock.EXPECT().
-		Create(tag).
+		Create(tagObj).
 		Return(nil)
 
-	tagJson, err := json.Marshal(tag)
+	tagJson, err := json.Marshal(tagObj)
 	suite.Require().NoError(err)
 
 	apitest.New().
@@ -46,11 +46,11 @@ func (suite *TagSuite) TestPost() {
 
 func (suite *TagSuite) TestGet() {
 	tagName := "test"
-	tag := new(model.Tag)
+	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
-		Do(func(tag *model.Tag, sort, query, field string) error {
-			tag.Name = tagName
+		Read(tagObj, "", "name = ?", tagName).
+		Do(func(t *tag.Tag, sort, query, field string) error {
+			t.Name = tagName
 			return nil
 		}).
 		Return(nil)
@@ -67,13 +67,13 @@ func (suite *TagSuite) TestGet() {
 
 func (suite *TagSuite) TestDelete() {
 	tagName := "test"
-	tag := new(model.Tag)
+	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
+		Read(tagObj, "", "name = ?", tagName).
 		Return(nil)
 
 	suite.base.dbMock.EXPECT().
-		Delete(new(model.Tag)).
+		Delete(new(tag.Tag)).
 		Return(nil)
 
 	apitest.New().
@@ -159,9 +159,9 @@ func (suite *TagSuite) TestPostFailures() {
 
 func (suite *TagSuite) TestGetFailure() {
 	tagName := "test"
-	tag := new(model.Tag)
+	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
+		Read(tagObj, "", "name = ?", tagName).
 		Return(middleware.NewError(http.StatusNotFound, "Tag not found with name: "+tagName))
 
 	// Record not found
@@ -176,9 +176,9 @@ func (suite *TagSuite) TestGetFailure() {
 
 func (suite *TagSuite) TestDeleteFailure() {
 	tagName := "test"
-	tag := new(model.Tag)
+	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
+		Read(tagObj, "", "name = ?", tagName).
 		Return(middleware.NewError(http.StatusNotFound, "Tag not found with name: "+tagName))
 
 	// Record not found

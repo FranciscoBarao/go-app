@@ -6,15 +6,14 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
-	"github.com/FranciscoBarao/catalog/services"
+	"github.com/FranciscoBarao/catalog/tag"
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
 type tagService interface {
-	Create(tag *model.Tag) error
-	GetAll(sort string) ([]model.Tag, error)
-	Get(name string) (model.Tag, error)
+	Create(t *tag.Tag) error
+	GetAll(sort string) ([]tag.Tag, error)
+	Get(name string) (tag.Tag, error)
 	Delete(name string) error
 }
 
@@ -23,7 +22,7 @@ type TagController struct {
 }
 
 // InitController initializes the tag controller.
-func InitTagController(tagSvc *services.TagService) *TagController {
+func InitTagController(tagSvc *tag.TagService) *TagController {
 	return &TagController{
 		service: tagSvc,
 	}
@@ -33,30 +32,30 @@ func InitTagController(tagSvc *services.TagService) *TagController {
 // @Summary 	Creates a Tag using a name
 // @Tags 		tags
 // @Produce 	json
-// @Param 		data body model.Tag true "The Tag name"
+// @Param 		data body tag.Tag true "The Tag name"
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Tag
+// @Success 	200 {object} tag.Tag
 // @Router 		/tag [post]
 func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Tag input
-	var tag = &model.Tag{}
-	if err := utils.DecodeJSONBody(w, r, tag); err != nil {
+	var t = &tag.Tag{}
+	if err := utils.DecodeJSONBody(w, r, t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Tag input
-	if err := utils.ValidateStruct(tag); err != nil {
+	if err := utils.ValidateStruct(t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(tag); err != nil {
+	if err := controller.service.Create(t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := render.New().JSON(w, http.StatusOK, tag); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -67,11 +66,11 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 // @Tags 		tags
 // @Produce 	json
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Tag
+// @Success 	200 {object} tag.Tag
 // @Router 		/tag [get]
 func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(model.Tag{}, sortBy)
+	sort, err := utils.GetSort(tag.Tag{}, sortBy)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -95,7 +94,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 // @Produce 	json
 // @Param 		name path string true "The Tag name"
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Tag
+// @Success 	200 {object} tag.Tag
 // @Router 		/tag/{name} [get]
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")

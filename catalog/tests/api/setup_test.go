@@ -7,11 +7,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/golang/mock/gomock"
 
+	"github.com/FranciscoBarao/catalog/boardgame"
+	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/database"
+	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware/logging"
-	"github.com/FranciscoBarao/catalog/repositories"
 	"github.com/FranciscoBarao/catalog/route"
-	"github.com/FranciscoBarao/catalog/services"
+	"github.com/FranciscoBarao/catalog/tag"
 )
 
 const oauthKey = "secret-key"
@@ -19,7 +22,7 @@ const oauthKey = "secret-key"
 type Base struct {
 	router      *chi.Mux
 	oauthHeader string
-	dbMock      *repositories.MockDatabase
+	dbMock      *database.MockDatabase
 }
 
 // Prepares test environment
@@ -28,22 +31,26 @@ func NewBase(t *testing.T) *Base {
 	log.Debug().Msg("setup starting..")
 
 	// Setup database mock
-	mock := repositories.NewMockDatabase(gomock.NewController(t))
+	mock := database.NewMockDatabase(gomock.NewController(t))
 
-	// Fetch Oauth Key
-	//oauthKey, _ := os.LookupEnv("OAUTH_KEY")
+	// Initialize Services
+	tagSvc := tag.NewTagService(mock)
+	categorySvc := category.NewCategoryService(mock)
+	mechanismSvc := mechanism.NewMechanismService(mock)
+	boardgameSvc := boardgame.NewBoardgameService(mock, tagSvc, categorySvc, mechanismSvc)
 
-	// Set Repositories & Controllers & Services
-	repositories := repositories.InitRepositories(mock)
-	services := services.InitServices(repositories)
-	controllers := controllers.InitControllers(services)
+	// Initialize Controllers
+	bgController := controllers.InitBoardgameController(boardgameSvc)
+	tagController := controllers.InitTagController(tagSvc)
+	categoryController := controllers.InitCategoryController(categorySvc)
+	mechanismController := controllers.InitMechanismController(mechanismSvc)
 
 	// Adds Routers
 	router := chi.NewRouter()
-	route.AddBoardGameRouter(router, oauthKey, controllers.BoardgameController)
-	route.AddTagRouter(router, oauthKey, controllers.TagController)
-	route.AddCategoryRouter(router, oauthKey, controllers.CategoryController)
-	route.AddMechanismRouter(router, oauthKey, controllers.MechanismController)
+	route.AddBoardGameRouter(router, oauthKey, bgController)
+	route.AddTagRouter(router, oauthKey, tagController)
+	route.AddCategoryRouter(router, oauthKey, categoryController)
+	route.AddMechanismRouter(router, oauthKey, mechanismController)
 
 	log.Debug().Msg("setup complete")
 	return &Base{

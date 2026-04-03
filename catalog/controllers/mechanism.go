@@ -5,16 +5,15 @@ import (
 
 	"github.com/unrolled/render"
 
+	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
-	"github.com/FranciscoBarao/catalog/services"
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
 type mechanismService interface {
-	Create(mechanism *model.Mechanism) error
-	GetAll(sort string) ([]model.Mechanism, error)
-	Get(name string) (model.Mechanism, error)
+	Create(mechanism *mechanism.Mechanism) error
+	GetAll(sort string) ([]mechanism.Mechanism, error)
+	Get(name string) (mechanism.Mechanism, error)
 	Delete(name string) error
 }
 
@@ -23,7 +22,7 @@ type MechanismController struct {
 }
 
 // InitController initializes the mechanism controller.
-func InitMechanismController(mechanismSvc *services.MechanismService) *MechanismController {
+func InitMechanismController(mechanismSvc *mechanism.MechanismService) *MechanismController {
 	return &MechanismController{
 		service: mechanismSvc,
 	}
@@ -33,30 +32,30 @@ func InitMechanismController(mechanismSvc *services.MechanismService) *Mechanism
 // @Summary 	Creates a Mechanism using a name
 // @Tags 	mechanisms
 // @Produce 	json
-// @Param 		data body model.Mechanism true "The Mechanism name"
+// @Param 		data body mechanism.Mechanism true "The Mechanism name"
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Mechanism
+// @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism [post]
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 	// Deserialize Mechanism input
-	var mechanism = &model.Mechanism{}
-	if err := utils.DecodeJSONBody(w, r, mechanism); err != nil {
+	var m = &mechanism.Mechanism{}
+	if err := utils.DecodeJSONBody(w, r, m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	// Validate Mechanism input
-	if err := utils.ValidateStruct(mechanism); err != nil {
+	if err := utils.ValidateStruct(m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := controller.service.Create(mechanism); err != nil {
+	if err := controller.service.Create(m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := render.New().JSON(w, http.StatusOK, mechanism); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -67,11 +66,11 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 // @Tags 	mechanisms
 // @Produce 	json
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Mechanism
+// @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(model.Mechanism{}, sortBy)
+	sort, err := utils.GetSort(mechanism.Mechanism{}, sortBy)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -95,18 +94,18 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 // @Produce 	json
 // @Param 		name path string true "The Mechanism name"
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
-// @Success 	200 {object} model.Mechanism
+// @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism/{name} [get]
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
 
-	mechanism, err := controller.service.Get(name)
+	m, err := controller.service.Get(name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := render.New().JSON(w, http.StatusOK, mechanism); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

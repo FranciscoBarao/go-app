@@ -1,8 +1,7 @@
-package model
+package category
 
 type Category struct {
-	Name       string      `gorm:"primarykey" json:"name" valid:"alphanum, maxstringlength(30)"`
-	Boardgames []Boardgame `gorm:"many2many:boardgame_categories;" json:"-"`
+	Name string `gorm:"primarykey" json:"name" valid:"alphanum, maxstringlength(30)"`
 }
 
 func NewCategory(name string) *Category {

@@ -1,8 +1,7 @@
-package model
+package mechanism
 
 type Mechanism struct {
-	Name       string      `gorm:"primarykey" json:"name" valid:"alphanum, maxstringlength(30)"`
-	Boardgames []Boardgame `gorm:"many2many:boardgame_mechanisms;" json:"-"`
+	Name string `gorm:"primarykey" json:"name" valid:"alphanum, maxstringlength(30)"`
 }
 
 func NewMechanism(name string) *Mechanism {
@@ -17,7 +16,6 @@ func (mechanism *Mechanism) UpdateMechanism(name string) {
 	}
 }
 
-// Getters
 func (mechanism Mechanism) GetName() string {
 	return mechanism.Name
 }

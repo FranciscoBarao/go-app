@@ -9,8 +9,11 @@ import (
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/FranciscoBarao/catalog/boardgame"
+	"github.com/FranciscoBarao/catalog/category"
+	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/tag"
 )
 
 type BoardGameSuite struct {
@@ -23,7 +26,7 @@ func (suite *BoardGameSuite) SetupSuite() {
 }
 
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
-	bg := &model.Boardgame{Name: "test", Publisher: "test", PlayerNumber: 1}
+	bg := &boardgame.Boardgame{Name: "test", Publisher: "test", PlayerNumber: 1}
 	suite.base.dbMock.EXPECT().
 		Create(bg).
 		Return(nil)
@@ -47,13 +50,13 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 	parentIDStr := "0"
 	u64, _ := strconv.ParseUint(parentIDStr, 10, 32)
 	parentID := uint(u64)
-	parentBg := new(model.Boardgame)
+	parentBg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
 		Read(parentBg, "", "id = ?", parentIDStr).
 		Return(nil)
 
 	// Boardgame expansion creation Mock
-	expansion := &model.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
+	expansion := &boardgame.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
 	expansion.SetBoardgameID(&parentID)
 	suite.base.dbMock.EXPECT().
 		Create(expansion).
@@ -74,7 +77,7 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 
 func (suite *BoardGameSuite) TestGetBoardgame() {
 	bgID := "test"
-	bg := new(model.Boardgame)
+	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
 		Read(bg, "", "id = ?", bgID).
 		Return(nil)
@@ -90,13 +93,13 @@ func (suite *BoardGameSuite) TestGetBoardgame() {
 
 func (suite *BoardGameSuite) TestDeleteBoardgameSuccess() {
 	bgID := "1"
-	bg := new(model.Boardgame)
+	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
 		Read(bg, "", "id = ?", bgID).
 		Return(nil)
 
 	suite.base.dbMock.EXPECT().
-		Delete(new(model.Boardgame)).
+		Delete(new(boardgame.Boardgame)).
 		Return(nil)
 
 	apitest.New().
@@ -222,9 +225,9 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	//  <<<< field - Tags >>>>
 	tagName := "test"
-	tag := new(model.Tag)
+	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
+		Read(tagObj, "", "name = ?", tagName).
 		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	apitest.New(). // Invalid Struct -> Tag does not previously exist
@@ -247,9 +250,9 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 	//  <<<< field - Categories >>>>
 	categoryName := "test"
-	category := new(model.Category)
+	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
+		Read(categoryObj, "", "name = ?", categoryName).
 		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	apitest.New(). // Invalid Struct -> Category does not previously exist
@@ -271,7 +274,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 	//  <<<< field - Mechanisms >>>>
 	mechName := "test"
-	mech := new(model.Mechanism)
+	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
 		Read(mech, "", "name = ?", mechName).
 		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
@@ -296,7 +299,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 func (suite *BoardGameSuite) TestGetBoardgameFailure() {
 	bgID := "1"
-	bg := new(model.Boardgame)
+	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
 		Read(bg, "", "id = ?", bgID).
 		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with name: "+bgID))
@@ -313,7 +316,7 @@ func (suite *BoardGameSuite) TestGetBoardgameFailure() {
 
 func (suite *BoardGameSuite) TestDeleteBoardgameFailure() {
 	bgID := "1"
-	bg := new(model.Boardgame)
+	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
 		Read(bg, "", "id = ?", bgID).
 		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with id: "+bgID))

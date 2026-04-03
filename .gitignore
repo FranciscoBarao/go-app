@@ -1,3 +1,4 @@
+### Golang ###
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -57,7 +58,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-### react ###
+### React ###
 .DS_*
 *.log
 logs
@@ -74,6 +75,7 @@ thumb
 sketch
 
 
+## Doc
 TODO.md
 docs/
 /.kanbn

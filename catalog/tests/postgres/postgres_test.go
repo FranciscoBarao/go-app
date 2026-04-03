@@ -6,10 +6,13 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/FranciscoBarao/catalog/boardgame"
+	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/database"
+	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/tag"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -34,7 +37,7 @@ func (suite *PostgresSuite) SetupSuite() {
 		Database: "postgres",
 	}
 	// Connect to Database
-	suite.postgres, err = database.Connect(config)
+	suite.postgres, err = database.Connect(config, &boardgame.Boardgame{}, &tag.Tag{}, &category.Category{}, &mechanism.Mechanism{}, &boardgame.Rating{})
 	suite.Require().NoError(err)
 }
 
@@ -56,7 +59,7 @@ func (suite *PostgresSuite) TestCreate_IncorrectModel() {
 }
 
 func (suite *PostgresSuite) TestCreate_Duplicated() {
-	insertBg := &model.Boardgame{Name: "duplicated", Publisher: "publisher", PlayerNumber: 1}
+	insertBg := &boardgame.Boardgame{Name: "duplicated", Publisher: "publisher", PlayerNumber: 1}
 	err := suite.postgres.Create(insertBg)
 	suite.Require().NoError(err)
 	err = suite.postgres.Create(insertBg)
@@ -64,13 +67,13 @@ func (suite *PostgresSuite) TestCreate_Duplicated() {
 }
 
 func (suite *PostgresSuite) TestGet() {
-	insertBg := &model.Boardgame{Name: "name-01", Publisher: "publisher", PlayerNumber: 1}
+	insertBg := &boardgame.Boardgame{Name: "name-01", Publisher: "publisher", PlayerNumber: 1}
 	suite.InsertEntry(insertBg)
 
-	insertBg = &model.Boardgame{Name: "name-02", Publisher: "publisher", PlayerNumber: 2}
+	insertBg = &boardgame.Boardgame{Name: "name-02", Publisher: "publisher", PlayerNumber: 2}
 	suite.InsertEntry(insertBg)
 
-	var readBg []model.Boardgame
+	var readBg []boardgame.Boardgame
 	err := suite.postgres.Read(&readBg, "", "name LIKE ?", "name-0%")
 	suite.Assert().NoError(err)
 	suite.Assert().Len(readBg, 2)
@@ -78,10 +81,10 @@ func (suite *PostgresSuite) TestGet() {
 
 func (suite *PostgresSuite) TestUpdate() {
 	name := "updateName"
-	insertBg := &model.Boardgame{Name: name, Publisher: "pub1", PlayerNumber: 1}
+	insertBg := &boardgame.Boardgame{Name: name, Publisher: "pub1", PlayerNumber: 1}
 	suite.InsertEntry(insertBg)
 
-	var bg model.Boardgame
+	var bg boardgame.Boardgame
 	err := suite.postgres.Read(&bg, "", "name = ?", name)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(insertBg.Publisher, bg.Publisher)
@@ -98,10 +101,10 @@ func (suite *PostgresSuite) TestUpdate() {
 
 func (suite *PostgresSuite) TestDelete() {
 	name := "deleteName"
-	insertBg := &model.Boardgame{Name: name, Publisher: "publisher", PlayerNumber: 1}
+	insertBg := &boardgame.Boardgame{Name: name, Publisher: "publisher", PlayerNumber: 1}
 	suite.InsertEntry(insertBg)
 
-	var readBg *model.Boardgame
+	var readBg *boardgame.Boardgame
 	err := suite.postgres.Read(&readBg, "", "name = ?", name)
 	suite.Assert().NoError(err)
 
@@ -110,9 +113,9 @@ func (suite *PostgresSuite) TestDelete() {
 }
 
 func (suite *PostgresSuite) TestDelete_NotFound() {
-	var model = &model.Boardgame{}
-	model.ID = 100
-	err := suite.postgres.Delete(model)
+	var bg = &boardgame.Boardgame{}
+	bg.ID = 100
+	err := suite.postgres.Delete(bg)
 	suite.Assert().Error(err)
 
 	var mr = &middleware.MalformedRequest{}

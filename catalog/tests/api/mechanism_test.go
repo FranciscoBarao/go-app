@@ -8,8 +8,8 @@ import (
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
 )
 
 type MechanismSuite struct {
@@ -24,7 +24,7 @@ func (suite *MechanismSuite) SetupSuite() {
 
 func (suite *MechanismSuite) TestPostMechanism() {
 	mechName := "test"
-	mech := model.NewMechanism(mechName)
+	mech := mechanism.NewMechanism(mechName)
 	suite.base.dbMock.EXPECT().
 		Create(mech).
 		Return(nil)
@@ -45,10 +45,10 @@ func (suite *MechanismSuite) TestPostMechanism() {
 
 func (suite *MechanismSuite) TestGetMechanism() {
 	mechName := "test"
-	mech := new(model.Mechanism)
+	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
 		Read(mech, "", "name = ?", mechName).
-		Do(func(mech *model.Mechanism, sort, query, field string) error {
+		Do(func(mech *mechanism.Mechanism, sort, query, field string) error {
 			mech.Name = mechName
 			return nil
 		}).
@@ -67,13 +67,13 @@ func (suite *MechanismSuite) TestGetMechanism() {
 func (suite *MechanismSuite) TestDeleteMechanism() {
 
 	mechName := "test"
-	mech := new(model.Mechanism)
+	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
 		Read(mech, "", "name = ?", mechName).
 		Return(nil)
 
 	suite.base.dbMock.EXPECT().
-		Delete(new(model.Mechanism)).
+		Delete(new(mechanism.Mechanism)).
 		Return(nil)
 
 	apitest.New().
@@ -159,7 +159,7 @@ func (suite *MechanismSuite) TestPostMechanismFailures() {
 
 func (suite *MechanismSuite) TestGetMechanismFailure() {
 	mechName := "test"
-	mech := new(model.Mechanism)
+	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
 		Read(mech, "", "name = ?", mechName).
 		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))
@@ -176,7 +176,7 @@ func (suite *MechanismSuite) TestGetMechanismFailure() {
 
 func (suite *MechanismSuite) TestDeleteMechanismFailure() {
 	mechName := "test"
-	mech := new(model.Mechanism)
+	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
 		Read(mech, "", "name = ?", mechName).
 		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))

@@ -13,14 +13,25 @@ import (
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/middleware"
 	"github.com/FranciscoBarao/catalog/middleware/logging"
-	"github.com/FranciscoBarao/catalog/model"
 )
+
+//go:generate mockgen --build_flags=--mod=mod -package database -destination=database_mock.go . Database
+
+// Database defines the interface for all database operations.
+// Moved from repositories/repositories.go to co-locate with the Postgres implementation.
+type Database interface {
+	Create(value interface{}) error
+	Read(value interface{}, sort, search, identifier string) error
+	Update(value interface{}) error
+	Delete(value interface{}) error
+	ReplaceAssociatons(model interface{}, association string, values interface{}) error
+}
 
 type Postgres struct {
 	db *gorm.DB
 }
 
-func Connect(config *config.PostgresConfig) (*Postgres, error) {
+func Connect(config *config.PostgresConfig, models ...interface{}) (*Postgres, error) {
 	log := logging.FromCtx(context.Background())
 
 	db, err := gorm.Open(postgres.Open(config.String()), &gorm.Config{})
@@ -31,20 +42,10 @@ func Connect(config *config.PostgresConfig) (*Postgres, error) {
 
 	log.Debug().Msg("connected to database")
 
-	if err = migrate(db, &model.Boardgame{}); err != nil {
-		return nil, err
-	}
-	if err = migrate(db, &model.Tag{}); err != nil {
-		return nil, err
-	}
-	if err = migrate(db, &model.Category{}); err != nil {
-		return nil, err
-	}
-	if err = migrate(db, &model.Mechanism{}); err != nil {
-		return nil, err
-	}
-	if err = migrate(db, &model.Rating{}); err != nil {
-		return nil, err
+	for _, m := range models {
+		if err = migrate(db, m); err != nil {
+			return nil, err
+		}
 	}
 
 	log.Debug().Msg("database migration completed")
