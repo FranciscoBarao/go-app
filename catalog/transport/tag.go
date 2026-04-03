@@ -1,4 +1,4 @@
-package controllers
+package transport
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
-type tagService interface {
+type TagService interface {
 	Create(t *tag.Tag) error
 	GetAll(sort string) ([]tag.Tag, error)
 	Get(name string) (tag.Tag, error)
@@ -18,11 +18,11 @@ type tagService interface {
 }
 
 type TagController struct {
-	service tagService
+	service TagService
 }
 
-// InitController initializes the tag controller.
-func InitTagController(tagSvc *tag.TagService) *TagController {
+// NewTagController initializes the tag controller.
+func NewTagController(tagSvc *tag.TagService) *TagController {
 	return &TagController{
 		service: tagSvc,
 	}

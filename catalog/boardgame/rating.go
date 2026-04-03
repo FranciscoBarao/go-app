@@ -2,7 +2,6 @@ package boardgame
 
 import "gorm.io/gorm"
 
-// Rating struct - co-located since Rating is boardgame-only
 type Rating struct {
 	gorm.Model `json:"-" swaggerignore:"true"`
 

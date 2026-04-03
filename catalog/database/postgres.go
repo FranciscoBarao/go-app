@@ -12,7 +12,6 @@ import (
 
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 //go:generate mockgen --build_flags=--mod=mod -package database -destination=database_mock.go . Database
@@ -32,7 +31,7 @@ type Postgres struct {
 }
 
 func Connect(config *config.PostgresConfig, models ...interface{}) (*Postgres, error) {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	db, err := gorm.Open(postgres.Open(config.String()), &gorm.Config{})
 	if err != nil {
@@ -54,7 +53,7 @@ func Connect(config *config.PostgresConfig, models ...interface{}) (*Postgres, e
 }
 
 func migrate(db *gorm.DB, model interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 	err := db.AutoMigrate(model)
 	if err != nil {
 		log.Error().Err(err).Interface("model", model).Msg("failed to migrate model")
@@ -67,7 +66,7 @@ func isSliceOrArray(value interface{}) bool {
 }
 
 func (instance *Postgres) Create(value interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	err := instance.db.Omit(clause.Associations).Create(value).Error
 	if err != nil {
@@ -83,7 +82,7 @@ func (instance *Postgres) Create(value interface{}) error {
 }
 
 func (instance *Postgres) Read(value interface{}, sort, search, identifier string) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	var err error
 	if isSliceOrArray(value) {
@@ -109,7 +108,7 @@ func (instance *Postgres) Read(value interface{}, sort, search, identifier strin
 }
 
 func (instance *Postgres) Update(value interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	err := instance.db.Omit(clause.Associations).Save(value).Error
 	if err != nil {
@@ -122,7 +121,7 @@ func (instance *Postgres) Update(value interface{}) error {
 }
 
 func (instance *Postgres) Delete(value interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	// Delete BG and all its associations (E.g Tags associations)
 	obj := instance.db.Select(clause.Associations).Delete(value)
@@ -142,7 +141,7 @@ func (instance *Postgres) Delete(value interface{}) error {
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<        ASSOCIATIONS        >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 // ReplaceAssociatons replaces the values of a certain association of a certain model (E.g Replace Tags of a Boardgame)
 func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	err := instance.db.Model(model).Association(association).Replace(values)
 	if err != nil {

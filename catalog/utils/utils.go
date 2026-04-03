@@ -10,13 +10,12 @@ import (
 	"github.com/go-chi/oauth"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 // ValidateStruct executes govalidator to check if sturct fields have the correct, previously defined values
 func ValidateStruct(value interface{}) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
-		logging.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
+		middleware.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
 		return middleware.NewError(http.StatusForbidden, "Error - Model validation failed")
 	}
 	return nil

@@ -7,12 +7,11 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 // GetSort constructs the whole sort
 func GetSort(model interface{}, sortBy string) (string, error) {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 	if sortBy == "" {
 		return "", nil // No sort -> No error
 	}
@@ -35,12 +34,12 @@ func validateSort(model interface{}, sortBy string) error {
 
 	field, order := splits[0], splits[1]
 	if field == "" || order == "" { // Validate if there are no empty parameters
-		logging.FromCtx(context.Background()).Error().Msg("sort malformed with empty parameters")
+		middleware.FromCtx(context.Background()).Error().Msg("sort malformed with empty parameters")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
 	}
 
 	if order != "desc" && order != "asc" { // Validate if order is valid
-		logging.FromCtx(context.Background()).Error().Str("order", order).Msg("sort malformed with incorrect parameters")
+		middleware.FromCtx(context.Background()).Error().Str("order", order).Msg("sort malformed with incorrect parameters")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
 	}
 
@@ -55,7 +54,7 @@ func validateField(model interface{}, fieldName string) error {
 			return isTypeSortable(field.Type.String()) // Checks if field is sortable
 		}
 	}
-	logging.FromCtx(context.Background()).Error().Interface("model", model).Str("field_name", fieldName).Msg("unknown field in struct")
+	middleware.FromCtx(context.Background()).Error().Interface("model", model).Str("field_name", fieldName).Msg("unknown field in struct")
 	return middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
 }
 
@@ -65,7 +64,7 @@ func isTypeSortable(typ string) error {
 	case "string", "int", "float64", "float32":
 		return nil
 	default:
-		logging.FromCtx(context.Background()).Error().Str("type", typ).Msg("field is not sortable")
+		middleware.FromCtx(context.Background()).Error().Str("type", typ).Msg("field is not sortable")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
 	}
 }

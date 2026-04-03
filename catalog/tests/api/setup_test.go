@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/golang/mock/gomock"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/boardgame"
 	"github.com/FranciscoBarao/catalog/category"
-	"github.com/FranciscoBarao/catalog/controllers"
 	"github.com/FranciscoBarao/catalog/database"
 	"github.com/FranciscoBarao/catalog/mechanism"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
+	"github.com/FranciscoBarao/catalog/middleware"
 	"github.com/FranciscoBarao/catalog/route"
 	"github.com/FranciscoBarao/catalog/tag"
+	"github.com/FranciscoBarao/catalog/transport"
 )
 
 const oauthKey = "secret-key"
@@ -27,11 +27,12 @@ type Base struct {
 
 // Prepares test environment
 func NewBase(t *testing.T) *Base {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 	log.Debug().Msg("setup starting..")
 
 	// Setup database mock
-	mock := database.NewMockDatabase(gomock.NewController(t))
+	ctrl := gomock.NewController(t)
+	mock := database.NewMockDatabase(ctrl)
 
 	// Initialize Services
 	tagSvc := tag.NewTagService(mock)
@@ -40,10 +41,10 @@ func NewBase(t *testing.T) *Base {
 	boardgameSvc := boardgame.NewBoardgameService(mock, tagSvc, categorySvc, mechanismSvc)
 
 	// Initialize Controllers
-	bgController := controllers.InitBoardgameController(boardgameSvc)
-	tagController := controllers.InitTagController(tagSvc)
-	categoryController := controllers.InitCategoryController(categorySvc)
-	mechanismController := controllers.InitMechanismController(mechanismSvc)
+	bgController := transport.NewBoardgameController(boardgameSvc)
+	tagController := transport.NewTagController(tagSvc)
+	categoryController := transport.NewCategoryController(categorySvc)
+	mechanismController := transport.NewMechanismController(mechanismSvc)
 
 	// Adds Routers
 	router := chi.NewRouter()

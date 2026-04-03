@@ -1,4 +1,4 @@
-package controllers
+package transport
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
-type mechanismService interface {
+type MechanismService interface {
 	Create(mechanism *mechanism.Mechanism) error
 	GetAll(sort string) ([]mechanism.Mechanism, error)
 	Get(name string) (mechanism.Mechanism, error)
@@ -18,11 +18,11 @@ type mechanismService interface {
 }
 
 type MechanismController struct {
-	service mechanismService
+	service MechanismService
 }
 
-// InitController initializes the mechanism controller.
-func InitMechanismController(mechanismSvc *mechanism.MechanismService) *MechanismController {
+// NewMechanismController initializes the mechanism controller.
+func NewMechanismController(mechanismSvc *mechanism.MechanismService) *MechanismController {
 	return &MechanismController{
 		service: mechanismSvc,
 	}

@@ -3,10 +3,10 @@ package route
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/transport"
 )
 
-func AddMechanismRouter(router chi.Router, oauthKey string, mechanismController *controllers.MechanismController) {
+func AddMechanismRouter(router chi.Router, oauthKey string, mechanismController *transport.MechanismController) {
 	// Protected layer
 	router.Route("/api/mechanism", func(router chi.Router) {
 		// Use the Bearer Authentication middleware

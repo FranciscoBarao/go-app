@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 // Examples of filters that work:
@@ -21,7 +20,7 @@ func GetFilters(model interface{}, filterBy string) (string, string, error) {
 		return "", "", nil // No filter -> No error
 	}
 
-	logging.FromCtx(context.Background()).Debug().Str("filter_by", filterBy).Msg("filtering")
+	middleware.FromCtx(context.Background()).Debug().Str("filter_by", filterBy).Msg("filtering")
 	if err := validateFilter(model, filterBy); err != nil { // Validates Filters
 		return "", "", err
 	}
@@ -32,7 +31,7 @@ func GetFilters(model interface{}, filterBy string) (string, string, error) {
 
 // validateFilter validates if filter parameters are correct by length, emptiness and type
 func validateFilter(model interface{}, filterBy string) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	var field, operator, value string
 
@@ -63,7 +62,7 @@ func validateFilter(model interface{}, filterBy string) error {
 
 // validateFieldAndValue checks if the field exists in the struct and if the value is of the correct type
 func validateFieldAndValue(model interface{}, fieldName, value, operator string) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 
 	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
 	for _, field := range fields {
@@ -103,7 +102,7 @@ func isValidType(typ, value string) error {
 			return nil
 		}
 	}
-	logging.FromCtx(context.Background()).Error().Msg("field convertion faile due to mistype")
+	middleware.FromCtx(context.Background()).Error().Msg("field convertion faile due to mistype")
 	return middleware.NewError(http.StatusUnprocessableEntity, "Incorrect field type")
 }
 
@@ -111,7 +110,7 @@ func isValidType(typ, value string) error {
 func validateOperator(operator string) error {
 	var allowedOperators = []string{"lt", "le", "gt", "ge", "eq"}
 	if !stringInSlice(operator, allowedOperators) {
-		logging.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
+		middleware.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 	}
 	return nil

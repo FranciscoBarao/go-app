@@ -12,11 +12,10 @@ import (
 	"github.com/golang/gddo/httputil/header"
 
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 )
 
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	log := logging.FromCtx(context.Background())
+	log := middleware.FromCtx(context.Background())
 	if r.Header.Get("Content-Type") != "" { // Only allow requests with application/json as header
 		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
 		if value != "application/json" {

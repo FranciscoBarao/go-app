@@ -14,7 +14,7 @@ type Boardgame struct {
 	PlayerNumber int                   `json:"playerNumber" valid:"int, range(1|16)"`
 	Tags         []tag.Tag             `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
 	Categories   []category.Category   `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
-	Mechanisms   []mechanism.Mechanism  `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
+	Mechanisms   []mechanism.Mechanism `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
 	Ratings      []Rating              `gorm:"many2many:boardgame_ratings;" json:"ratings,omitempty"`
 	Expansions   []Boardgame           `gorm:"foreignkey:BoardgameID" swaggerignore:"true" json:"expansions,omitempty"`
 	BoardgameID  *uint                 `swaggerignore:"true" json:"boardgame_id,omitempty"`
@@ -90,16 +90,4 @@ func (bg Boardgame) GetBoardgameID() *uint {
 // Setters
 func (bg *Boardgame) SetBoardgameID(id *uint) {
 	bg.BoardgameID = id
-}
-
-// Rating struct - co-located since Rating is boardgame-only
-type Rating struct {
-	gorm.Model `json:"-" swaggerignore:"true"`
-
-	Username string `json:"username,omitempty" db:"username" gorm:"unique"`
-	Value    int    `json:"value" db:"value" valid:"required, int, range(0|10)"`
-}
-
-func (rating *Rating) SetUsername(username string) {
-	rating.Username = username
 }

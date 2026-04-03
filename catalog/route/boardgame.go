@@ -3,10 +3,10 @@ package route
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/transport"
 )
 
-func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *controllers.BoardgameController) {
+func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *transport.BoardgameController) {
 	// Protected layer
 	router.Group(func(router chi.Router) {
 		// Use the Bearer Authentication middleware

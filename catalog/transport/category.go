@@ -1,4 +1,4 @@
-package controllers
+package transport
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
-type categoryService interface {
+type CategoryService interface {
 	Create(c *category.Category) error
 	GetAll(sort string) ([]category.Category, error)
 	Get(name string) (category.Category, error)
@@ -18,11 +18,11 @@ type categoryService interface {
 }
 
 type CategoryController struct {
-	service categoryService
+	service CategoryService
 }
 
-// InitController initializes the category controller.
-func InitCategoryController(categorySvc *category.CategoryService) *CategoryController {
+// NewCategoryController initializes the category controller.
+func NewCategoryController(categorySvc *category.CategoryService) *CategoryController {
 	return &CategoryController{
 		service: categorySvc,
 	}

@@ -9,7 +9,6 @@ import (
 	"github.com/FranciscoBarao/catalog/database"
 	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/middleware/logging"
 	"github.com/FranciscoBarao/catalog/tag"
 )
 
@@ -144,7 +143,7 @@ func (svc *BoardgameService) connectBoardgameToExpansion(boardgame *Boardgame, i
 	}
 
 	if boardgameParent.IsExpansion() {
-		logging.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
+		middleware.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
 		return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 	}
 

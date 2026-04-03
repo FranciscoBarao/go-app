@@ -1,4 +1,4 @@
-package controllers
+package transport
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 )
 
 // Declaring the repository interface in the controller package allows us to easily swap out the actual implementation, enforcing loose coupling
-type boardgameService interface {
+type BoardgameService interface {
 	Create(bg *boardgame.Boardgame, id string) error
 	GetAll(sort, filterBody, filterValue string) ([]boardgame.Boardgame, error)
 	GetById(id string) (boardgame.Boardgame, error)
@@ -22,11 +22,11 @@ type boardgameService interface {
 
 // Controller contains the service, which contains database-related logic, as an injectable dependency, allowing us to decouple business logic from db logic
 type BoardgameController struct {
-	service boardgameService
+	service BoardgameService
 }
 
-// InitBoardgameController initializes the boardgame and the associations controller
-func InitBoardgameController(boardGameSvc *boardgame.BoardgameService) *BoardgameController {
+// NewBoardgameController initializes the boardgame and the associations controller
+func NewBoardgameController(boardGameSvc *boardgame.BoardgameService) *BoardgameController {
 	return &BoardgameController{
 		service: boardGameSvc,
 	}

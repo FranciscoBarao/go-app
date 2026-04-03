@@ -5,20 +5,21 @@ import (
 	"net/http"
 	"os"
 
+	logging "github.com/FranciscoBarao/catalog/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
 	httpSwagger "github.com/swaggo/http-swagger"
 
 	"github.com/FranciscoBarao/catalog/boardgame"
 	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/config"
-	"github.com/FranciscoBarao/catalog/controllers"
 	"github.com/FranciscoBarao/catalog/database"
 	_ "github.com/FranciscoBarao/catalog/docs"
 	"github.com/FranciscoBarao/catalog/mechanism"
-	logging "github.com/FranciscoBarao/catalog/middleware/logging"
 	"github.com/FranciscoBarao/catalog/route"
 	"github.com/FranciscoBarao/catalog/tag"
+	"github.com/FranciscoBarao/catalog/transport"
 )
 
 // @title Catalog App Swagger
@@ -57,10 +58,10 @@ func main() {
 	boardgameSvc := boardgame.NewBoardgameService(db, tagSvc, categorySvc, mechanismSvc)
 
 	// Initialize Controllers
-	bgController := controllers.InitBoardgameController(boardgameSvc)
-	tagController := controllers.InitTagController(tagSvc)
-	categoryController := controllers.InitCategoryController(categorySvc)
-	mechanismController := controllers.InitMechanismController(mechanismSvc)
+	bgController := transport.NewBoardgameController(boardgameSvc)
+	tagController := transport.NewTagController(tagSvc)
+	categoryController := transport.NewCategoryController(categorySvc)
+	mechanismController := transport.NewMechanismController(mechanismSvc)
 
 	// Creates routing
 	router := chi.NewRouter()

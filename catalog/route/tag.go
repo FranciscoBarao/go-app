@@ -3,10 +3,10 @@ package route
 import (
 	"github.com/go-chi/chi/v5"
 
-	"github.com/FranciscoBarao/catalog/controllers"
+	"github.com/FranciscoBarao/catalog/transport"
 )
 
-func AddTagRouter(router chi.Router, oauthKey string, tagController *controllers.TagController) {
+func AddTagRouter(router chi.Router, oauthKey string, tagController *transport.TagController) {
 	// Protected layer
 	router.Route("/api/tag", func(router chi.Router) {
 		// Use the Bearer Authentication middleware
