@@ -1,5 +1,7 @@
 package tests
 
+//go:generate mockgen -package tests -destination mock_database_test.go -source setup_test.go
+
 import (
 	"context"
 	"testing"
@@ -9,7 +11,6 @@ import (
 
 	"github.com/FranciscoBarao/catalog/boardgame"
 	"github.com/FranciscoBarao/catalog/category"
-	"github.com/FranciscoBarao/catalog/database"
 	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
 	"github.com/FranciscoBarao/catalog/route"
@@ -17,12 +18,21 @@ import (
 	"github.com/FranciscoBarao/catalog/transport"
 )
 
+// Database defines the persistence operations needed by the integration tests.
+type Database interface {
+	Create(value interface{}) error
+	Read(value interface{}, sort, search, identifier string) error
+	Update(value interface{}) error
+	Delete(value interface{}) error
+	ReplaceAssociatons(model interface{}, association string, values interface{}) error
+}
+
 const oauthKey = "secret-key"
 
 type Base struct {
 	router      *chi.Mux
 	oauthHeader string
-	dbMock      *database.MockDatabase
+	dbMock      *MockDatabase
 }
 
 // Prepares test environment
@@ -32,7 +42,7 @@ func NewBase(t *testing.T) *Base {
 
 	// Setup database mock
 	ctrl := gomock.NewController(t)
-	mock := database.NewMockDatabase(ctrl)
+	mock := NewMockDatabase(ctrl)
 
 	// Initialize Services
 	tagSvc := tag.NewService(mock)

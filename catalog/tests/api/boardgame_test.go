@@ -57,7 +57,7 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 
 	// Boardgame expansion creation Mock
 	expansion := &boardgame.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
-	expansion.SetBoardgameID(&parentID)
+	expansion.BoardgameID = &parentID
 	suite.base.dbMock.EXPECT().
 		Create(expansion).
 		Return(nil)

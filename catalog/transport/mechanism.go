@@ -10,6 +10,8 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+//go:generate mockgen -package transport -destination mechanism_mock.go . MechanismService
+
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(mechanism *mechanism.Mechanism) error
@@ -24,7 +26,7 @@ type MechanismController struct {
 }
 
 // NewMechanismController initializes the mechanism controller.
-func NewMechanismController(mechanismSvc *mechanism.Service) *MechanismController {
+func NewMechanismController(mechanismSvc MechanismService) *MechanismController {
 	return &MechanismController{
 		service: mechanismSvc,
 	}

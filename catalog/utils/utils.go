@@ -13,7 +13,7 @@ import (
 )
 
 // ValidateStruct executes govalidator to check if sturct fields have the correct, previously defined values
-func ValidateStruct(value interface{}) error {
+func ValidateStruct(value any) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
 		middleware.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
 		return middleware.NewError(http.StatusForbidden, "Error - Model validation failed")
@@ -34,16 +34,6 @@ func GetUsernameFromToken(r *http.Request) (string, error) {
 		return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
 	}
 	return username, nil
-}
-
-// stringInSlice checks if a specific string exists in a slice of strings
-func stringInSlice(value string, list []string) bool {
-	for _, element := range list {
-		if element == value {
-			return true
-		}
-	}
-	return false
 }
 
 // isAlphanumeric checks if a string is alphanumeric

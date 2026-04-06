@@ -10,6 +10,8 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+//go:generate mockgen -package transport -destination category_mock.go . CategoryService
+
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(c *category.Category) error
@@ -24,7 +26,7 @@ type CategoryController struct {
 }
 
 // NewCategoryController initializes the category controller.
-func NewCategoryController(categorySvc *category.Service) *CategoryController {
+func NewCategoryController(categorySvc CategoryService) *CategoryController {
 	return &CategoryController{
 		service: categorySvc,
 	}

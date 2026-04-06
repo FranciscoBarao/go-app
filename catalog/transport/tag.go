@@ -10,6 +10,8 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+//go:generate mockgen -package transport -destination tag_mock.go . TagService
+
 // TagService defines the interface for tag business logic.
 type TagService interface {
 	Create(t *tag.Tag) error
@@ -24,7 +26,7 @@ type TagController struct {
 }
 
 // NewTagController initializes the tag controller.
-func NewTagController(tagSvc *tag.Service) *TagController {
+func NewTagController(tagSvc TagService) *TagController {
 	return &TagController{
 		service: tagSvc,
 	}

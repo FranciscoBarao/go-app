@@ -9,8 +9,3 @@ type Rating struct {
 	Username string `json:"username,omitempty" db:"username" gorm:"unique"`
 	Value    int    `json:"value" db:"value" valid:"required, int, range(0|10)"`
 }
-
-// SetUsername sets the rating's username.
-func (rating *Rating) SetUsername(username string) {
-	rating.Username = username
-}

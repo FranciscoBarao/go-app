@@ -14,18 +14,6 @@ import (
 	"github.com/FranciscoBarao/catalog/middleware"
 )
 
-//go:generate mockgen --build_flags=--mod=mod -package database -destination=database_mock.go . Database
-
-// Database defines the interface for all database operations.
-// Moved from repositories/repositories.go to co-locate with the Postgres implementation.
-type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Update(value interface{}) error
-	Delete(value interface{}) error
-	ReplaceAssociatons(model interface{}, association string, values interface{}) error
-}
-
 // Postgres wraps a gorm.DB connection.
 type Postgres struct {
 	db *gorm.DB

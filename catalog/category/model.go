@@ -18,8 +18,3 @@ func (category *Category) UpdateCategory(name string) {
 		category.Name = name
 	}
 }
-
-// GetName returns the category name.
-func (category Category) GetName() string {
-	return category.Name
-}

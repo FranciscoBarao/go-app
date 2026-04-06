@@ -3,18 +3,26 @@ package mechanism
 import (
 	"errors"
 
-	"github.com/FranciscoBarao/catalog/database"
 	"github.com/FranciscoBarao/catalog/middleware"
 )
 
+//go:generate mockgen -package mechanism -destination service_mock.go . Database
+
+// Database defines the persistence operations needed by the tag service.
+type Database interface {
+	Create(value interface{}) error
+	Read(value interface{}, sort, search, identifier string) error
+	Delete(value interface{}) error
+}
+
 // Service merges the old MechanismRepository and Service into a single struct
-// that holds a database.Database directly (no intermediate repository layer).
+// that holds a Database directly (no intermediate repository layer).
 type Service struct {
-	db database.Database
+	db Database
 }
 
 // NewService creates a new mechanism Service with the given database instance.
-func NewService(db database.Database) *Service {
+func NewService(db Database) *Service {
 	return &Service{
 		db: db,
 	}

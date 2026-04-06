@@ -24,8 +24,3 @@ func (tag *Tag) UpdateTag(name string) {
 		tag.Name = name
 	}
 }
-
-// GetName returns the tag name.
-func (tag Tag) GetName() string {
-	return tag.Name
-}

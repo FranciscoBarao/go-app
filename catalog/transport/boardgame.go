@@ -10,6 +10,8 @@ import (
 	"github.com/FranciscoBarao/catalog/utils"
 )
 
+//go:generate mockgen -package transport -destination boardgame_mock.go . BoardgameService
+
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(bg *boardgame.Boardgame, id string) error
@@ -26,7 +28,7 @@ type BoardgameController struct {
 }
 
 // NewBoardgameController initializes the boardgame and the associations controller
-func NewBoardgameController(boardGameSvc *boardgame.Service) *BoardgameController {
+func NewBoardgameController(boardGameSvc BoardgameService) *BoardgameController {
 	return &BoardgameController{
 		service: boardGameSvc,
 	}

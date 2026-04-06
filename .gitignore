@@ -22,18 +22,8 @@
 build
 
 
-### NextJS ###
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
 # testing
 /coverage
-
-# next.js
-.next/
-/out/
 
 # production
 /build
@@ -54,16 +44,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 
-### React ###
-.DS_*
-*.log
-logs
-**/*.backup.*
-**/*.back.*
 
 node_modules
 bower_components
@@ -80,3 +61,6 @@ TODO.md
 docs/
 /.kanbn
 
+
+# Mock files
+*_mock.go

@@ -169,14 +169,3 @@ Having this one-sided allowed me to add/delete associations of Tags (with or wit
 
 **Choice: B** Previously, handling associations was not bidirectional, which means that I was able to handle Tags via BGs but not the other way around.  
 **Improvements:** Ability to delete Tags that are already associated. Improved way of returning all BGs with a specific Tag. 
-
-
-
-
-
-I want to refactor code to make the following changes to be more inline with go standards:
-- Remove the use of model Getters (e.g tag GetName())
-- Remove the use of basic model Setters (e.g boardgame SetBoardgameID())
-
-
-Keep the field existance functions (HasX()) since those are validating the existence of fields.

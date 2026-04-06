@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -110,7 +111,7 @@ func isValidType(typ, value string) error {
 // validateOperator validates the operator in the URL parameter
 func validateOperator(operator string) error {
 	var allowedOperators = []string{"lt", "le", "gt", "ge", "eq"}
-	if !stringInSlice(operator, allowedOperators) {
+	if !slices.Contains(allowedOperators, operator) {
 		middleware.FromCtx(context.Background()).Error().Str("operator", operator).Msg("unknown operator")
 		return middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
 	}
