@@ -1,12 +1,12 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/middleware"
 	"github.com/FranciscoBarao/catalog/tag"
@@ -26,34 +26,26 @@ func (suite *TagSuite) TestPost() {
 	tagName := "test"
 	tagObj := tag.NewTag(tagName)
 	suite.base.dbMock.EXPECT().
-		Create(tagObj).
+		CreateTag(gomock.Any(), tagObj).
 		Return(nil)
-
-	tagJSON, err := json.Marshal(tagObj)
-	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/tag").
-		JSON(tagJSON).
+		JSON(`{"name":"test"}`).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(tagJSON)).
 		Status(http.StatusOK).
 		End()
 }
 
 func (suite *TagSuite) TestGet() {
 	tagName := "test"
-	tagObj := new(tag.Tag)
+	expected := tag.Tag{Name: tagName}
 	suite.base.dbMock.EXPECT().
-		Read(tagObj, "", "name = ?", tagName).
-		Do(func(t *tag.Tag, sort, query, field string) error {
-			t.Name = tagName
-			return nil
-		}).
-		Return(nil)
+		GetTag(gomock.Any(), tagName).
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
@@ -61,19 +53,13 @@ func (suite *TagSuite) TestGet() {
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusOK).
-		Body(`{ "name": "` + tagName + `" }`).
 		End()
 }
 
 func (suite *TagSuite) TestDelete() {
 	tagName := "test"
-	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tagObj, "", "name = ?", tagName).
-		Return(nil)
-
-	suite.base.dbMock.EXPECT().
-		Delete(new(tag.Tag)).
+		DeleteTag(gomock.Any(), tagName).
 		Return(nil)
 
 	apitest.New().
@@ -159,10 +145,9 @@ func (suite *TagSuite) TestPostFailures() {
 
 func (suite *TagSuite) TestGetFailure() {
 	tagName := "test"
-	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tagObj, "", "name = ?", tagName).
-		Return(middleware.NewError(http.StatusNotFound, "Tag not found with name: "+tagName))
+		GetTag(gomock.Any(), tagName).
+		Return(tag.Tag{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().
@@ -176,10 +161,9 @@ func (suite *TagSuite) TestGetFailure() {
 
 func (suite *TagSuite) TestDeleteFailure() {
 	tagName := "test"
-	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tagObj, "", "name = ?", tagName).
-		Return(middleware.NewError(http.StatusNotFound, "Tag not found with name: "+tagName))
+		DeleteTag(gomock.Any(), tagName).
+		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().

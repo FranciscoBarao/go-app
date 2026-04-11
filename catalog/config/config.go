@@ -7,11 +7,12 @@ import (
 
 // PostgresConfig holds the configuration for connecting to a PostgreSQL database.
 type PostgresConfig struct {
-	Host     string
-	Username string
-	Password string
-	Port     string
-	Database string
+	Host          string
+	Username      string
+	Password      string
+	Port          string
+	Database      string
+	MigrationPath string
 }
 
 // NewPostgresConfig reads PostgreSQL connection settings from environment variables.

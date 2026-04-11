@@ -1,0 +1,14 @@
+DROP TRIGGER IF EXISTS boardgame_ratings_updated_at ON boardgame_ratings;
+DROP TABLE IF EXISTS boardgame_ratings;
+DROP TABLE IF EXISTS boardgame_mechanisms;
+DROP TABLE IF EXISTS boardgame_categories;
+DROP TABLE IF EXISTS boardgame_tags;
+DROP TRIGGER IF EXISTS mechanisms_updated_at ON mechanisms;
+DROP TABLE IF EXISTS mechanisms;
+DROP TRIGGER IF EXISTS categories_updated_at ON categories;
+DROP TABLE IF EXISTS categories;
+DROP TRIGGER IF EXISTS tags_updated_at ON tags;
+DROP TABLE IF EXISTS tags;
+DROP TRIGGER IF EXISTS boardgames_updated_at ON boardgames;
+DROP TABLE IF EXISTS boardgames;
+DROP FUNCTION IF EXISTS update_updated_at_column();

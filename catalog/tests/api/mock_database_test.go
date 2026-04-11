@@ -10,8 +10,13 @@
 package tests
 
 import (
+	context "context"
 	reflect "reflect"
 
+	boardgame "github.com/FranciscoBarao/catalog/boardgame"
+	category "github.com/FranciscoBarao/catalog/category"
+	mechanism "github.com/FranciscoBarao/catalog/mechanism"
+	tag "github.com/FranciscoBarao/catalog/tag"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -39,72 +44,262 @@ func (m *MockDatabase) EXPECT() *MockDatabaseMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method.
-func (m *MockDatabase) Create(value any) error {
+// CreateBoardgame mocks base method.
+func (m *MockDatabase) CreateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", value)
+	ret := m.ctrl.Call(m, "CreateBoardgame", ctx, bg)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Create indicates an expected call of Create.
-func (mr *MockDatabaseMockRecorder) Create(value any) *gomock.Call {
+// CreateBoardgame indicates an expected call of CreateBoardgame.
+func (mr *MockDatabaseMockRecorder) CreateBoardgame(ctx, bg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockDatabase)(nil).Create), value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBoardgame", reflect.TypeOf((*MockDatabase)(nil).CreateBoardgame), ctx, bg)
 }
 
-// Delete mocks base method.
-func (m *MockDatabase) Delete(value any) error {
+// CreateCategory mocks base method.
+func (m *MockDatabase) CreateCategory(ctx context.Context, c *category.Category) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Delete", value)
+	ret := m.ctrl.Call(m, "CreateCategory", ctx, c)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Delete indicates an expected call of Delete.
-func (mr *MockDatabaseMockRecorder) Delete(value any) *gomock.Call {
+// CreateCategory indicates an expected call of CreateCategory.
+func (mr *MockDatabaseMockRecorder) CreateCategory(ctx, c any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockDatabase)(nil).Delete), value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCategory", reflect.TypeOf((*MockDatabase)(nil).CreateCategory), ctx, c)
 }
 
-// Read mocks base method.
-func (m *MockDatabase) Read(value any, sort, search, identifier string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Read", value, sort, search, identifier)
+// CreateMechanism mocks base method.
+func (m_2 *MockDatabase) CreateMechanism(ctx context.Context, m *mechanism.Mechanism) error {
+	m_2.ctrl.T.Helper()
+	ret := m_2.ctrl.Call(m_2, "CreateMechanism", ctx, m)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Read indicates an expected call of Read.
-func (mr *MockDatabaseMockRecorder) Read(value, sort, search, identifier any) *gomock.Call {
+// CreateMechanism indicates an expected call of CreateMechanism.
+func (mr *MockDatabaseMockRecorder) CreateMechanism(ctx, m any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Read", reflect.TypeOf((*MockDatabase)(nil).Read), value, sort, search, identifier)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateMechanism", reflect.TypeOf((*MockDatabase)(nil).CreateMechanism), ctx, m)
 }
 
-// ReplaceAssociatons mocks base method.
-func (m *MockDatabase) ReplaceAssociatons(model any, association string, values any) error {
+// CreateTag mocks base method.
+func (m *MockDatabase) CreateTag(ctx context.Context, t *tag.Tag) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReplaceAssociatons", model, association, values)
+	ret := m.ctrl.Call(m, "CreateTag", ctx, t)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// ReplaceAssociatons indicates an expected call of ReplaceAssociatons.
-func (mr *MockDatabaseMockRecorder) ReplaceAssociatons(model, association, values any) *gomock.Call {
+// CreateTag indicates an expected call of CreateTag.
+func (mr *MockDatabaseMockRecorder) CreateTag(ctx, t any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceAssociatons", reflect.TypeOf((*MockDatabase)(nil).ReplaceAssociatons), model, association, values)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTag", reflect.TypeOf((*MockDatabase)(nil).CreateTag), ctx, t)
 }
 
-// Update mocks base method.
-func (m *MockDatabase) Update(value any) error {
+// DeleteBoardgame mocks base method.
+func (m *MockDatabase) DeleteBoardgame(ctx context.Context, id uint) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Update", value)
+	ret := m.ctrl.Call(m, "DeleteBoardgame", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// Update indicates an expected call of Update.
-func (mr *MockDatabaseMockRecorder) Update(value any) *gomock.Call {
+// DeleteBoardgame indicates an expected call of DeleteBoardgame.
+func (mr *MockDatabaseMockRecorder) DeleteBoardgame(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockDatabase)(nil).Update), value)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBoardgame", reflect.TypeOf((*MockDatabase)(nil).DeleteBoardgame), ctx, id)
+}
+
+// DeleteCategory mocks base method.
+func (m *MockDatabase) DeleteCategory(ctx context.Context, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteCategory", ctx, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteCategory indicates an expected call of DeleteCategory.
+func (mr *MockDatabaseMockRecorder) DeleteCategory(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCategory", reflect.TypeOf((*MockDatabase)(nil).DeleteCategory), ctx, name)
+}
+
+// DeleteMechanism mocks base method.
+func (m *MockDatabase) DeleteMechanism(ctx context.Context, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteMechanism", ctx, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteMechanism indicates an expected call of DeleteMechanism.
+func (mr *MockDatabaseMockRecorder) DeleteMechanism(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteMechanism", reflect.TypeOf((*MockDatabase)(nil).DeleteMechanism), ctx, name)
+}
+
+// DeleteTag mocks base method.
+func (m *MockDatabase) DeleteTag(ctx context.Context, name string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteTag", ctx, name)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteTag indicates an expected call of DeleteTag.
+func (mr *MockDatabaseMockRecorder) DeleteTag(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteTag", reflect.TypeOf((*MockDatabase)(nil).DeleteTag), ctx, name)
+}
+
+// GetAllBoardgames mocks base method.
+func (m *MockDatabase) GetAllBoardgames(ctx context.Context, sort string) ([]boardgame.Boardgame, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllBoardgames", ctx, sort)
+	ret0, _ := ret[0].([]boardgame.Boardgame)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllBoardgames indicates an expected call of GetAllBoardgames.
+func (mr *MockDatabaseMockRecorder) GetAllBoardgames(ctx, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllBoardgames", reflect.TypeOf((*MockDatabase)(nil).GetAllBoardgames), ctx, sort)
+}
+
+// GetAllCategories mocks base method.
+func (m *MockDatabase) GetAllCategories(ctx context.Context, sort string) ([]category.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllCategories", ctx, sort)
+	ret0, _ := ret[0].([]category.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllCategories indicates an expected call of GetAllCategories.
+func (mr *MockDatabaseMockRecorder) GetAllCategories(ctx, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllCategories", reflect.TypeOf((*MockDatabase)(nil).GetAllCategories), ctx, sort)
+}
+
+// GetAllMechanisms mocks base method.
+func (m *MockDatabase) GetAllMechanisms(ctx context.Context, sort string) ([]mechanism.Mechanism, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllMechanisms", ctx, sort)
+	ret0, _ := ret[0].([]mechanism.Mechanism)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllMechanisms indicates an expected call of GetAllMechanisms.
+func (mr *MockDatabaseMockRecorder) GetAllMechanisms(ctx, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllMechanisms", reflect.TypeOf((*MockDatabase)(nil).GetAllMechanisms), ctx, sort)
+}
+
+// GetAllTags mocks base method.
+func (m *MockDatabase) GetAllTags(ctx context.Context, sort string) ([]tag.Tag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTags", ctx, sort)
+	ret0, _ := ret[0].([]tag.Tag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAllTags indicates an expected call of GetAllTags.
+func (mr *MockDatabaseMockRecorder) GetAllTags(ctx, sort any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTags", reflect.TypeOf((*MockDatabase)(nil).GetAllTags), ctx, sort)
+}
+
+// GetBoardgameByID mocks base method.
+func (m *MockDatabase) GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boardgame, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBoardgameByID", ctx, id)
+	ret0, _ := ret[0].(boardgame.Boardgame)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBoardgameByID indicates an expected call of GetBoardgameByID.
+func (mr *MockDatabaseMockRecorder) GetBoardgameByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBoardgameByID", reflect.TypeOf((*MockDatabase)(nil).GetBoardgameByID), ctx, id)
+}
+
+// GetCategory mocks base method.
+func (m *MockDatabase) GetCategory(ctx context.Context, name string) (category.Category, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCategory", ctx, name)
+	ret0, _ := ret[0].(category.Category)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCategory indicates an expected call of GetCategory.
+func (mr *MockDatabaseMockRecorder) GetCategory(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCategory", reflect.TypeOf((*MockDatabase)(nil).GetCategory), ctx, name)
+}
+
+// GetMechanism mocks base method.
+func (m *MockDatabase) GetMechanism(ctx context.Context, name string) (mechanism.Mechanism, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetMechanism", ctx, name)
+	ret0, _ := ret[0].(mechanism.Mechanism)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetMechanism indicates an expected call of GetMechanism.
+func (mr *MockDatabaseMockRecorder) GetMechanism(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMechanism", reflect.TypeOf((*MockDatabase)(nil).GetMechanism), ctx, name)
+}
+
+// GetTag mocks base method.
+func (m *MockDatabase) GetTag(ctx context.Context, name string) (tag.Tag, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTag", ctx, name)
+	ret0, _ := ret[0].(tag.Tag)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTag indicates an expected call of GetTag.
+func (mr *MockDatabaseMockRecorder) GetTag(ctx, name any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTag", reflect.TypeOf((*MockDatabase)(nil).GetTag), ctx, name)
+}
+
+// ReplaceBoardgameTags mocks base method.
+func (m *MockDatabase) ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReplaceBoardgameTags", ctx, boardgameID, tags)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ReplaceBoardgameTags indicates an expected call of ReplaceBoardgameTags.
+func (mr *MockDatabaseMockRecorder) ReplaceBoardgameTags(ctx, boardgameID, tags any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReplaceBoardgameTags", reflect.TypeOf((*MockDatabase)(nil).ReplaceBoardgameTags), ctx, boardgameID, tags)
+}
+
+// UpdateBoardgame mocks base method.
+func (m *MockDatabase) UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBoardgame", ctx, bg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateBoardgame indicates an expected call of UpdateBoardgame.
+func (mr *MockDatabaseMockRecorder) UpdateBoardgame(ctx, bg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBoardgame", reflect.TypeOf((*MockDatabase)(nil).UpdateBoardgame), ctx, bg)
 }

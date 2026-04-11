@@ -1,18 +1,17 @@
 package tag
 
 import (
-	"errors"
-
-	"github.com/FranciscoBarao/catalog/middleware"
+	"context"
 )
 
 //go:generate mockgen -package tag -destination service_mock.go . Database
 
 // Database defines the persistence operations needed by the tag service.
 type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Delete(value interface{}) error
+	CreateTag(ctx context.Context, t *Tag) error
+	GetTag(ctx context.Context, name string) (Tag, error)
+	GetAllTags(ctx context.Context, sort string) ([]Tag, error)
+	DeleteTag(ctx context.Context, name string) error
 }
 
 // Service merges the old TagRepository and Service into a single struct
@@ -29,35 +28,21 @@ func NewService(db Database) *Service {
 }
 
 // Create persists a new Tag to the database.
-func (svc *Service) Create(tag *Tag) error {
-	return svc.db.Create(tag)
+func (svc *Service) Create(ctx context.Context, tag *Tag) error {
+	return svc.db.CreateTag(ctx, tag)
 }
 
 // GetAll retrieves all Tags from the database, optionally sorted.
-func (svc *Service) GetAll(sort string) ([]Tag, error) {
-	var tags []Tag
-	return tags, svc.db.Read(&tags, sort, "", "")
+func (svc *Service) GetAll(ctx context.Context, sort string) ([]Tag, error) {
+	return svc.db.GetAllTags(ctx, sort)
 }
 
-// Get retrieves a single Tag by name. Returns a MalformedRequest error if not found.
-func (svc *Service) Get(name string) (Tag, error) {
-	var tag Tag
-	err := svc.db.Read(&tag, "", "name = ?", name)
-
-	var mr *middleware.MalformedRequest
-	if err != nil && errors.As(err, &mr) {
-		return tag, middleware.NewError(mr.GetStatus(), "Tag not found with name: "+name)
-	}
-
-	return tag, err
+// Get retrieves a single Tag by name.
+func (svc *Service) Get(ctx context.Context, name string) (Tag, error) {
+	return svc.db.GetTag(ctx, name)
 }
 
-// Delete removes a Tag by name. It first retrieves the tag, then deletes it.
-func (svc *Service) Delete(name string) error {
-	tag, err := svc.Get(name)
-	if err != nil {
-		return err
-	}
-
-	return svc.db.Delete(&tag)
+// Delete removes a Tag by name.
+func (svc *Service) Delete(ctx context.Context, name string) error {
+	return svc.db.DeleteTag(ctx, name)
 }

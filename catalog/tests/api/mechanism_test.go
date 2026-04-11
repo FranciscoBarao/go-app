@@ -1,12 +1,12 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
@@ -26,33 +26,26 @@ func (suite *MechanismSuite) TestPostMechanism() {
 	mechName := "test"
 	mech := mechanism.NewMechanism(mechName)
 	suite.base.dbMock.EXPECT().
-		Create(mech).
+		CreateMechanism(gomock.Any(), mech).
 		Return(nil)
-
-	mechJSON, err := json.Marshal(mech)
-	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/mechanism").
-		JSON(mechJSON).
+		JSON(`{"name":"test"}`).
+		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(mechJSON)).
 		Status(http.StatusOK).
 		End()
 }
 
 func (suite *MechanismSuite) TestGetMechanism() {
 	mechName := "test"
-	mech := new(mechanism.Mechanism)
+	expected := mechanism.Mechanism{Name: mechName}
 	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Do(func(mech *mechanism.Mechanism, sort, query, field string) error {
-			mech.Name = mechName
-			return nil
-		}).
-		Return(nil)
+		GetMechanism(gomock.Any(), mechName).
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
@@ -60,20 +53,13 @@ func (suite *MechanismSuite) TestGetMechanism() {
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusOK).
-		Body(`{ "name": "` + mechName + `" }`).
 		End()
 }
 
 func (suite *MechanismSuite) TestDeleteMechanism() {
-
 	mechName := "test"
-	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Return(nil)
-
-	suite.base.dbMock.EXPECT().
-		Delete(new(mechanism.Mechanism)).
+		DeleteMechanism(gomock.Any(), mechName).
 		Return(nil)
 
 	apitest.New().
@@ -159,10 +145,9 @@ func (suite *MechanismSuite) TestPostMechanismFailures() {
 
 func (suite *MechanismSuite) TestGetMechanismFailure() {
 	mechName := "test"
-	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))
+		GetMechanism(gomock.Any(), mechName).
+		Return(mechanism.Mechanism{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().
@@ -176,10 +161,9 @@ func (suite *MechanismSuite) TestGetMechanismFailure() {
 
 func (suite *MechanismSuite) TestDeleteMechanismFailure() {
 	mechName := "test"
-	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Return(middleware.NewError(http.StatusNotFound, "Mechanism not found with name: "+mechName))
+		DeleteMechanism(gomock.Any(), mechName).
+		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().

@@ -3,17 +3,17 @@ package tests
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/boardgame"
 	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/tag"
+	tag "github.com/FranciscoBarao/catalog/tag"
 )
 
 type BoardGameSuite struct {
@@ -28,7 +28,7 @@ func (suite *BoardGameSuite) SetupSuite() {
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 	bg := &boardgame.Boardgame{Name: "test", Publisher: "test", PlayerNumber: 1}
 	suite.base.dbMock.EXPECT().
-		Create(bg).
+		CreateBoardgame(gomock.Any(), bg).
 		Return(nil)
 
 	bgJSON, err := json.Marshal(bg)
@@ -47,19 +47,19 @@ func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 
 func (suite *BoardGameSuite) TestPostExpansion() {
 	// Expansion read of parent boardgame Mock
-	parentIDStr := "0"
-	u64, _ := strconv.ParseUint(parentIDStr, 10, 32)
-	parentID := uint(u64)
-	parentBg := new(boardgame.Boardgame)
+	parentIDStr := "1"
+	parentID := uint(1)
+	parentBg := boardgame.Boardgame{}
+	parentBg.ID = parentID
 	suite.base.dbMock.EXPECT().
-		Read(parentBg, "", "id = ?", parentIDStr).
-		Return(nil)
+		GetBoardgameByID(gomock.Any(), parentID).
+		Return(parentBg, nil)
 
 	// Boardgame expansion creation Mock
 	expansion := &boardgame.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
 	expansion.BoardgameID = &parentID
 	suite.base.dbMock.EXPECT().
-		Create(expansion).
+		CreateBoardgame(gomock.Any(), expansion).
 		Return(nil)
 	expansionJSON, err := json.Marshal(expansion)
 	suite.Require().NoError(err)
@@ -76,11 +76,11 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 }
 
 func (suite *BoardGameSuite) TestGetBoardgame() {
-	bgID := "test"
-	bg := new(boardgame.Boardgame)
+	bgID := "1"
+	expected := boardgame.Boardgame{}
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(nil)
+		GetBoardgameByID(gomock.Any(), uint(1)).
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
@@ -93,13 +93,8 @@ func (suite *BoardGameSuite) TestGetBoardgame() {
 
 func (suite *BoardGameSuite) TestDeleteBoardgameSuccess() {
 	bgID := "1"
-	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(nil)
-
-	suite.base.dbMock.EXPECT().
-		Delete(new(boardgame.Boardgame)).
+		DeleteBoardgame(gomock.Any(), uint(1)).
 		Return(nil)
 
 	apitest.New().
@@ -225,10 +220,9 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	//  <<<< field - Tags >>>>
 	tagName := "test"
-	tagObj := new(tag.Tag)
 	suite.base.dbMock.EXPECT().
-		Read(tagObj, "", "name = ?", tagName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
+		GetTag(gomock.Any(), tagName).
+		Return(tag.Tag{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	apitest.New(). // Invalid Struct -> Tag does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
@@ -250,10 +244,9 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 	//  <<<< field - Categories >>>>
 	categoryName := "test"
-	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(categoryObj, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
+		GetCategory(gomock.Any(), categoryName).
+		Return(category.Category{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	apitest.New(). // Invalid Struct -> Category does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
@@ -274,10 +267,9 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 	//  <<<< field - Mechanisms >>>>
 	mechName := "test"
-	mech := new(mechanism.Mechanism)
 	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
+		GetMechanism(gomock.Any(), mechName).
+		Return(mechanism.Mechanism{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	apitest.New(). // Invalid Struct -> Mechanism does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
@@ -287,7 +279,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 			Expect(suite.T()).
 			Status(http.StatusNotFound).
 			End()
-	apitest.New(). // Invalid Struct -> Mchanisms have too many fields
+	apitest.New(). // Invalid Struct -> Mechanisms have too many fields
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
 			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test", "test":"test"}]}`).
@@ -299,10 +291,9 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 
 func (suite *BoardGameSuite) TestGetBoardgameFailure() {
 	bgID := "1"
-	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with name: "+bgID))
+		GetBoardgameByID(gomock.Any(), uint(1)).
+		Return(boardgame.Boardgame{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().
@@ -316,10 +307,9 @@ func (suite *BoardGameSuite) TestGetBoardgameFailure() {
 
 func (suite *BoardGameSuite) TestDeleteBoardgameFailure() {
 	bgID := "1"
-	bg := new(boardgame.Boardgame)
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with id: "+bgID))
+		DeleteBoardgame(gomock.Any(), uint(1)).
+		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().

@@ -1,24 +1,27 @@
 package boardgame
 
 import (
+	"time"
+
 	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/mechanism"
 	"github.com/FranciscoBarao/catalog/tag"
-	"gorm.io/gorm"
 )
 
 // Boardgame represents a board game entity with its associations.
 type Boardgame struct {
-	gorm.Model   `swaggerignore:"true"`
+	ID           uint                  `json:"id"`
+	CreatedAt    time.Time             `json:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at"`
 	Name         string                `json:"name" valid:"alphanum, maxstringlength(100)"`
 	Publisher    string                `json:"publisher" valid:"alphanum, maxstringlength(100)"`
 	PlayerNumber int                   `json:"playerNumber" valid:"int, range(1|16)"`
-	Tags         []tag.Tag             `gorm:"many2many:boardgame_tags;" json:"tags,omitempty"`
-	Categories   []category.Category   `gorm:"many2many:boardgame_categories;" json:"categories,omitempty"`
-	Mechanisms   []mechanism.Mechanism `gorm:"many2many:boardgame_mechanisms;" json:"mechanisms,omitempty"`
-	Ratings      []Rating              `gorm:"many2many:boardgame_ratings;" json:"ratings,omitempty"`
-	Expansions   []Boardgame           `gorm:"foreignkey:BoardgameID" swaggerignore:"true" json:"expansions,omitempty"`
-	BoardgameID  *uint                 `swaggerignore:"true" json:"boardgame_id,omitempty"`
+	Tags         []tag.Tag             `json:"tags,omitempty"`
+	Categories   []category.Category   `json:"categories,omitempty"`
+	Mechanisms   []mechanism.Mechanism `json:"mechanisms,omitempty"`
+	Ratings      []Rating              `json:"ratings,omitempty"`
+	Expansions   []Boardgame           `json:"expansions,omitempty"`
+	BoardgameID  *uint                 `json:"boardgame_id,omitempty"`
 }
 
 // UpdateBoardgame applies changes from the given boardgame to this one.
@@ -54,5 +57,3 @@ func (bg Boardgame) HasExpansions() bool {
 func (bg Boardgame) IsExpansion() bool {
 	return bg.BoardgameID != nil
 }
-
-

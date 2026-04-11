@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/unrolled/render"
@@ -14,10 +15,10 @@ import (
 
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
-	Create(c *category.Category) error
-	GetAll(sort string) ([]category.Category, error)
-	Get(name string) (category.Category, error)
-	Delete(name string) error
+	Create(ctx context.Context, c *category.Category) error
+	GetAll(ctx context.Context, sort string) ([]category.Category, error)
+	Get(ctx context.Context, name string) (category.Category, error)
+	Delete(ctx context.Context, name string) error
 }
 
 // CategoryController handles HTTP requests for category operations.
@@ -54,7 +55,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := controller.service.Create(c); err != nil {
+	if err := controller.service.Create(context.Background(), c); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -80,7 +81,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	categories, err := controller.service.GetAll(sort)
+	categories, err := controller.service.GetAll(context.Background(), sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -102,7 +103,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 // @Router 		/category/{name} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
-	c, err := controller.service.Get(name)
+	c, err := controller.service.Get(context.Background(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -126,7 +127,7 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(name); err != nil {
+	if err := controller.service.Delete(context.Background(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

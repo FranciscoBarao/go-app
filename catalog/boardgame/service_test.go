@@ -1,81 +1,66 @@
 package boardgame
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/middleware"
 	tag "github.com/FranciscoBarao/catalog/tag"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
 
-// BoardgameServiceSuite tests the boardgame Service in isolation using mocksuite.
 type BoardgameServiceSuite struct {
 	suite.Suite
 	mockDB   *MockDatabase
-	mockTag  *MockTagGetter
-	mockCat  *MockCategoryGetter
-	mockMech *MockMechanismGetter
+	mockTag  *MockTagService
+	mockCat  *MockCategoryService
+	mockMech *MockMechanismService
 	service  *Service
 }
 
 func (suite *BoardgameServiceSuite) SetupTest() {
 	ctrl := gomock.NewController(suite.T())
 	suite.mockDB = NewMockDatabase(ctrl)
-	suite.mockTag = NewMockTagGetter(ctrl)
-	suite.mockCat = NewMockCategoryGetter(ctrl)
-	suite.mockMech = NewMockMechanismGetter(ctrl)
+	suite.mockTag = NewMockTagService(ctrl)
+	suite.mockCat = NewMockCategoryService(ctrl)
+	suite.mockMech = NewMockMechanismService(ctrl)
 	suite.service = NewService(suite.mockDB, suite.mockTag, suite.mockCat, suite.mockMech)
 }
 
 func (suite *BoardgameServiceSuite) TestCreate() {
 	bg := &Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
-	suite.mockDB.EXPECT().Create(bg).Return(nil)
+	suite.mockDB.EXPECT().CreateBoardgame(gomock.Any(), bg).Return(nil)
 
-	err := suite.service.Create(bg, "")
+	err := suite.service.Create(context.Background(), bg, 0)
 	suite.Assert().NoError(err)
 }
 
 func (suite *BoardgameServiceSuite) TestCreateWithExpansion() {
-	parentID := uint(1)
-	parent := Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4, BoardgameID: &parentID}
+	parent := Boardgame{ID: 1, Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
 
 	expansion := &Boardgame{Name: "Catan: Seafarers", Publisher: "Kosmos", PlayerNumber: 4}
 
-	// GetByID for parent — db.Read populates the dest pointer
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "1").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Boardgame)
-			*ptr = parent
-			return nil
-		},
-	)
-	suite.mockDB.EXPECT().Create(expansion).Return(nil)
+	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(1)).Return(parent, nil)
+	suite.mockDB.EXPECT().CreateBoardgame(gomock.Any(), expansion).Return(nil)
 
-	err := suite.service.Create(expansion, "1")
+	err := suite.service.Create(context.Background(), expansion, 1)
 	suite.Assert().NoError(err)
 	suite.Assert().NotNil(expansion.BoardgameID)
-	suite.Assert().Equal(parentID, *expansion.BoardgameID)
+	suite.Assert().Equal(uint(1), *expansion.BoardgameID)
 }
 
-func (suite *BoardgameServiceSuite) TestCreateExpansionOfExpansionFails() {
+func (suite *BoardgameServiceSuite) TestCreate_ExpansionOfExpansionFails() {
 	parentID := uint(2)
 	parent := Boardgame{Name: "Catan: Seafarers", Publisher: "Kosmos", PlayerNumber: 4, BoardgameID: &parentID}
 
 	expansion := &Boardgame{Name: "Catan: Seafarers Scenario", Publisher: "Kosmos", PlayerNumber: 4}
 
-	// GetByID for parent — parent is an expansion (BoardgameID != nil)
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "2").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Boardgame)
-			*ptr = parent
-			return nil
-		},
-	)
-	// db.Create should NOT be called
+	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(2)).Return(parent, nil)
 
-	err := suite.service.Create(expansion, "2")
+	err := suite.service.Create(context.Background(), expansion, 2)
 	suite.Assert().Error(err)
 
 	var mr *middleware.MalformedRequest
@@ -84,6 +69,7 @@ func (suite *BoardgameServiceSuite) TestCreateExpansionOfExpansionFails() {
 }
 
 func (suite *BoardgameServiceSuite) TestCreateWithTags() {
+	ctx := context.Background()
 	bg := &Boardgame{
 		Name:         "Catan",
 		Publisher:    "Kosmos",
@@ -91,15 +77,15 @@ func (suite *BoardgameServiceSuite) TestCreateWithTags() {
 		Tags:         []tag.Tag{{Name: "strategy"}, {Name: "family"}},
 	}
 
-	suite.mockTag.EXPECT().Get("strategy").Return(tag.Tag{Name: "strategy"}, nil)
-	suite.mockTag.EXPECT().Get("family").Return(tag.Tag{Name: "family"}, nil)
-	suite.mockDB.EXPECT().Create(bg).Return(nil)
+	suite.mockTag.EXPECT().Get(ctx, "strategy").Return(tag.Tag{Name: "strategy"}, nil)
+	suite.mockTag.EXPECT().Get(ctx, "family").Return(tag.Tag{Name: "family"}, nil)
+	suite.mockDB.EXPECT().CreateBoardgame(ctx, bg).Return(nil)
 
-	err := suite.service.Create(bg, "")
+	err := suite.service.Create(ctx, bg, 0)
 	suite.Assert().NoError(err)
 }
 
-func (suite *BoardgameServiceSuite) TestCreateTagNotFound() {
+func (suite *BoardgameServiceSuite) TestCreateTag_NotFound() {
 	bg := &Boardgame{
 		Name:         "Catan",
 		Publisher:    "Kosmos",
@@ -108,39 +94,41 @@ func (suite *BoardgameServiceSuite) TestCreateTagNotFound() {
 	}
 
 	tagErr := middleware.NewError(http.StatusNotFound, "Tag not found with name: nonexistent")
-	suite.mockTag.EXPECT().Get("nonexistent").Return(tag.Tag{}, tagErr)
-	// db.Create should NOT be called
+	suite.mockTag.EXPECT().Get(gomock.Any(), "nonexistent").Return(tag.Tag{}, tagErr)
 
-	err := suite.service.Create(bg, "")
+	err := suite.service.Create(context.Background(), bg, 0)
 	suite.Assert().Error(err)
 	suite.Assert().Equal("Tag not found with name: nonexistent", err.Error())
+}
+
+func (suite *BoardgameServiceSuite) TestCreateWithExpansion_GetIDInternalError() {
+	suite.mockDB.EXPECT().
+		GetBoardgameByID(gomock.Any(), uint(1)).
+		Return(Boardgame{}, assert.AnError)
+
+	err := suite.service.Create(context.Background(), nil, 1)
+	suite.Assert().Error(err)
 }
 
 func (suite *BoardgameServiceSuite) TestGetByID() {
 	parentID := uint(1)
 	expected := Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4, BoardgameID: &parentID}
 
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "1").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Boardgame)
-			*ptr = expected
-			return nil
-		},
-	)
+	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(1)).Return(expected, nil)
 
-	bg, err := suite.service.GetByID("1")
+	bg, err := suite.service.GetByID(context.Background(), 1)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, bg)
 }
 
-func (suite *BoardgameServiceSuite) TestGetByIDNotFound() {
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "999").Return(
-		middleware.NewError(http.StatusNotFound, "not found"),
+func (suite *BoardgameServiceSuite) TestGetByID_NotFound() {
+	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(999)).Return(
+		Boardgame{}, middleware.NewError(http.StatusNotFound, "record not found"),
 	)
 
-	_, err := suite.service.GetByID("999")
+	_, err := suite.service.GetByID(context.Background(), 999)
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Boardgame not found with id: 999", err.Error())
+	suite.Assert().Equal("record not found", err.Error())
 }
 
 func (suite *BoardgameServiceSuite) TestUpdate() {
@@ -154,52 +142,30 @@ func (suite *BoardgameServiceSuite) TestUpdate() {
 		Tags:         []tag.Tag{{Name: "strategy"}},
 	}
 
-	// validateAssociations — tag lookup
-	suite.mockTag.EXPECT().Get("strategy").Return(tag.Tag{Name: "strategy"}, nil)
+	suite.mockTag.EXPECT().Get(gomock.Any(), "strategy").Return(tag.Tag{Name: "strategy"}, nil)
+	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(1)).Return(existing, nil)
+	suite.mockDB.EXPECT().UpdateBoardgame(gomock.Any(), gomock.Any()).Return(nil)
+	suite.mockDB.EXPECT().ReplaceBoardgameTags(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
-	// GetByID — fetch existing
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "1").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Boardgame)
-			*ptr = existing
-			return nil
-		},
-	)
-
-	// After UpdateBoardgame is applied, the existing boardgame gets input's fields
-	suite.mockDB.EXPECT().Update(gomock.Any()).Return(nil)
-	suite.mockDB.EXPECT().ReplaceAssociatons(gomock.Any(), "Tags", gomock.Any()).Return(nil)
-
-	err := suite.service.Update(input, "1")
+	err := suite.service.Update(context.Background(), input, 1)
 	suite.Assert().NoError(err)
 }
 
 func (suite *BoardgameServiceSuite) TestDeleteByID() {
-	parentID := uint(1)
-	existing := Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4, BoardgameID: &parentID}
+	suite.mockDB.EXPECT().DeleteBoardgame(gomock.Any(), uint(1)).Return(nil)
 
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "1").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Boardgame)
-			*ptr = existing
-			return nil
-		},
-	)
-	suite.mockDB.EXPECT().Delete(gomock.Any()).Return(nil)
-
-	err := suite.service.DeleteByID("1")
+	err := suite.service.DeleteByID(context.Background(), 1)
 	suite.Assert().NoError(err)
 }
 
-func (suite *BoardgameServiceSuite) TestDeleteByIDNotFound() {
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "id = ?", "999").Return(
-		middleware.NewError(http.StatusNotFound, "not found"),
+func (suite *BoardgameServiceSuite) TestDeleteByID_NotFound() {
+	suite.mockDB.EXPECT().DeleteBoardgame(gomock.Any(), uint(999)).Return(
+		middleware.NewError(http.StatusNotFound, "record not found"),
 	)
-	// db.Delete should NOT be called
 
-	err := suite.service.DeleteByID("999")
+	err := suite.service.DeleteByID(context.Background(), 999)
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Boardgame not found with id: 999", err.Error())
+	suite.Assert().Equal("record not found", err.Error())
 }
 
 func TestBoardgameServiceSuite(t *testing.T) {

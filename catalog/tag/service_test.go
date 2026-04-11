@@ -1,6 +1,7 @@
 package tag
 
 import (
+	"context"
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/middleware"
@@ -28,76 +29,55 @@ func (suite *TagServiceSuite) TearDownTest() {
 
 func (suite *TagServiceSuite) TestCreate() {
 	tag := NewTag("strategy")
-	suite.mockDB.EXPECT().Create(tag).Return(nil)
+	suite.mockDB.EXPECT().CreateTag(gomock.Any(), tag).Return(nil)
 
-	err := suite.service.Create(tag)
+	err := suite.service.Create(context.Background(), tag)
 	suite.Assert().NoError(err)
 }
 
 func (suite *TagServiceSuite) TestGetAll() {
 	expected := []Tag{{Name: "strategy"}, {Name: "cooperative"}}
-	suite.mockDB.EXPECT().Read(gomock.Any(), "name", "", "").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*[]Tag)
-			*ptr = expected
-			return nil
-		},
-	)
+	suite.mockDB.EXPECT().GetAllTags(gomock.Any(), "name").Return(expected, nil)
 
-	tags, err := suite.service.GetAll("name")
+	tags, err := suite.service.GetAll(context.Background(), "name")
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, tags)
 }
 
 func (suite *TagServiceSuite) TestGet() {
 	expected := Tag{Name: "strategy"}
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "name = ?", "strategy").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Tag)
-			*ptr = expected
-			return nil
-		},
-	)
+	suite.mockDB.EXPECT().GetTag(gomock.Any(), "strategy").Return(expected, nil)
 
-	tag, err := suite.service.Get("strategy")
+	tag, err := suite.service.Get(context.Background(), "strategy")
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, tag)
 }
 
 func (suite *TagServiceSuite) TestGetNotFound() {
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "name = ?", "nonexistent").Return(
-		middleware.NewError(404, "not found"),
+	suite.mockDB.EXPECT().GetTag(gomock.Any(), "nonexistent").Return(
+		Tag{}, middleware.NewError(404, "Record not found"),
 	)
 
-	_, err := suite.service.Get("nonexistent")
+	_, err := suite.service.Get(context.Background(), "nonexistent")
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Tag not found with name: nonexistent", err.Error())
+	suite.Assert().Equal("Record not found", err.Error())
 }
 
 func (suite *TagServiceSuite) TestDelete() {
-	expected := Tag{Name: "strategy"}
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "name = ?", "strategy").DoAndReturn(
-		func(dest interface{}, sort, search, identifier string) error {
-			ptr := dest.(*Tag)
-			*ptr = expected
-			return nil
-		},
-	)
-	suite.mockDB.EXPECT().Delete(&expected).Return(nil)
+	suite.mockDB.EXPECT().DeleteTag(gomock.Any(), "strategy").Return(nil)
 
-	err := suite.service.Delete("strategy")
+	err := suite.service.Delete(context.Background(), "strategy")
 	suite.Assert().NoError(err)
 }
 
 func (suite *TagServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().Read(gomock.Any(), "", "name = ?", "missing").Return(
-		middleware.NewError(404, "not found"),
+	suite.mockDB.EXPECT().DeleteTag(gomock.Any(), "missing").Return(
+		middleware.NewError(404, "Record not found"),
 	)
-	// db.Delete should NOT be called
 
-	err := suite.service.Delete("missing")
+	err := suite.service.Delete(context.Background(), "missing")
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Tag not found with name: missing", err.Error())
+	suite.Assert().Equal("Record not found", err.Error())
 }
 
 func TestTagServiceSuite(t *testing.T) {

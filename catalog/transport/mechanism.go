@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/unrolled/render"
@@ -14,10 +15,10 @@ import (
 
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
-	Create(mechanism *mechanism.Mechanism) error
-	GetAll(sort string) ([]mechanism.Mechanism, error)
-	Get(name string) (mechanism.Mechanism, error)
-	Delete(name string) error
+	Create(ctx context.Context, mechanism *mechanism.Mechanism) error
+	GetAll(ctx context.Context, sort string) ([]mechanism.Mechanism, error)
+	Get(ctx context.Context, name string) (mechanism.Mechanism, error)
+	Delete(ctx context.Context, name string) error
 }
 
 // MechanismController handles HTTP requests for mechanism operations.
@@ -54,7 +55,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := controller.service.Create(m); err != nil {
+	if err := controller.service.Create(context.Background(), m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -80,7 +81,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	mechanisms, err := controller.service.GetAll(sort)
+	mechanisms, err := controller.service.GetAll(context.Background(), sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -103,7 +104,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
 
-	m, err := controller.service.Get(name)
+	m, err := controller.service.Get(context.Background(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -127,7 +128,7 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(name); err != nil {
+	if err := controller.service.Delete(context.Background(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

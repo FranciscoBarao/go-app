@@ -16,7 +16,7 @@ import (
 func ValidateStruct(value any) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
 		middleware.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
-		return middleware.NewError(http.StatusForbidden, "Error - Model validation failed")
+		return middleware.NewError(http.StatusBadRequest, "Error - Model validation failed")
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package transport
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/unrolled/render"
@@ -14,10 +15,10 @@ import (
 
 // TagService defines the interface for tag business logic.
 type TagService interface {
-	Create(t *tag.Tag) error
-	GetAll(sort string) ([]tag.Tag, error)
-	Get(name string) (tag.Tag, error)
-	Delete(name string) error
+	Create(ctx context.Context, t *tag.Tag) error
+	GetAll(ctx context.Context, sort string) ([]tag.Tag, error)
+	Get(ctx context.Context, name string) (tag.Tag, error)
+	Delete(ctx context.Context, name string) error
 }
 
 // TagController handles HTTP requests for tag operations.
@@ -54,7 +55,7 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := controller.service.Create(t); err != nil {
+	if err := controller.service.Create(context.Background(), t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -80,7 +81,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	tags, err := controller.service.GetAll(sort)
+	tags, err := controller.service.GetAll(context.Background(), sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -102,7 +103,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 // @Router 		/tag/{name} [get]
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
-	tag, err := controller.service.Get(name)
+	tag, err := controller.service.Get(context.Background(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -126,7 +127,7 @@ func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) 
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(name); err != nil {
+	if err := controller.service.Delete(context.Background(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

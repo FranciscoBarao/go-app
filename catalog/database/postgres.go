@@ -3,144 +3,109 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
-	"reflect"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/middleware"
 )
 
-// Postgres wraps a gorm.DB connection.
+const (
+	uniqueViolationCode     = "23505"
+	foreignKeyViolationCode = "23503"
+)
+
+// Postgres holds the pgx connection pool.
 type Postgres struct {
-	db *gorm.DB
+	pool *pgxpool.Pool
 }
 
-// Connect opens a PostgreSQL connection and runs migrations for the given models.
-func Connect(config *config.PostgresConfig, models ...interface{}) (*Postgres, error) {
-	log := middleware.FromCtx(context.Background())
+// Connect creates a new Postgres instance with an initialized connection pool.
+// If cfg.MigrationPath is set, all *.up.sql files in that directory are executed
+// in lexicographic order before returning.
+func Connect(ctx context.Context, cfg *config.PostgresConfig) (*Postgres, error) {
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database,
+	)
 
-	db, err := gorm.Open(postgres.Open(config.String()), &gorm.Config{})
+	pool, err := pgxpool.New(ctx, connStr)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to connect to database")
-		return nil, err
+		return nil, fmt.Errorf("database connect: %w", err)
 	}
 
-	log.Debug().Msg("connected to database")
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("database ping: %w", err)
+	}
 
-	for _, m := range models {
-		if err = migrate(db, m); err != nil {
-			return nil, err
+	if cfg.MigrationPath != "" {
+		if err := runMigrations(ctx, pool, cfg.MigrationPath); err != nil {
+			pool.Close()
+			return nil, fmt.Errorf("database migrate: %w", err)
 		}
 	}
 
-	log.Debug().Msg("database migration completed")
-
-	return &Postgres{db}, nil
+	return &Postgres{pool: pool}, nil
 }
 
-func migrate(db *gorm.DB, model interface{}) error {
-	log := middleware.FromCtx(context.Background())
-	err := db.AutoMigrate(model)
+// Close shuts down the connection pool.
+func (p *Postgres) Close() {
+	p.pool.Close()
+}
+
+// runMigrations reads all *.up.sql files from dir in sorted order and executes them.
+func runMigrations(ctx context.Context, pool *pgxpool.Pool, dir string) error {
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		log.Error().Err(err).Interface("model", model).Msg("failed to migrate model")
+		return fmt.Errorf("read migration dir: %w", err)
+	}
+
+	var files []string
+	for _, e := range entries {
+		if !e.IsDir() && strings.HasSuffix(e.Name(), ".up.sql") {
+			files = append(files, e.Name())
+		}
+	}
+	sort.Strings(files)
+
+	for _, f := range files {
+		sql, err := os.ReadFile(filepath.Join(dir, f))
+		if err != nil {
+			return fmt.Errorf("read migration %s: %w", f, err)
+		}
+		if _, err := pool.Exec(ctx, string(sql)); err != nil {
+			return fmt.Errorf("exec migration %s: %w", f, err)
+		}
+	}
+
+	return nil
+}
+
+// mapPgError converts pgx errors to domain errors.
+func mapPgError(err error) error {
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return middleware.NewError(http.StatusNotFound, "record not found")
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case uniqueViolationCode:
+			return middleware.NewError(http.StatusConflict, "entry already registered")
+		case foreignKeyViolationCode:
+			return middleware.NewError(http.StatusConflict, "referenced record not found")
+		}
 	}
 	return err
-}
-
-func isSliceOrArray(value interface{}) bool {
-	return reflect.ValueOf(value).Elem().Kind() == reflect.Slice || reflect.ValueOf(value).Elem().Kind() == reflect.Array
-}
-
-// Create persists a new record to the database.
-func (instance *Postgres) Create(value interface{}) error {
-	log := middleware.FromCtx(context.Background())
-
-	err := instance.db.Omit(clause.Associations).Create(value).Error
-	if err != nil {
-		log.Error().Err(err).Interface("value", value).Msg("failed to create database entry")
-		if errors.Is(err, gorm.ErrRegistered) {
-			return middleware.NewError(http.StatusConflict, "Entry already registered")
-		}
-		return err
-	}
-
-	log.Debug().Interface("value", value).Msg("created database entry")
-	return nil
-}
-
-func (instance *Postgres) Read(value interface{}, sort, search, identifier string) error {
-	log := middleware.FromCtx(context.Background())
-
-	var err error
-	if isSliceOrArray(value) {
-		if search == "" {
-			err = instance.db.Preload(clause.Associations).Order(sort).Find(value).Error // Find all with sort and NO filters
-		} else {
-			err = instance.db.Preload(clause.Associations).Order(sort).Find(value, search, identifier).Error // Find all with filters and sort
-		}
-	} else {
-		err = instance.db.Preload(clause.Associations).First(value, search, identifier).Error // Find 1 Specific
-	}
-
-	if err != nil {
-		log.Error().Err(err).Str("search", search).Str("identifier", identifier).Msg("failed to read database entry")
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return middleware.NewError(http.StatusNotFound, "Record not found")
-		}
-		return err
-	}
-
-	log.Debug().Interface("value", value).Msg("fetched database entry")
-	return nil
-}
-
-// Update saves changes to an existing record.
-func (instance *Postgres) Update(value interface{}) error {
-	log := middleware.FromCtx(context.Background())
-
-	err := instance.db.Omit(clause.Associations).Save(value).Error
-	if err != nil {
-		log.Error().Err(err).Interface("value", value).Msg("failed to update database entry")
-		return err
-	}
-
-	log.Debug().Interface("value", value).Msg("updated database entry")
-	return nil
-}
-
-// Delete removes a record and its associations from the database.
-func (instance *Postgres) Delete(value interface{}) error {
-	log := middleware.FromCtx(context.Background())
-
-	// Delete BG and all its associations (E.g Tags associations)
-	obj := instance.db.Select(clause.Associations).Delete(value)
-	if obj.Error != nil {
-		log.Error().Err(obj.Error).Interface("value", value).Msg("failed to delete database entry")
-		return obj.Error
-	}
-	if obj.RowsAffected != 1 {
-		log.Error().Err(obj.Error).Interface("value", value).Msg("failed to delete database entry")
-		return middleware.NewError(http.StatusNotFound, "Record Not found")
-	}
-
-	log.Debug().Interface("value", value).Msg("deleted database entry")
-	return nil
-}
-
-// ReplaceAssociatons replaces the values of a certain association of a certain model.
-func (instance *Postgres) ReplaceAssociatons(model interface{}, association string, values interface{}) error {
-	log := middleware.FromCtx(context.Background())
-
-	err := instance.db.Model(model).Association(association).Replace(values)
-	if err != nil {
-		log.Error().Err(err).Interface("model", model).Str("association", association).Interface("values", values).Msg("failed to replace associations")
-		return err
-	}
-
-	log.Debug().Interface("model", model).Str("association", association).Interface("values", values).Msg("replaced association")
-	return nil
 }

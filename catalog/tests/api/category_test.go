@@ -1,12 +1,12 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/middleware"
@@ -26,33 +26,26 @@ func (suite *CategorySuite) TestPostCategory() {
 	categoryName := "test"
 	categoryObj := category.NewCategory(categoryName)
 	suite.base.dbMock.EXPECT().
-		Create(categoryObj).
+		CreateCategory(gomock.Any(), categoryObj).
 		Return(nil)
-
-	categoryJSON, err := json.Marshal(categoryObj)
-	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
-		JSON(categoryJSON).
+		JSON(`{"name":"test"}`).
+		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Body(string(categoryJSON)).
 		Status(http.StatusOK).
 		End()
 }
 
 func (suite *CategorySuite) TestGetCategory() {
 	categoryName := "test"
-	categoryObj := new(category.Category)
+	expected := category.Category{Name: categoryName}
 	suite.base.dbMock.EXPECT().
-		Read(categoryObj, "", "name = ?", categoryName).
-		Do(func(categoryObj *category.Category, sort, query, field string) error {
-			categoryObj.Name = categoryName
-			return nil
-		}).
-		Return(nil)
+		GetCategory(gomock.Any(), categoryName).
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
@@ -60,19 +53,13 @@ func (suite *CategorySuite) TestGetCategory() {
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusOK).
-		Body(`{"name": "` + categoryName + `"}`).
 		End()
 }
 
 func (suite *CategorySuite) TestDeleteCategory() {
 	categoryName := "test"
-	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(categoryObj, "", "name = ?", categoryName).
-		Return(nil)
-
-	suite.base.dbMock.EXPECT().
-		Delete(new(category.Category)).
+		DeleteCategory(gomock.Any(), categoryName).
 		Return(nil)
 
 	apitest.New().
@@ -158,10 +145,9 @@ func (suite *CategorySuite) TestPostCategoryFailures() {
 
 func (suite *CategorySuite) TestGetCategoryFailure() {
 	categoryName := "test"
-	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(categoryObj, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
+		GetCategory(gomock.Any(), categoryName).
+		Return(category.Category{}, middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().
@@ -175,10 +161,9 @@ func (suite *CategorySuite) TestGetCategoryFailure() {
 
 func (suite *CategorySuite) TestDeleteCategoryFailure() {
 	categoryName := "test"
-	categoryObj := new(category.Category)
 	suite.base.dbMock.EXPECT().
-		Read(categoryObj, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
+		DeleteCategory(gomock.Any(), categoryName).
+		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
 
 	// Record not found
 	apitest.New().

@@ -1,18 +1,17 @@
 package mechanism
 
 import (
-	"errors"
-
-	"github.com/FranciscoBarao/catalog/middleware"
+	"context"
 )
 
 //go:generate mockgen -package mechanism -destination service_mock.go . Database
 
-// Database defines the persistence operations needed by the tag service.
+// Database defines the persistence operations needed by the mechanism service.
 type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Delete(value interface{}) error
+	CreateMechanism(ctx context.Context, m *Mechanism) error
+	GetMechanism(ctx context.Context, name string) (Mechanism, error)
+	GetAllMechanisms(ctx context.Context, sort string) ([]Mechanism, error)
+	DeleteMechanism(ctx context.Context, name string) error
 }
 
 // Service merges the old MechanismRepository and Service into a single struct
@@ -29,35 +28,21 @@ func NewService(db Database) *Service {
 }
 
 // Create persists a new Mechanism to the database.
-func (svc *Service) Create(mechanism *Mechanism) error {
-	return svc.db.Create(mechanism)
+func (svc *Service) Create(ctx context.Context, mechanism *Mechanism) error {
+	return svc.db.CreateMechanism(ctx, mechanism)
 }
 
 // GetAll retrieves all Mechanisms from the database, optionally sorted.
-func (svc *Service) GetAll(sort string) ([]Mechanism, error) {
-	var mechanisms []Mechanism
-	return mechanisms, svc.db.Read(&mechanisms, sort, "", "")
+func (svc *Service) GetAll(ctx context.Context, sort string) ([]Mechanism, error) {
+	return svc.db.GetAllMechanisms(ctx, sort)
 }
 
-// Get retrieves a single Mechanism by name. Returns a MalformedRequest error if not found.
-func (svc *Service) Get(name string) (Mechanism, error) {
-	var mechanism Mechanism
-	err := svc.db.Read(&mechanism, "", "name = ?", name)
-
-	var mr *middleware.MalformedRequest
-	if err != nil && errors.As(err, &mr) {
-		return mechanism, middleware.NewError(mr.GetStatus(), "Mechanism not found with name: "+name)
-	}
-
-	return mechanism, err
+// Get retrieves a single Mechanism by name.
+func (svc *Service) Get(ctx context.Context, name string) (Mechanism, error) {
+	return svc.db.GetMechanism(ctx, name)
 }
 
-// Delete removes a Mechanism by name. It first retrieves the mechanism, then deletes it.
-func (svc *Service) Delete(name string) error {
-	mechanism, err := svc.Get(name)
-	if err != nil {
-		return err
-	}
-
-	return svc.db.Delete(&mechanism)
+// Delete removes a Mechanism by name.
+func (svc *Service) Delete(ctx context.Context, name string) error {
+	return svc.db.DeleteMechanism(ctx, name)
 }

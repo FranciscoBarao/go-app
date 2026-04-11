@@ -1,7 +1,9 @@
 package transport
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/unrolled/render"
 
@@ -14,12 +16,12 @@ import (
 
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
-	Create(bg *boardgame.Boardgame, id string) error
-	GetAll(sort, filterBody, filterValue string) ([]boardgame.Boardgame, error)
-	GetByID(id string) (boardgame.Boardgame, error)
-	Update(bg *boardgame.Boardgame, id string) error
-	DeleteByID(id string) error
-	Rate(rating *boardgame.Rating, id, username string) error
+	Create(ctx context.Context, bg *boardgame.Boardgame, id uint) error
+	GetAll(ctx context.Context, sort string) ([]boardgame.Boardgame, error)
+	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
+	Update(ctx context.Context, bg *boardgame.Boardgame, id uint) error
+	DeleteByID(ctx context.Context, id uint) error
+	Rate(ctx context.Context, rating *boardgame.Rating, id uint, username string) error
 }
 
 // BoardgameController handles HTTP requests for boardgame operations.
@@ -58,9 +60,17 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 	}
 
 	// Get Id from url - If its an expansion
-	id := utils.GetFieldFromURL(r, "id")
+	var parentID uint
+	if id := utils.GetFieldFromURL(r, "id"); id != "" {
+		parsedID, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			middleware.ErrorHandler(w, middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id))
+			return
+		}
+		parentID = uint(parsedID)
+	}
 
-	if err := controller.service.Create(bg, id); err != nil {
+	if err := controller.service.Create(context.Background(), bg, parentID); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -75,7 +85,6 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 // @Summary 	Fetches all Boardgames
 // @Tags 		boardgames
 // @Produce 	json
-// @Param 		filterBy query string  false  "Filter using field.value (For String partial find) OR field.operator.value"
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame [get]
 func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -86,14 +95,20 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	filterBy := r.URL.Query().Get("filterBy")
-	filterBody, filterValue, err := utils.GetFilters(boardgame.Boardgame{}, filterBy)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
+	/*
+		TODO - Reevaluate and rething this filter strategy
 
-	boardgames, err := controller.service.GetAll(sort, filterBody, filterValue)
+		// @Param  filterBy query string  false  "Filter using field.value (For String partial find) OR field.operator.value"
+
+		filterBy := r.URL.Query().Get("filterBy")
+		filterBody, filterValue, err := utils.GetFilters(boardgame.Boardgame{}, filterBy)
+		if err != nil {
+			middleware.ErrorHandler(w, err)
+			return
+		}
+	*/
+
+	boardgames, err := controller.service.GetAll(context.Background(), sort)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -114,8 +129,14 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 // @Router 		/boardgame/{id} [get]
 func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Request) {
 	id := utils.GetFieldFromURL(r, "id")
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		err = middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id)
+		middleware.ErrorHandler(w, err)
+		return
+	}
 
-	boardgame, err := controller.service.GetByID(id)
+	boardgame, err := controller.service.GetByID(context.Background(), uint(parsedID))
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -150,9 +171,15 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 	}
 
 	id := utils.GetFieldFromURL(r, "id")
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		err = middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id)
+		middleware.ErrorHandler(w, err)
+		return
+	}
 
 	// Updates Boardgame
-	if err := controller.service.Update(input, id); err != nil {
+	if err := controller.service.Update(context.Background(), input, uint(parsedID)); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -173,9 +200,15 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 // @Router 		/boardgame/{id} [delete]
 func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Request) {
 	id := utils.GetFieldFromURL(r, "id")
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		err = middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id)
+		middleware.ErrorHandler(w, err)
+		return
+	}
 
 	// Delete by Id
-	if err := controller.service.DeleteByID(id); err != nil {
+	if err := controller.service.DeleteByID(context.Background(), uint(parsedID)); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -210,6 +243,12 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 
 	// Get Boardgame Id from url
 	id := utils.GetFieldFromURL(r, "id")
+	parsedID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		err = middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id)
+		middleware.ErrorHandler(w, err)
+		return
+	}
 
 	// Get username from oauth Token
 	user, err := utils.GetUsernameFromToken(r)
@@ -218,7 +257,7 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := controller.service.Rate(rating, id, user); err != nil {
+	if err := controller.service.Rate(context.Background(), rating, uint(parsedID), user); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

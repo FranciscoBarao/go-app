@@ -1,10 +1,15 @@
 package tag
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Tag represents a board game tag.
 type Tag struct {
-	Name string `gorm:"primarykey" json:"name" valid:"alphanum, maxstringlength(30)"`
+	Name      string    `json:"name" valid:"alphanum, maxstringlength(30)"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // NewTag creates a new Tag with the given name.

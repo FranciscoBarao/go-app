@@ -37,12 +37,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to fetch database env variables")
 	}
+	config.MigrationPath = "database/migrations"
 
 	// Connect to Database
-	db, err := database.Connect(config, &boardgame.Boardgame{}, &tag.Tag{}, &category.Category{}, &mechanism.Mechanism{}, &boardgame.Rating{})
+	db, err := database.Connect(ctx, config)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
+	defer db.Close()
 
 	// Fetch Env variables
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")

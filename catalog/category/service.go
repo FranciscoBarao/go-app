@@ -1,18 +1,17 @@
 package category
 
 import (
-	"errors"
-
-	"github.com/FranciscoBarao/catalog/middleware"
+	"context"
 )
 
 //go:generate mockgen -package category -destination service_mock.go . Database
 
 // Database defines the persistence operations needed by the category service.
 type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Delete(value interface{}) error
+	CreateCategory(ctx context.Context, c *Category) error
+	GetCategory(ctx context.Context, name string) (Category, error)
+	GetAllCategories(ctx context.Context, sort string) ([]Category, error)
+	DeleteCategory(ctx context.Context, name string) error
 }
 
 // Service merges the old CategoryRepository and Service into a single struct
@@ -29,35 +28,21 @@ func NewService(db Database) *Service {
 }
 
 // Create persists a new Category to the database.
-func (svc *Service) Create(category *Category) error {
-	return svc.db.Create(category)
+func (svc *Service) Create(ctx context.Context, category *Category) error {
+	return svc.db.CreateCategory(ctx, category)
 }
 
 // GetAll retrieves all Categories from the database, optionally sorted.
-func (svc *Service) GetAll(sort string) ([]Category, error) {
-	var categories []Category
-	return categories, svc.db.Read(&categories, sort, "", "")
+func (svc *Service) GetAll(ctx context.Context, sort string) ([]Category, error) {
+	return svc.db.GetAllCategories(ctx, sort)
 }
 
-// Get retrieves a single Category by name. Returns a MalformedRequest error if not found.
-func (svc *Service) Get(name string) (Category, error) {
-	var category Category
-	err := svc.db.Read(&category, "", "name = ?", name)
-
-	var mr *middleware.MalformedRequest
-	if err != nil && errors.As(err, &mr) {
-		return category, middleware.NewError(mr.GetStatus(), "Category not found with name: "+name)
-	}
-
-	return category, err
+// Get retrieves a single Category by name.
+func (svc *Service) Get(ctx context.Context, name string) (Category, error) {
+	return svc.db.GetCategory(ctx, name)
 }
 
-// Delete removes a Category by name. It first retrieves the category, then deletes it.
-func (svc *Service) Delete(name string) error {
-	category, err := svc.Get(name)
-	if err != nil {
-		return err
-	}
-
-	return svc.db.Delete(&category)
+// Delete removes a Category by name.
+func (svc *Service) Delete(ctx context.Context, name string) error {
+	return svc.db.DeleteCategory(ctx, name)
 }

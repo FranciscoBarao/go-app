@@ -19,12 +19,33 @@ import (
 )
 
 // Database defines the persistence operations needed by the integration tests.
+// It combines all four resource Database interfaces into a single mock target.
 type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Update(value interface{}) error
-	Delete(value interface{}) error
-	ReplaceAssociatons(model interface{}, association string, values interface{}) error
+	// Tag methods
+	CreateTag(ctx context.Context, t *tag.Tag) error
+	GetTag(ctx context.Context, name string) (tag.Tag, error)
+	GetAllTags(ctx context.Context, sort string) ([]tag.Tag, error)
+	DeleteTag(ctx context.Context, name string) error
+
+	// Category methods
+	CreateCategory(ctx context.Context, c *category.Category) error
+	GetCategory(ctx context.Context, name string) (category.Category, error)
+	GetAllCategories(ctx context.Context, sort string) ([]category.Category, error)
+	DeleteCategory(ctx context.Context, name string) error
+
+	// Mechanism methods
+	CreateMechanism(ctx context.Context, m *mechanism.Mechanism) error
+	GetMechanism(ctx context.Context, name string) (mechanism.Mechanism, error)
+	GetAllMechanisms(ctx context.Context, sort string) ([]mechanism.Mechanism, error)
+	DeleteMechanism(ctx context.Context, name string) error
+
+	// Boardgame methods
+	CreateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error
+	GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
+	GetAllBoardgames(ctx context.Context, sort string) ([]boardgame.Boardgame, error)
+	UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error
+	DeleteBoardgame(ctx context.Context, id uint) error
+	ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error
 }
 
 const oauthKey = "secret-key"

@@ -2,7 +2,6 @@ package boardgame
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
 	"github.com/FranciscoBarao/catalog/category"
@@ -11,43 +10,44 @@ import (
 	"github.com/FranciscoBarao/catalog/tag"
 )
 
-//go:generate mockgen -package boardgame -destination service_mock.go . Database,TagGetter,CategoryGetter,MechanismGetter
+//go:generate mockgen -package boardgame -destination service_mock.go . Database,TagService,CategoryService,MechanismService
 
 // Database defines the interface for database operations needed by the boardgame service.
 type Database interface {
-	Create(value interface{}) error
-	Read(value interface{}, sort, search, identifier string) error
-	Update(value interface{}) error
-	Delete(value interface{}) error
-	ReplaceAssociatons(model interface{}, association string, values interface{}) error
+	CreateBoardgame(ctx context.Context, bg *Boardgame) error
+	GetBoardgameByID(ctx context.Context, id uint) (Boardgame, error)
+	GetAllBoardgames(ctx context.Context, sort string) ([]Boardgame, error)
+	UpdateBoardgame(ctx context.Context, bg *Boardgame) error
+	DeleteBoardgame(ctx context.Context, id uint) error
+	ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error
 }
 
-// TagGetter is a local interface for retrieving tags by name.
-type TagGetter interface {
-	Get(name string) (tag.Tag, error)
+// TagService is a local interface for retrieving tags by name.
+type TagService interface {
+	Get(ctx context.Context, name string) (tag.Tag, error)
 }
 
-// CategoryGetter is a local interface for retrieving categories by name.
-type CategoryGetter interface {
-	Get(name string) (category.Category, error)
+// CategoryService is a local interface for retrieving categories by name.
+type CategoryService interface {
+	Get(ctx context.Context, name string) (category.Category, error)
 }
 
-// MechanismGetter is a local interface for retrieving mechanisms by name.
-type MechanismGetter interface {
-	Get(name string) (mechanism.Mechanism, error)
+// MechanismService is a local interface for retrieving mechanisms by name.
+type MechanismService interface {
+	Get(ctx context.Context, name string) (mechanism.Mechanism, error)
 }
 
 // Service merges the old BoardgameRepository and Service into a single struct
 // that holds a Database directly and uses local getter interfaces for association validation.
 type Service struct {
 	db           Database
-	tagSvc       TagGetter
-	categorySvc  CategoryGetter
-	mechanismSvc MechanismGetter
+	tagSvc       TagService
+	categorySvc  CategoryService
+	mechanismSvc MechanismService
 }
 
 // NewService creates a new boardgame Service with the given dependencies.
-func NewService(db Database, tagSvc TagGetter, catSvc CategoryGetter, mechSvc MechanismGetter) *Service {
+func NewService(db Database, tagSvc TagService, catSvc CategoryService, mechSvc MechanismService) *Service {
 	return &Service{
 		db:           db,
 		tagSvc:       tagSvc,
@@ -57,48 +57,40 @@ func NewService(db Database, tagSvc TagGetter, catSvc CategoryGetter, mechSvc Me
 }
 
 // Create validates associations, connects expansions if needed, and persists a new Boardgame.
-func (svc *Service) Create(boardgame *Boardgame, id string) error {
+func (svc *Service) Create(ctx context.Context, boardgame *Boardgame, id uint) error {
 	// Check if Expansion -> Connect if needed
-	if err := svc.connectBoardgameToExpansion(boardgame, id); err != nil {
+	if err := svc.connectBoardgameToExpansion(ctx, boardgame, id); err != nil {
 		return err
 	}
 
 	// Check if Tags, Categories & Mechanisms exist
-	if err := svc.validateAssociations(boardgame); err != nil {
+	if err := svc.validateAssociations(ctx, boardgame); err != nil {
 		return err
 	}
 
-	return svc.db.Create(boardgame)
+	return svc.db.CreateBoardgame(ctx, boardgame)
 }
 
 // GetAll retrieves all Boardgames from the database with optional sort and filter.
-func (svc *Service) GetAll(sort, filterBody, filterValue string) ([]Boardgame, error) {
-	var bg []Boardgame
-	return bg, svc.db.Read(&bg, sort, filterBody, filterValue)
+// TODO: Sort and Filters can be Options.
+func (svc *Service) GetAll(ctx context.Context, sort string) ([]Boardgame, error) {
+	return svc.db.GetAllBoardgames(ctx, sort)
 }
 
 // GetByID retrieves a single Boardgame by its ID.
-func (svc *Service) GetByID(id string) (Boardgame, error) {
-	var bg Boardgame
-	err := svc.db.Read(&bg, "", "id = ?", id)
-
-	var mr *middleware.MalformedRequest
-	if err != nil && errors.As(err, &mr) {
-		return bg, middleware.NewError(mr.GetStatus(), "Boardgame not found with id: "+id)
-	}
-
-	return bg, err
+func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
+	return svc.db.GetBoardgameByID(ctx, id)
 }
 
 // Update validates associations, fetches the existing boardgame, applies changes, and persists.
-func (svc *Service) Update(input *Boardgame, id string) error {
+func (svc *Service) Update(ctx context.Context, input *Boardgame, id uint) error {
 	// Check if Tags & Categories & Mechanisms exist
-	if err := svc.validateAssociations(input); err != nil {
+	if err := svc.validateAssociations(ctx, input); err != nil {
 		return err
 	}
 
 	// Get Boardgame by id
-	boardgame, err := svc.GetByID(id)
+	boardgame, err := svc.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -106,29 +98,23 @@ func (svc *Service) Update(input *Boardgame, id string) error {
 	// Updates Boardgame
 	boardgame.UpdateBoardgame(input)
 
-	if err := svc.db.Update(&boardgame); err != nil {
+	if err := svc.db.UpdateBoardgame(ctx, &boardgame); err != nil {
 		return err
 	}
 
-	// Replace associations -> Easy fix? I dont like this approach -> Not modular
-	return svc.db.ReplaceAssociatons(&boardgame, "Tags", &boardgame.Tags)
+	// Replace tag associations
+	return svc.db.ReplaceBoardgameTags(ctx, boardgame.ID, boardgame.Tags)
 }
 
-// DeleteByID fetches a boardgame by ID and deletes it.
-func (svc *Service) DeleteByID(id string) error {
-	// Get Boardgame
-	boardgame, err := svc.GetByID(id)
-	if err != nil {
-		return err
-	}
-
-	return svc.db.Delete(&boardgame)
+// DeleteByID deletes a boardgame by its ID.
+func (svc *Service) DeleteByID(ctx context.Context, id uint) error {
+	return svc.db.DeleteBoardgame(ctx, id)
 }
 
 // Rate validates the boardgame exists and sets the username on the rating.
-func (svc *Service) Rate(rating *Rating, id, username string) error {
+func (svc *Service) Rate(ctx context.Context, rating *Rating, id uint, username string) error {
 	// Check if boardgame exists
-	_, err := svc.GetByID(id)
+	_, err := svc.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -141,18 +127,18 @@ func (svc *Service) Rate(rating *Rating, id, username string) error {
 }
 
 // connectBoardgameToExpansion checks if we are dealing with expansions and creates connection to boardgame parent.
-func (svc *Service) connectBoardgameToExpansion(boardgame *Boardgame, id string) error {
-	if id == "" { // This is an expansion
+func (svc *Service) connectBoardgameToExpansion(ctx context.Context, boardgame *Boardgame, id uint) error {
+	if id == 0 { // This is an expansion
 		return nil
 	}
 
-	boardgameParent, err := svc.GetByID(id) // Get Parent BG
+	boardgameParent, err := svc.GetByID(ctx, id) // Get Parent BG
 	if err != nil {
 		return err
 	}
 
 	if boardgameParent.IsExpansion() {
-		middleware.FromCtx(context.Background()).Error().Msg("an expansion cannot have other expansions")
+		middleware.FromCtx(ctx).Error().Msg("an expansion cannot have other expansions")
 		return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 	}
 
@@ -161,11 +147,11 @@ func (svc *Service) connectBoardgameToExpansion(boardgame *Boardgame, id string)
 }
 
 // validateAssociations validates if tags, categories and mechanisms exist when boardgames are created.
-func (svc *Service) validateAssociations(boardgame *Boardgame) error {
+func (svc *Service) validateAssociations(ctx context.Context, boardgame *Boardgame) error {
 	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.HasTags() {
 		for _, tempTag := range boardgame.Tags {
-			if _, err := svc.tagSvc.Get(tempTag.Name); err != nil { // Get tag by name
+			if _, err := svc.tagSvc.Get(ctx, tempTag.Name); err != nil { // Get tag by name
 				return err // That tag does not exist -> Return Error
 			}
 		}
@@ -173,7 +159,7 @@ func (svc *Service) validateAssociations(boardgame *Boardgame) error {
 
 	if boardgame.HasCategories() {
 		for _, tempCategory := range boardgame.Categories {
-			if _, err := svc.categorySvc.Get(tempCategory.Name); err != nil { // Get category by name
+			if _, err := svc.categorySvc.Get(ctx, tempCategory.Name); err != nil { // Get category by name
 				return err // That category does not exist -> Return Error
 			}
 		}
@@ -181,7 +167,7 @@ func (svc *Service) validateAssociations(boardgame *Boardgame) error {
 
 	if boardgame.HasMechanisms() {
 		for _, tempMechanism := range boardgame.Mechanisms {
-			if _, err := svc.mechanismSvc.Get(tempMechanism.Name); err != nil { // Get mechanism by name
+			if _, err := svc.mechanismSvc.Get(ctx, tempMechanism.Name); err != nil { // Get mechanism by name
 				return err // That mechanism does not exist -> Return Error
 			}
 		}
