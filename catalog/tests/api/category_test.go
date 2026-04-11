@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
-	"github.com/FranciscoBarao/catalog/category"
-	"github.com/FranciscoBarao/catalog/middleware"
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 type CategorySuite struct {
@@ -129,7 +129,7 @@ func (suite *CategorySuite) TestPostCategoryFailures() {
 		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Status(http.StatusForbidden).
+		Status(http.StatusBadRequest).
 		End()
 
 	// Invalid Struct -> NOT alphanum
@@ -139,7 +139,7 @@ func (suite *CategorySuite) TestPostCategoryFailures() {
 		JSON(`{"name": "test.?"}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
-		Status(http.StatusForbidden).
+		Status(http.StatusBadRequest).
 		End()
 }
 

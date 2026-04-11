@@ -5,21 +5,21 @@ import (
 	"net/http"
 	"os"
 
-	logging "github.com/FranciscoBarao/catalog/middleware"
+	logging "github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"github.com/FranciscoBarao/catalog/boardgame"
-	"github.com/FranciscoBarao/catalog/category"
 	"github.com/FranciscoBarao/catalog/config"
-	"github.com/FranciscoBarao/catalog/database"
 	_ "github.com/FranciscoBarao/catalog/docs"
-	"github.com/FranciscoBarao/catalog/mechanism"
-	"github.com/FranciscoBarao/catalog/route"
-	"github.com/FranciscoBarao/catalog/tag"
-	"github.com/FranciscoBarao/catalog/transport"
+	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/database"
+	"github.com/FranciscoBarao/catalog/internal/mechanism"
+	"github.com/FranciscoBarao/catalog/internal/route"
+	"github.com/FranciscoBarao/catalog/internal/tag"
+	"github.com/FranciscoBarao/catalog/internal/transport"
 )
 
 // @title Catalog App Swagger

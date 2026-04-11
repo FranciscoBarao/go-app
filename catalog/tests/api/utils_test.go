@@ -7,8 +7,8 @@ import (
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/FranciscoBarao/catalog/boardgame"
-	"github.com/FranciscoBarao/catalog/utils"
+	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 type UtilSuite struct {

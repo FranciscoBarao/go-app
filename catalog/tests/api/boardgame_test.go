@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
-	"github.com/FranciscoBarao/catalog/boardgame"
-	"github.com/FranciscoBarao/catalog/category"
-	"github.com/FranciscoBarao/catalog/mechanism"
-	"github.com/FranciscoBarao/catalog/middleware"
-	tag "github.com/FranciscoBarao/catalog/tag"
+	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/mechanism"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
+	tag "github.com/FranciscoBarao/catalog/internal/tag"
 )
 
 type BoardGameSuite struct {
@@ -166,7 +166,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 			JSON(`{"Name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
-			Status(http.StatusForbidden).
+			Status(http.StatusBadRequest).
 			End()
 
 	apitest.New(). // Invalid Struct -> NOT alphanum
@@ -175,7 +175,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 			JSON(`{"Name":"test?","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
-			Status(http.StatusForbidden).
+			Status(http.StatusBadRequest).
 			End()
 
 	//  <<<< field - Publisher >>>>
@@ -185,7 +185,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 			JSON(`{"Name":"test","Publisher":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
-			Status(http.StatusForbidden).
+			Status(http.StatusBadRequest).
 			End()
 
 	apitest.New(). // Invalid Struct -> NOT alphanum
@@ -194,7 +194,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 			JSON(`{"Name":"test","Publisher":"test?","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
-			Status(http.StatusForbidden).
+			Status(http.StatusBadRequest).
 			End()
 
 	//  <<<< field - PlayerNumber >>>>
@@ -213,7 +213,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":17,"Tags":[],"Categories":[],"Mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
-			Status(http.StatusForbidden).
+			Status(http.StatusBadRequest).
 			End()
 }
 

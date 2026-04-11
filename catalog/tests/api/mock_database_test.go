@@ -13,10 +13,10 @@ import (
 	context "context"
 	reflect "reflect"
 
-	boardgame "github.com/FranciscoBarao/catalog/boardgame"
-	category "github.com/FranciscoBarao/catalog/category"
-	mechanism "github.com/FranciscoBarao/catalog/mechanism"
-	tag "github.com/FranciscoBarao/catalog/tag"
+	boardgame "github.com/FranciscoBarao/catalog/internal/boardgame"
+	category "github.com/FranciscoBarao/catalog/internal/category"
+	mechanism "github.com/FranciscoBarao/catalog/internal/mechanism"
+	tag "github.com/FranciscoBarao/catalog/internal/tag"
 	gomock "go.uber.org/mock/gomock"
 )
 

@@ -1,6 +1,6 @@
 package tests
 
-//go:generate mockgen -package tests -destination mock_database_test.go -source setup_test.go
+//go:generate mockgen -package tests -destination database_mock.go . Database
 
 import (
 	"context"
@@ -9,13 +9,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/mock/gomock"
 
-	"github.com/FranciscoBarao/catalog/boardgame"
-	"github.com/FranciscoBarao/catalog/category"
-	"github.com/FranciscoBarao/catalog/mechanism"
-	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/route"
-	"github.com/FranciscoBarao/catalog/tag"
-	"github.com/FranciscoBarao/catalog/transport"
+	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/mechanism"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/route"
+	"github.com/FranciscoBarao/catalog/internal/tag"
+	"github.com/FranciscoBarao/catalog/internal/transport"
 )
 
 // Database defines the persistence operations needed by the integration tests.
