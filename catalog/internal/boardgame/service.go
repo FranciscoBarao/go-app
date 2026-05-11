@@ -82,21 +82,21 @@ func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
 	return svc.db.GetBoardgameByID(ctx, id)
 }
 
-// Update validates associations, fetches the existing boardgame, applies changes, and persists.
-func (svc *Service) Update(ctx context.Context, input *Boardgame, id uint) error {
-	// Check if Tags & Categories & Mechanisms exist
-	if err := svc.validateAssociations(ctx, input); err != nil {
-		return err
-	}
-
+// Update fetches the existing boardgame, applies partial changes from the request, validates associations, and persists.
+func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, id uint) error {
 	// Get Boardgame by id
 	boardgame, err := svc.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	// Updates Boardgame
-	boardgame.UpdateBoardgame(input)
+	// Apply partial update
+	req.ToBoardgame(&boardgame)
+
+	// Check if Tags & Categories & Mechanisms exist
+	if err := svc.validateAssociations(ctx, &boardgame); err != nil {
+		return err
+	}
 
 	if err := svc.db.UpdateBoardgame(ctx, &boardgame); err != nil {
 		return err

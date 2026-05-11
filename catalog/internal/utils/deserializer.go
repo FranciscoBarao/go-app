@@ -15,7 +15,7 @@ import (
 )
 
 // DecodeJSONBody decodes a JSON request body into the given destination struct.
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
+func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	log := middleware.FromCtx(context.Background())
 	if r.Header.Get("Content-Type") != "" { // Only allow requests with application/json as header
 		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")

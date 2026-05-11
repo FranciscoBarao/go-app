@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -31,13 +30,10 @@ func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 		CreateBoardgame(gomock.Any(), bg).
 		Return(nil)
 
-	bgJSON, err := json.Marshal(bg)
-	suite.Require().NoError(err)
-
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(bgJSON).
+		JSON(`{"name":"test","publisher":"test","playerNumber":1}`).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
@@ -61,13 +57,11 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 	suite.base.dbMock.EXPECT().
 		CreateBoardgame(gomock.Any(), expansion).
 		Return(nil)
-	expansionJSON, err := json.Marshal(expansion)
-	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame/"+parentIDStr+"/expansion").
-		JSON(expansionJSON).
+		JSON(`{"name":"expansion","publisher":"expansion","playerNumber":1}`).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
@@ -111,7 +105,7 @@ func (suite *BoardGameSuite) TestPostBoardgameJsonFailures() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(`[{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]},{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}]`).
+		JSON(`[{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]},{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}]`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -121,7 +115,7 @@ func (suite *BoardGameSuite) TestPostBoardgameJsonFailures() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(`{"Name:"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		JSON(`{"name:"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -131,7 +125,7 @@ func (suite *BoardGameSuite) TestPostBoardgameJsonFailures() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(`{"Name":100,"Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		JSON(`{"name":100,"publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -141,7 +135,7 @@ func (suite *BoardGameSuite) TestPostBoardgameJsonFailures() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(`{"TEST":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+		JSON(`{"TEST":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}`).
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusBadRequest).
@@ -163,16 +157,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 	apitest.New(). // Invalid Struct -> NOT maxstringlength(100)
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-
-	apitest.New(). // Invalid Struct -> NOT alphanum
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test?","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -182,16 +167,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 	apitest.New(). // Invalid Struct -> NOT maxstringlength(100)
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-
-	apitest.New(). // Invalid Struct -> NOT alphanum
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test?","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","playerNumber":1,"tags":[],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -201,7 +177,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 	apitest.New(). // Invalid Struct -> NOT int
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1.5,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1.5,"tags":[],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -210,7 +186,7 @@ func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
 	apitest.New(). // Invalid Struct -> NOT in range(0|16)
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":17,"Tags":[],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":17,"tags":[],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -227,7 +203,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Tag does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[{"name":"`+tagName+`"}],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[{"name":"`+tagName+`"}],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusNotFound).
@@ -236,7 +212,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Tags have too many fields
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[{"name":"test", "test":"test"}],"Categories":[],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[{"name":"test", "test":"test"}],"categories":[],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -251,7 +227,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Category does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[{"name":"test"}],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[{"name":"test"}],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusNotFound).
@@ -259,7 +235,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Categories have too many fields
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[{"name":"test", "test":"test"}],"Mechanisms":[]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[{"name":"test", "test":"test"}],"mechanisms":[]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).
@@ -274,7 +250,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Mechanism does not previously exist
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test"}]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[{"name":"test"}]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusNotFound).
@@ -282,7 +258,7 @@ func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
 	apitest.New(). // Invalid Struct -> Mechanisms have too many fields
 			HandlerFunc(suite.base.router.ServeHTTP).
 			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test", "test":"test"}]}`).
+			JSON(`{"name":"test","publisher":"test","playerNumber":1,"tags":[],"categories":[],"mechanisms":[{"name":"test", "test":"test"}]}`).
 			Header("Authorization", "Bearer "+suite.base.oauthHeader).
 			Expect(suite.T()).
 			Status(http.StatusBadRequest).

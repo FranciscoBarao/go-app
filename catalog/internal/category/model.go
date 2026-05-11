@@ -15,10 +15,3 @@ func NewCategory(name string) *Category {
 		Name: name,
 	}
 }
-
-// UpdateCategory updates the category name if non-empty.
-func (category *Category) UpdateCategory(name string) {
-	if name != "" {
-		category.Name = name
-	}
-}

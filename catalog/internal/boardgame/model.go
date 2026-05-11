@@ -31,6 +31,7 @@ func (bg *Boardgame) UpdateBoardgame(input *Boardgame) {
 	bg.PlayerNumber = input.PlayerNumber
 	bg.Tags = input.Tags
 	bg.Categories = input.Categories
+	bg.Mechanisms = input.Mechanisms
 }
 
 // HasTags returns true if the boardgame has associated tags.

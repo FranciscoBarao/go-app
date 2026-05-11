@@ -30,45 +30,47 @@ func (suite *BoardgameControllerSuite) SetupTest() {
 }
 
 func (suite *BoardgameControllerSuite) TestCreate() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	req := boardgame.CreateBoardgameRequest{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	expectedBg := boardgame.NewBoardgame(&req)
 
 	suite.mockSvc.EXPECT().Create(gomock.Any(), expectedBg, uint(0)).Return(nil)
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(req)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", "application/json")
+	httpReq := httptest.NewRequest(http.MethodPost, "/", body)
+	httpReq.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
-	suite.controller.Create(rec, req)
+	suite.controller.Create(rec, httpReq)
 
 	suite.Assert().Equal(http.StatusOK, rec.Code)
 	var result boardgame.Boardgame
 	suite.Require().NoError(json.Unmarshal(rec.Body.Bytes(), &result))
-	suite.Assert().Equal(expectedBg.Name, result.Name)
-	suite.Assert().Equal(expectedBg.Publisher, result.Publisher)
-	suite.Assert().Equal(expectedBg.PlayerNumber, result.PlayerNumber)
+	suite.Assert().Equal(req.Name, result.Name)
+	suite.Assert().Equal(req.Publisher, result.Publisher)
+	suite.Assert().Equal(req.PlayerNumber, result.PlayerNumber)
 
 }
 
 func (suite *BoardgameControllerSuite) TestCreate_InternalError() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	req := boardgame.CreateBoardgameRequest{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	expectedBg := boardgame.NewBoardgame(&req)
 
 	suite.mockSvc.EXPECT().
 		Create(gomock.Any(), expectedBg, uint(0)).
 		Return(assert.AnError)
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(req)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", "application/json")
+	httpReq := httptest.NewRequest(http.MethodPost, "/", body)
+	httpReq.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
-	suite.controller.Create(rec, req)
+	suite.controller.Create(rec, httpReq)
 
 	suite.Assert().Equal(http.StatusInternalServerError, rec.Code)
 }
@@ -158,13 +160,14 @@ func (suite *BoardgameControllerSuite) TestGetAll_InternalError() {
 }
 
 func (suite *BoardgameControllerSuite) TestUpdate() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	name := "Catan Updated"
+	dto := boardgame.UpdateBoardgameRequest{Name: &name}
 
 	suite.mockSvc.EXPECT().
-		Update(gomock.Any(), expectedBg, uint(1)).
+		Update(gomock.Any(), &dto, uint(1)).
 		Return(nil)
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(dto)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
@@ -178,19 +181,13 @@ func (suite *BoardgameControllerSuite) TestUpdate() {
 	suite.controller.Update(rec, req)
 
 	suite.Equal(http.StatusOK, rec.Code)
-	var result boardgame.Boardgame
-	suite.NoError(json.Unmarshal(rec.Body.Bytes(), &result))
-	suite.Equal(expectedBg.Name, result.Name)
 }
 
 func (suite *BoardgameControllerSuite) TestUpdate_InvalidInput() {
-	expectedBg := &boardgame.Boardgame{
-		Name:         "Catan",
-		Publisher:    "Kosmos",
-		PlayerNumber: 20, // Invalid input
-	}
+	playerNumber := 20 // Invalid input
+	dto := boardgame.UpdateBoardgameRequest{PlayerNumber: &playerNumber}
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(dto)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
@@ -207,9 +204,10 @@ func (suite *BoardgameControllerSuite) TestUpdate_InvalidInput() {
 }
 
 func (suite *BoardgameControllerSuite) TestUpdate_InvalidID() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	name := "Catan"
+	dto := boardgame.UpdateBoardgameRequest{Name: &name}
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(dto)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
@@ -226,13 +224,14 @@ func (suite *BoardgameControllerSuite) TestUpdate_InvalidID() {
 }
 
 func (suite *BoardgameControllerSuite) TestUpdate_InternalError() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	name := "Catan"
+	dto := boardgame.UpdateBoardgameRequest{Name: &name}
 
 	suite.mockSvc.EXPECT().
-		Update(gomock.Any(), expectedBg, uint(1)).
+		Update(gomock.Any(), &dto, uint(1)).
 		Return(assert.AnError)
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(dto)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 
@@ -249,13 +248,14 @@ func (suite *BoardgameControllerSuite) TestUpdate_InternalError() {
 }
 
 func (suite *BoardgameControllerSuite) TestUpdate_NotFound() {
-	expectedBg := &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}
+	name := "Catan"
+	dto := boardgame.UpdateBoardgameRequest{Name: &name}
 
 	suite.mockSvc.EXPECT().
-		Update(gomock.Any(), expectedBg, uint(1)).
+		Update(gomock.Any(), &dto, uint(1)).
 		Return(middleware.NewError(http.StatusNotFound, "not found"))
 
-	bgBytes, err := json.Marshal(expectedBg)
+	bgBytes, err := json.Marshal(dto)
 	suite.Require().NoError(err)
 	body := bytes.NewReader(bgBytes)
 

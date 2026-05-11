@@ -135,15 +135,17 @@ func (suite *BoardgameServiceSuite) TestUpdate() {
 	parentID := uint(1)
 	existing := Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4, BoardgameID: &parentID}
 
-	input := &Boardgame{
-		Name:         "Catan Revised",
-		Publisher:    "Kosmos",
-		PlayerNumber: 6,
-		Tags:         []tag.Tag{{Name: "strategy"}},
+	name := "Catan Revised"
+	playerNumber := 6
+	tags := []tag.Tag{{Name: "strategy"}}
+	input := &UpdateBoardgameRequest{
+		Name:         &name,
+		PlayerNumber: &playerNumber,
+		Tags:         &tags,
 	}
 
-	suite.mockTag.EXPECT().Get(gomock.Any(), "strategy").Return(tag.Tag{Name: "strategy"}, nil)
 	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(1)).Return(existing, nil)
+	suite.mockTag.EXPECT().Get(gomock.Any(), "strategy").Return(tag.Tag{Name: "strategy"}, nil)
 	suite.mockDB.EXPECT().UpdateBoardgame(gomock.Any(), gomock.Any()).Return(nil)
 	suite.mockDB.EXPECT().ReplaceBoardgameTags(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 

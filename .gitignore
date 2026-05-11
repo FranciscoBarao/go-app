@@ -64,3 +64,6 @@ docs/
 
 # Mock files
 *_mock.go
+
+# Kiro files
+.kiro

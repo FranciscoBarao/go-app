@@ -15,15 +15,3 @@ func NewMechanism(name string) *Mechanism {
 		Name: name,
 	}
 }
-
-// UpdateMechanism updates the mechanism name if non-empty.
-func (mechanism *Mechanism) UpdateMechanism(name string) {
-	if name != "" {
-		mechanism.Name = name
-	}
-}
-
-// GetName returns the mechanism name.
-func (mechanism Mechanism) GetName() string {
-	return mechanism.Name
-}

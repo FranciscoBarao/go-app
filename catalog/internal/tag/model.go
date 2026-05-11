@@ -22,10 +22,3 @@ func NewTag(name string) *Tag {
 func (tag *Tag) String() string {
 	return fmt.Sprintf("{ %s }", tag.Name)
 }
-
-// UpdateTag updates the tag name if non-empty.
-func (tag *Tag) UpdateTag(name string) {
-	if name != "" {
-		tag.Name = name
-	}
-}

@@ -19,7 +19,7 @@ type BoardgameService interface {
 	Create(ctx context.Context, bg *boardgame.Boardgame, id uint) error
 	GetAll(ctx context.Context, sort string) ([]boardgame.Boardgame, error)
 	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
-	Update(ctx context.Context, bg *boardgame.Boardgame, id uint) error
+	Update(ctx context.Context, req *boardgame.UpdateBoardgameRequest, id uint) error
 	DeleteByID(ctx context.Context, id uint) error
 	Rate(ctx context.Context, rating *boardgame.Rating, id uint, username string) error
 }
@@ -46,18 +46,21 @@ func NewBoardgameController(boardGameSvc BoardgameService) *BoardgameController 
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
-	// Deserialize Boardgame input
-	var bg = &boardgame.Boardgame{}
-	if err := utils.DecodeJSONBody(w, r, bg); err != nil {
+	// Deserialize into request
+	var req boardgame.CreateBoardgameRequest
+	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	// Validate Boardgame input
-	if err := utils.ValidateStruct(bg); err != nil {
+	// Validate input
+	if err := utils.ValidateStruct(&req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
+
+	// Construct Boardgame
+	bg := boardgame.NewBoardgame(&req)
 
 	// Get Id from url - If its an expansion
 	var parentID uint
@@ -152,39 +155,39 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 // @Tags 		boardgames
 // @Produce 	json
 // @Param 		id path int true "The Boardgame id"
-// @Param 		data body boardgame.Boardgame true "The Boardgame struct to be updated into"
+// @Param 		data body UpdateBoardgameRequest true "The partial Boardgame fields to update"
 // @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame/{id} [patch]
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
-	// Deserialize Boardgame input
-	var input = &boardgame.Boardgame{}
-	if err := utils.DecodeJSONBody(w, r, input); err != nil {
+	// Deserialize into request
+	var req boardgame.UpdateBoardgameRequest
+	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	// Validate Boardgame input
-	if err := utils.ValidateStruct(input); err != nil {
+	// Validate input
+	if err := utils.ValidateStruct(&req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
+	// Get ID from URL
 	id := utils.GetFieldFromURL(r, "id")
 	parsedID, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
-		err = middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id)
-		middleware.ErrorHandler(w, err)
+		middleware.ErrorHandler(w, middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+id))
 		return
 	}
 
 	// Updates Boardgame
-	if err := controller.service.Update(context.Background(), input, uint(parsedID)); err != nil {
+	if err := controller.service.Update(context.Background(), &req, uint(parsedID)); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	if err := render.New().JSON(w, http.StatusOK, input); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
