@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -37,9 +38,9 @@ func (suite *TagServiceSuite) TestCreate() {
 
 func (suite *TagServiceSuite) TestGetAll() {
 	expected := []Tag{{Name: "strategy"}, {Name: "cooperative"}}
-	suite.mockDB.EXPECT().GetAllTags(gomock.Any(), "name").Return(expected, nil)
+	suite.mockDB.EXPECT().GetAllTags(gomock.Any(), query.Filter{SortColumn: "name", SortOrder: "asc"}).Return(expected, nil)
 
-	tags, err := suite.service.GetAll(context.Background(), "name")
+	tags, err := suite.service.GetAll(context.Background(), query.WithSort("name", "asc"))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, tags)
 }

@@ -9,69 +9,58 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
-// GetSort constructs the whole sort
-func GetSort(model interface{}, sortBy string) (string, error) {
-	log := middleware.FromCtx(context.Background())
+// GetSort validates the sortBy parameter and returns the DB column name and order.
+//
+// The sortBy format is "Field.Order" where Field is a case-insensitive struct field name
+// and Order is "asc" or "desc". The DB column name is resolved from the field's `db` tag.
+//
+// Examples:
+//
+//	GetSort(Boardgame{}, "name.asc")          -> ("name", "asc", nil)
+//	GetSort(Boardgame{}, "playernumber.desc") -> ("player_number", "desc", nil)
+//	GetSort(Boardgame{}, "")                  -> ("", "", nil)
+//	GetSort(Boardgame{}, "tags.asc")          -> ("", "", error: Field not sortable)
+func GetSort(model any, sortBy string) (string, string, error) {
 	if sortBy == "" {
-		return "", nil // No sort -> No error
+		return "", "", nil
 	}
 
+	log := middleware.FromCtx(context.Background())
 	log.Debug().Str("sort_by", sortBy).Msg("sorting")
-	if err := validateSort(model, sortBy); err != nil {
-		return "", err
-	}
 
-	return constructSort(sortBy), nil
-}
-
-// validateSort checks if the sort parameters are valid for use by length, emptiness, order and field existence
-func validateSort(model interface{}, sortBy string) error {
 	splits := strings.Split(sortBy, ".")
-
-	if len(splits) != 2 { // Validate if there are only 2 parameters
-		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
+	if len(splits) != 2 {
+		return "", "", middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, should be field.order")
 	}
 
 	field, order := splits[0], splits[1]
-	if field == "" || order == "" { // Validate if there are no empty parameters
-		middleware.FromCtx(context.Background()).Error().Msg("sort malformed with empty parameters")
-		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
+	if field == "" || order == "" {
+		return "", "", middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
 	}
 
-	if order != "desc" && order != "asc" { // Validate if order is valid
-		middleware.FromCtx(context.Background()).Error().Str("order", order).Msg("sort malformed with incorrect parameters")
-		return middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
+	if order != "asc" && order != "desc" {
+		return "", "", middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
 	}
 
-	return validateField(model, field) // Validate if field exists
+	column, err := dbTag(model, field)
+	if err != nil {
+		return "", "", err
+	}
+
+	return column, order, nil
 }
 
-// validateField checks if a field exists in the struct
-func validateField(model interface{}, fieldName string) error {
-	fields := reflect.VisibleFields(reflect.TypeOf(model)) // Get all fields of Struct
-	for _, field := range fields {
-		if strings.ToLower(field.Name) == fieldName { // If there is a Field with this name
-			return isTypeSortable(field.Type.String()) // Checks if field is sortable
+// dbTag finds the struct field by name (case-insensitive) and returns its db tag value.
+func dbTag(model any, fieldName string) (string, error) {
+	fields := reflect.VisibleFields(reflect.TypeOf(model))
+	for _, f := range fields {
+		if strings.EqualFold(f.Name, fieldName) {
+			col := f.Tag.Get("db")
+			if col == "" || col == "-" {
+				return "", middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
+			}
+			return col, nil
 		}
 	}
-	middleware.FromCtx(context.Background()).Error().Interface("model", model).Str("field_name", fieldName).Msg("unknown field in struct")
-	return middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
-}
-
-// isTypeSortable verifies if the field is sortable (E.g We cant sort by Tags)
-func isTypeSortable(typ string) error {
-	switch typ {
-	case "string", "int", "float64", "float32":
-		return nil
-	default:
-		middleware.FromCtx(context.Background()).Error().Str("type", typ).Msg("field is not sortable")
-		return middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
-	}
-}
-
-// constructSort constructs the sort query
-func constructSort(sortBy string) string {
-	splits := strings.Split(sortBy, ".")
-	field, order := splits[0], splits[1]
-	return field + " " + order
+	return "", middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
 }

@@ -108,7 +108,7 @@ func (suite *TagControllerSuite) TestCreate_InternalError() {
 
 func (suite *TagControllerSuite) TestGetAll() {
 	expected := []tag.Tag{{Name: "Strategy"}, {Name: "Family"}}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -123,7 +123,7 @@ func (suite *TagControllerSuite) TestGetAll() {
 
 func (suite *TagControllerSuite) TestGetAll_Empty() {
 	expected := []tag.Tag{}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -138,7 +138,7 @@ func (suite *TagControllerSuite) TestGetAll_Empty() {
 
 func (suite *TagControllerSuite) TestGetAll_InternalError() {
 	suite.mockSvc.EXPECT().
-		GetAll(gomock.Any(), "").Return(nil, assert.AnError)
+		GetAll(gomock.Any()).Return(nil, assert.AnError)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

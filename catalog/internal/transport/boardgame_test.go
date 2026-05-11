@@ -120,7 +120,7 @@ func (suite *BoardgameControllerSuite) TestGetAll() {
 		{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4},
 		{Name: "Vagrantsong", Publisher: "Karma", PlayerNumber: 2},
 	}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -135,7 +135,7 @@ func (suite *BoardgameControllerSuite) TestGetAll() {
 
 func (suite *BoardgameControllerSuite) TestGetAll_Empty() {
 	expected := []boardgame.Boardgame{}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -149,7 +149,7 @@ func (suite *BoardgameControllerSuite) TestGetAll_Empty() {
 }
 
 func (suite *BoardgameControllerSuite) TestGetAll_InternalError() {
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(nil, assert.AnError)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(nil, assert.AnError)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

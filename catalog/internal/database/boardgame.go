@@ -10,6 +10,7 @@ import (
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -70,20 +71,20 @@ func (p *Postgres) GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boa
 }
 
 // GetAllBoardgames retrieves all boardgames with optional filtering and sorting.
-func (p *Postgres) GetAllBoardgames(ctx context.Context, sort string) ([]boardgame.Boardgame, error) {
-	col, err := boardgameSortColumn(sort)
+func (p *Postgres) GetAllBoardgames(ctx context.Context, filter query.Filter) ([]boardgame.Boardgame, error) {
+	col, err := boardgameSortColumn(filter.SortColumn)
 	if err != nil {
 		return nil, err
 	}
 
 	var rows pgx.Rows
 
-	query := dbsql.SelectAllBoardgames
+	q := dbsql.SelectAllBoardgames
 	if col != "" {
-		query += fmt.Sprintf(dbsql.OrderBy, col)
+		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
 	}
 
-	rows, err = p.pool.Query(ctx, query)
+	rows, err = p.pool.Query(ctx, q)
 	if err != nil {
 		return nil, mapPgError(err)
 	}

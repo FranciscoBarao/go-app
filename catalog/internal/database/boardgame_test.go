@@ -12,6 +12,7 @@ import (
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -97,7 +98,7 @@ func (suite *BoardgameSuite) TestGetAll() {
 	err = suite.postgres.CreateBoardgame(ctx, bg2)
 	suite.Require().NoError(err)
 
-	all, err := suite.postgres.GetAllBoardgames(ctx, "id")
+	all, err := suite.postgres.GetAllBoardgames(ctx, query.Filter{SortColumn: "id", SortOrder: "asc"})
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 2)
 }

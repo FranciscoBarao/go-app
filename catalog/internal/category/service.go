@@ -2,6 +2,8 @@ package category
 
 import (
 	"context"
+
+	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 //go:generate mockgen -package category -destination service_mock.go . Database
@@ -10,7 +12,7 @@ import (
 type Database interface {
 	CreateCategory(ctx context.Context, c *Category) error
 	GetCategory(ctx context.Context, name string) (Category, error)
-	GetAllCategories(ctx context.Context, sort string) ([]Category, error)
+	GetAllCategories(ctx context.Context, filter query.Filter) ([]Category, error)
 	DeleteCategory(ctx context.Context, name string) error
 }
 
@@ -33,8 +35,8 @@ func (svc *Service) Create(ctx context.Context, category *Category) error {
 }
 
 // GetAll retrieves all Categories from the database, optionally sorted.
-func (svc *Service) GetAll(ctx context.Context, sort string) ([]Category, error) {
-	return svc.db.GetAllCategories(ctx, sort)
+func (svc *Service) GetAll(ctx context.Context, opts ...query.Option) ([]Category, error) {
+	return svc.db.GetAllCategories(ctx, query.Apply(opts...))
 }
 
 // Get retrieves a single Category by name.

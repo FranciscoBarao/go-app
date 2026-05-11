@@ -102,7 +102,7 @@ func (suite *CategoryControllerSuite) TestCreate_InternalError() {
 
 func (suite *CategoryControllerSuite) TestGetAll() {
 	expected := []category.Category{{Name: "Strategy"}, {Name: "Family"}}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -117,7 +117,7 @@ func (suite *CategoryControllerSuite) TestGetAll() {
 
 func (suite *CategoryControllerSuite) TestGetAll_Empty() {
 	expected := []category.Category{}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -132,7 +132,7 @@ func (suite *CategoryControllerSuite) TestGetAll_Empty() {
 
 func (suite *CategoryControllerSuite) TestGetAll_InternalError() {
 	suite.mockSvc.EXPECT().
-		GetAll(gomock.Any(), "").Return(nil, assert.AnError)
+		GetAll(gomock.Any()).Return(nil, assert.AnError)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

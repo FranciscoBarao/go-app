@@ -2,6 +2,8 @@ package mechanism
 
 import (
 	"context"
+
+	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 //go:generate mockgen -package mechanism -destination service_mock.go . Database
@@ -10,7 +12,7 @@ import (
 type Database interface {
 	CreateMechanism(ctx context.Context, m *Mechanism) error
 	GetMechanism(ctx context.Context, name string) (Mechanism, error)
-	GetAllMechanisms(ctx context.Context, sort string) ([]Mechanism, error)
+	GetAllMechanisms(ctx context.Context, filter query.Filter) ([]Mechanism, error)
 	DeleteMechanism(ctx context.Context, name string) error
 }
 
@@ -33,8 +35,8 @@ func (svc *Service) Create(ctx context.Context, mechanism *Mechanism) error {
 }
 
 // GetAll retrieves all Mechanisms from the database, optionally sorted.
-func (svc *Service) GetAll(ctx context.Context, sort string) ([]Mechanism, error) {
-	return svc.db.GetAllMechanisms(ctx, sort)
+func (svc *Service) GetAll(ctx context.Context, opts ...query.Option) ([]Mechanism, error) {
+	return svc.db.GetAllMechanisms(ctx, query.Apply(opts...))
 }
 
 // Get retrieves a single Mechanism by name.

@@ -101,7 +101,7 @@ func (suite *MechanismControllerSuite) TestCreate_InternalError() {
 
 func (suite *MechanismControllerSuite) TestGetAll() {
 	expected := []mechanism.Mechanism{{Name: "DeckBuilding"}, {Name: "WorkerPlacement"}}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -116,7 +116,7 @@ func (suite *MechanismControllerSuite) TestGetAll() {
 
 func (suite *MechanismControllerSuite) TestGetAll_Empty() {
 	expected := []mechanism.Mechanism{}
-	suite.mockSvc.EXPECT().GetAll(gomock.Any(), "").Return(expected, nil)
+	suite.mockSvc.EXPECT().GetAll(gomock.Any()).Return(expected, nil)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
@@ -131,7 +131,7 @@ func (suite *MechanismControllerSuite) TestGetAll_Empty() {
 
 func (suite *MechanismControllerSuite) TestGetAll_InternalError() {
 	suite.mockSvc.EXPECT().
-		GetAll(gomock.Any(), "").Return(nil, assert.AnError)
+		GetAll(gomock.Any()).Return(nil, assert.AnError)
 
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

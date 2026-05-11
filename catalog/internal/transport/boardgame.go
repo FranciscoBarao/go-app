@@ -9,6 +9,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -17,7 +18,7 @@ import (
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(ctx context.Context, bg *boardgame.Boardgame, id uint) error
-	GetAll(ctx context.Context, sort string) ([]boardgame.Boardgame, error)
+	GetAll(ctx context.Context, opts ...query.Option) ([]boardgame.Boardgame, error)
 	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	Update(ctx context.Context, req *boardgame.UpdateBoardgameRequest, id uint) error
 	DeleteByID(ctx context.Context, id uint) error
@@ -92,10 +93,15 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 // @Router 		/boardgame [get]
 func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(boardgame.Boardgame{}, sortBy)
+	col, order, err := utils.GetSort(boardgame.Boardgame{}, sortBy)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
+	}
+
+	var opts []query.Option
+	if col != "" {
+		opts = append(opts, query.WithSort(col, order))
 	}
 
 	/*
@@ -111,7 +117,7 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 		}
 	*/
 
-	boardgames, err := controller.service.GetAll(context.Background(), sort)
+	boardgames, err := controller.service.GetAll(context.Background(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

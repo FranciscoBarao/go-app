@@ -7,6 +7,7 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 )
 
@@ -16,7 +17,7 @@ import (
 type Database interface {
 	CreateBoardgame(ctx context.Context, bg *Boardgame) error
 	GetBoardgameByID(ctx context.Context, id uint) (Boardgame, error)
-	GetAllBoardgames(ctx context.Context, sort string) ([]Boardgame, error)
+	GetAllBoardgames(ctx context.Context, filter query.Filter) ([]Boardgame, error)
 	UpdateBoardgame(ctx context.Context, bg *Boardgame) error
 	DeleteBoardgame(ctx context.Context, id uint) error
 	ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error
@@ -72,9 +73,8 @@ func (svc *Service) Create(ctx context.Context, boardgame *Boardgame, id uint) e
 }
 
 // GetAll retrieves all Boardgames from the database with optional sort and filter.
-// TODO: Sort and Filters can be Options.
-func (svc *Service) GetAll(ctx context.Context, sort string) ([]Boardgame, error) {
-	return svc.db.GetAllBoardgames(ctx, sort)
+func (svc *Service) GetAll(ctx context.Context, opts ...query.Option) ([]Boardgame, error) {
+	return svc.db.GetAllBoardgames(ctx, query.Apply(opts...))
 }
 
 // GetByID retrieves a single Boardgame by its ID.

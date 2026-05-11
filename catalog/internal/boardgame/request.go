@@ -16,16 +16,6 @@ type CreateBoardgameRequest struct {
 	Mechanisms   []mechanism.Mechanism `json:"mechanisms,omitempty"`
 }
 
-// UpdateBoardgameRequest is the request for PATCH /boardgame/{id} requests.
-type UpdateBoardgameRequest struct {
-	Name         *string                `json:"name,omitempty" valid:"optional,maxstringlength(100)"`
-	Publisher    *string                `json:"publisher,omitempty" valid:"optional,maxstringlength(100)"`
-	PlayerNumber *int                   `json:"playerNumber,omitempty" valid:"optional,range(1|16)"`
-	Tags         *[]tag.Tag             `json:"tags,omitempty"`
-	Categories   *[]category.Category   `json:"categories,omitempty"`
-	Mechanisms   *[]mechanism.Mechanism `json:"mechanisms,omitempty"`
-}
-
 // NewBoardgame creates a Boardgame domain model from a CreateBoardgameRequest.
 func NewBoardgame(req *CreateBoardgameRequest) *Boardgame {
 	return &Boardgame{
@@ -36,6 +26,16 @@ func NewBoardgame(req *CreateBoardgameRequest) *Boardgame {
 		Categories:   req.Categories,
 		Mechanisms:   req.Mechanisms,
 	}
+}
+
+// UpdateBoardgameRequest is the request for PATCH /boardgame/{id} requests.
+type UpdateBoardgameRequest struct {
+	Name         *string                `json:"name,omitempty" valid:"optional,maxstringlength(100)"`
+	Publisher    *string                `json:"publisher,omitempty" valid:"optional,maxstringlength(100)"`
+	PlayerNumber *int                   `json:"playerNumber,omitempty" valid:"optional,range(1|16)"`
+	Tags         *[]tag.Tag             `json:"tags,omitempty"`
+	Categories   *[]category.Category   `json:"categories,omitempty"`
+	Mechanisms   *[]mechanism.Mechanism `json:"mechanisms,omitempty"`
 }
 
 // ToBoardgame applies non-nil fields from UpdateBoardgameRequest onto an existing Boardgame.

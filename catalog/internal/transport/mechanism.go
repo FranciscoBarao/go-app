@@ -8,6 +8,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -16,7 +17,7 @@ import (
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(ctx context.Context, mechanism *mechanism.Mechanism) error
-	GetAll(ctx context.Context, sort string) ([]mechanism.Mechanism, error)
+	GetAll(ctx context.Context, opts ...query.Option) ([]mechanism.Mechanism, error)
 	Get(ctx context.Context, name string) (mechanism.Mechanism, error)
 	Delete(ctx context.Context, name string) error
 }
@@ -75,13 +76,18 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(mechanism.Mechanism{}, sortBy)
+	col, order, err := utils.GetSort(mechanism.Mechanism{}, sortBy)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	mechanisms, err := controller.service.GetAll(context.Background(), sort)
+	var opts []query.Option
+	if col != "" {
+		opts = append(opts, query.WithSort(col, order))
+	}
+
+	mechanisms, err := controller.service.GetAll(context.Background(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

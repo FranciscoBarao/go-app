@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/category"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 // CreateCategory inserts a new category into the database.
@@ -29,15 +30,15 @@ func (p *Postgres) GetCategory(ctx context.Context, name string) (category.Categ
 }
 
 // GetAllCategories retrieves all categories, optionally ordered by the given sort column.
-func (p *Postgres) GetAllCategories(ctx context.Context, sort string) ([]category.Category, error) {
-	col, err := categorySortColumn(sort)
+func (p *Postgres) GetAllCategories(ctx context.Context, filter query.Filter) ([]category.Category, error) {
+	col, err := categorySortColumn(filter.SortColumn)
 	if err != nil {
 		return nil, err
 	}
 
 	q := dbsql.SelectAllCategories
 	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col)
+		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
 	}
 
 	rows, err := p.pool.Query(ctx, q)

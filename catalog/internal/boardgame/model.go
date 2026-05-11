@@ -10,18 +10,18 @@ import (
 
 // Boardgame represents a board game entity with its associations.
 type Boardgame struct {
-	ID           uint                  `json:"id"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	Name         string                `json:"name" valid:"alphanum, maxstringlength(100)"`
-	Publisher    string                `json:"publisher" valid:"alphanum, maxstringlength(100)"`
-	PlayerNumber int                   `json:"playerNumber" valid:"int, range(1|16)"`
-	Tags         []tag.Tag             `json:"tags,omitempty"`
-	Categories   []category.Category   `json:"categories,omitempty"`
-	Mechanisms   []mechanism.Mechanism `json:"mechanisms,omitempty"`
-	Ratings      []Rating              `json:"ratings,omitempty"`
-	Expansions   []Boardgame           `json:"expansions,omitempty"`
-	BoardgameID  *uint                 `json:"boardgame_id,omitempty"`
+	ID           uint                  `json:"id" db:"id"`
+	CreatedAt    time.Time             `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at" db:"updated_at"`
+	Name         string                `json:"name" db:"name" valid:"alphanum, maxstringlength(100)"`
+	Publisher    string                `json:"publisher" db:"publisher" valid:"alphanum, maxstringlength(100)"`
+	PlayerNumber int                   `json:"playerNumber" db:"player_number" valid:"int, range(1|16)"`
+	Tags         []tag.Tag             `json:"tags,omitempty" db:"-"`
+	Categories   []category.Category   `json:"categories,omitempty" db:"-"`
+	Mechanisms   []mechanism.Mechanism `json:"mechanisms,omitempty" db:"-"`
+	Ratings      []Rating              `json:"ratings,omitempty" db:"-"`
+	Expansions   []Boardgame           `json:"expansions,omitempty" db:"-"`
+	BoardgameID  *uint                 `json:"boardgame_id,omitempty" db:"-"`
 }
 
 // UpdateBoardgame applies changes from the given boardgame to this one.

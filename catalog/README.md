@@ -49,27 +49,64 @@ ReadAll
 curl -X GET localhost:8081/api/boardgame
 ```
 
-ReadAll can be filtered and sorted. Filters can have 2 formats, depending on what is being evaluated.
+ReadAll can be filtered and sorted.
+
+### Sorting
+
+The `sortBy` query parameter uses the format `Field.Order`:
+- **Field** — struct field name (case-insensitive), mapped to the DB column via `db` struct tags
+- **Order** — `asc` or `desc`
+
+**Sortable Boardgame fields:**
+| Field | DB Column |
+|-------|-----------|
+| `name` | `name` |
+| `publisher` | `publisher` |
+| `playernumber` | `player_number` |
+| `id` | `id` |
+| `createdat` | `created_at` |
+| `updatedat` | `updated_at` |
+
+Fields with `db:"-"` (tags, categories, mechanisms, ratings, expansions) are **not sortable**.
+
+**Examples:**
+```bash
+# Sort by name ascending
+curl -X GET "localhost:8081/api/boardgame?sortBy=name.asc"
+
+# Sort by player number descending
+curl -X GET "localhost:8081/api/boardgame?sortBy=playernumber.desc"
+
+# Sort by creation date
+curl -X GET "localhost:8081/api/boardgame?sortBy=createdat.asc"
+
+# No sort (default DB order)
+curl -X GET "localhost:8081/api/boardgame"
+```
+
+**Error cases (422):**
+```bash
+curl "localhost:8081/api/boardgame?sortBy=name"         # -> "should be field.order"
+curl "localhost:8081/api/boardgame?sortBy=name.random"   # -> "order should be asc or desc"
+curl "localhost:8081/api/boardgame?sortBy=unknown.asc"   # -> "No field with this name"
+curl "localhost:8081/api/boardgame?sortBy=tags.asc"      # -> "Field not sortable"
+```
+
+### Filtering
+
+Filters use 2 formats depending on what is being evaluated:
 ```
 filterBy -> Field.Value 
 filterBy -> Field.Operator.Value 	
-
-sortBy -> Field.Order
 ```
 
-Examples of filters that work:
+Examples:
 ```
-	name.a 		   --->   name LIKE ?    %a%
-	price.le.10    --->   price <= ?     10
+name.a         --->   name LIKE ?    %a%
+price.le.10    --->   price <= ?     10
 ```
 
-Filters will require an update sometime in the future because it doesnt allow floats cause we can't do ```price.lt.10,4```. 
-
-Examples of sorts that work:
-```
-	name.asc 	  --->    ordered by name in alphabetical ascending order
-	price.desc    --->    ordered by price in numerical descending order
-```
+Filters will require an update sometime in the future because it doesnt allow floats cause we can't do ```price.lt.10,4```.
 
 
 Read
@@ -121,10 +158,12 @@ ReadAll can be sorted.
 sortBy -> Field.Order
 ```
 
-Examples of sorts that work:
-```
-	name.asc 	  --->    ordered by name in alphabetical ascending order
-	price.desc    --->    ordered by price in numerical descending order
+Sortable fields: `name`, `createdat`, `updatedat`
+
+Examples:
+```bash
+curl -X GET "localhost:8081/api/tag?sortBy=name.asc"
+curl -X GET "localhost:8081/api/tag?sortBy=createdat.desc"
 ```
 
 

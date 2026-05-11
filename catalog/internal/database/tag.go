@@ -9,6 +9,7 @@ import (
 
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 )
 
@@ -29,15 +30,15 @@ func (p *Postgres) GetTag(ctx context.Context, name string) (tag.Tag, error) {
 }
 
 // GetAllTags retrieves all tags, optionally ordered by the given sort column.
-func (p *Postgres) GetAllTags(ctx context.Context, sort string) ([]tag.Tag, error) {
-	col, err := tagSortColumn(sort)
+func (p *Postgres) GetAllTags(ctx context.Context, filter query.Filter) ([]tag.Tag, error) {
+	col, err := tagSortColumn(filter.SortColumn)
 	if err != nil {
 		return nil, err
 	}
 
 	q := dbsql.SelectAllTags
 	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col)
+		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
 	}
 
 	rows, err := p.pool.Query(ctx, q)

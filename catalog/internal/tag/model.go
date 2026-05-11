@@ -7,9 +7,9 @@ import (
 
 // Tag represents a board game tag.
 type Tag struct {
-	Name      string    `json:"name" valid:"alphanum, maxstringlength(30)"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	Name      string    `json:"name" db:"name" valid:"alphanum, maxstringlength(30)"`
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // NewTag creates a new Tag with the given name.

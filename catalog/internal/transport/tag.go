@@ -7,6 +7,7 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
@@ -16,7 +17,7 @@ import (
 // TagService defines the interface for tag business logic.
 type TagService interface {
 	Create(ctx context.Context, t *tag.Tag) error
-	GetAll(ctx context.Context, sort string) ([]tag.Tag, error)
+	GetAll(ctx context.Context, opts ...query.Option) ([]tag.Tag, error)
 	Get(ctx context.Context, name string) (tag.Tag, error)
 	Delete(ctx context.Context, name string) error
 }
@@ -75,13 +76,18 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 // @Router 		/tag [get]
 func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sortBy")
-	sort, err := utils.GetSort(tag.Tag{}, sortBy)
+	col, order, err := utils.GetSort(tag.Tag{}, sortBy)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	tags, err := controller.service.GetAll(context.Background(), sort)
+	var opts []query.Option
+	if col != "" {
+		opts = append(opts, query.WithSort(col, order))
+	}
+
+	tags, err := controller.service.GetAll(context.Background(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

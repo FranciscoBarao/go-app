@@ -10,6 +10,7 @@ import (
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 // CreateMechanism inserts a new mechanism into the database.
@@ -29,15 +30,15 @@ func (p *Postgres) GetMechanism(ctx context.Context, name string) (mechanism.Mec
 }
 
 // GetAllMechanisms retrieves all mechanisms, optionally ordered by the given sort column.
-func (p *Postgres) GetAllMechanisms(ctx context.Context, sort string) ([]mechanism.Mechanism, error) {
-	col, err := mechanismSortColumn(sort)
+func (p *Postgres) GetAllMechanisms(ctx context.Context, filter query.Filter) ([]mechanism.Mechanism, error) {
+	col, err := mechanismSortColumn(filter.SortColumn)
 	if err != nil {
 		return nil, err
 	}
 
 	q := dbsql.SelectAllMechanisms
 	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col)
+		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
 	}
 
 	rows, err := p.pool.Query(ctx, q)
