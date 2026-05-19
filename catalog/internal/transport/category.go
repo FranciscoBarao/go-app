@@ -7,8 +7,8 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -17,7 +17,7 @@ import (
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(ctx context.Context, c *category.Category) error
-	GetAll(ctx context.Context, opts ...query.Option) ([]category.Category, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]category.Category, error)
 	Get(ctx context.Context, name string) (category.Category, error)
 	Delete(ctx context.Context, name string) error
 }
@@ -75,6 +75,8 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 // @Success 	200 {object} category.Category
 // @Router 		/category [get]
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
+	var opts []listopt.Option
+
 	sortBy := r.URL.Query().Get("sortBy")
 	col, order, err := utils.GetSort(category.Category{}, sortBy)
 	if err != nil {
@@ -82,9 +84,18 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var opts []query.Option
 	if col != "" {
-		opts = append(opts, query.WithSort(col, order))
+		opts = append(opts, listopt.WithSort(col, order))
+	}
+
+	filterBy := r.URL.Query().Get("filterBy")
+	fcol, fop, fval, err := utils.GetFilter(category.Category{}, filterBy)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	if fcol != "" {
+		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
 	categories, err := controller.service.GetAll(context.Background(), opts...)

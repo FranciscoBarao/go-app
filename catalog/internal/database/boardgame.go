@@ -8,9 +8,9 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -71,20 +71,21 @@ func (p *Postgres) GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boa
 }
 
 // GetAllBoardgames retrieves all boardgames with optional filtering and sorting.
-func (p *Postgres) GetAllBoardgames(ctx context.Context, filter query.Filter) ([]boardgame.Boardgame, error) {
-	col, err := boardgameSortColumn(filter.SortColumn)
-	if err != nil {
-		return nil, err
-	}
-
-	var rows pgx.Rows
+func (p *Postgres) GetAllBoardgames(ctx context.Context, filter listopt.Params) ([]boardgame.Boardgame, error) {
 
 	q := dbsql.SelectAllBoardgames
-	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
+	var args []any
+
+	if where, arg := filterClause(filter); where != "" {
+		q += where
+		args = append(args, arg)
 	}
 
-	rows, err = p.pool.Query(ctx, q)
+	if filter.Sort.Column != "" {
+		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
+	}
+
+	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, mapPgError(err)
 	}
@@ -232,17 +233,4 @@ func scanBoardgameRow(row pgx.CollectableRow) (boardgame.Boardgame, error) {
 		&bg.Name, &bg.Publisher, &bg.PlayerNumber, &bg.BoardgameID,
 	)
 	return bg, err
-}
-
-// boardgameSortColumn validates and returns the sort column for boardgames.
-func boardgameSortColumn(sort string) (string, error) {
-	if sort == "" {
-		return "", nil
-	}
-	switch sort {
-	case "id", "name", "publisher", "player_number", "created_at", "updated_at":
-		return sort, nil
-	default:
-		return "", middleware.NewError(http.StatusBadRequest, fmt.Sprintf("invalid sort column: %s", sort))
-	}
 }

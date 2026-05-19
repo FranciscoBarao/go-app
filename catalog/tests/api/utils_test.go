@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -22,13 +23,13 @@ func (suite *UtilSuite) SetupSuite() {
 }
 
 func (suite *UtilSuite) TestGetFilters() {
-	apitest.New(). // name.a -> Names that contain letter a
+	apitest.New(). // name.a -> partial match
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			body, value, err := utils.GetFilters(boardgame.Boardgame{}, "name.a")
-			if err != nil || body != "name LIKE ?" || value != "%a%" {
+			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "name.a")
+			if err != nil || col != "name" || op != "like" || val != "a" {
 				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
-
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
@@ -37,11 +38,27 @@ func (suite *UtilSuite) TestGetFilters() {
 		Status(http.StatusOK).
 		End()
 
-	apitest.New(). // playernumber.lt.5 -> Player Number lower than 5
+	apitest.New(). // playernumber.lt.5 -> numeric comparison
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			body, value, err := utils.GetFilters(boardgame.Boardgame{}, "playernumber.lt.5")
-			if err != nil || body != "playernumber < ?" || value != "5" {
+			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "playernumber.lt.5")
+			if err != nil || col != "player_number" || op != listopt.OpLt || val != "5" {
 				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+		}).
+		Get("").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		End()
+
+	apitest.New(). // name.eq.Catan -> exact equality
+			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "name.eq.Catan")
+			if err != nil || col != "name" || op != "eq" || val != "Catan" {
+				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 			w.WriteHeader(http.StatusOK)
 		}).
@@ -53,9 +70,10 @@ func (suite *UtilSuite) TestGetFilters() {
 
 	apitest.New(). // No filter
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			body, value, err := utils.GetFilters(boardgame.Boardgame{}, "")
-			if err != nil || body != "" || value != "" {
+			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "")
+			if err != nil || col != "" || op != "" || val != "" {
 				w.WriteHeader(http.StatusBadRequest)
+				return
 			}
 			w.WriteHeader(http.StatusOK)
 		}).
@@ -67,14 +85,14 @@ func (suite *UtilSuite) TestGetFilters() {
 }
 
 func (suite *UtilSuite) TestFiltersFailure() {
-	apitest.New(). // Different number of allowed Fields -> a.a.a.a || a
+	apitest.New(). // Too many or too few parts
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, err := utils.GetFilters(boardgame.Boardgame{}, "name.a.a.a")
-			_, _, err2 := utils.GetFilters(boardgame.Boardgame{}, "name")
+			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "name.a.a.a")
+			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "name")
 			if err != nil && err2 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
+				return
 			}
-
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
@@ -83,15 +101,15 @@ func (suite *UtilSuite) TestFiltersFailure() {
 		Status(http.StatusUnprocessableEntity).
 		End()
 
-	apitest.New(). // Filters cant be empty -> .a || a..a || a.
+	apitest.New(). // Empty field or value
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, err := utils.GetFilters(boardgame.Boardgame{}, ".name")
-			_, _, err2 := utils.GetFilters(boardgame.Boardgame{}, "name.")
-			_, _, err3 := utils.GetFilters(boardgame.Boardgame{}, "name..a")
+			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, ".name")
+			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "name.")
+			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name..a")
 			if err != nil && err2 != nil && err3 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
+				return
 			}
-
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
@@ -100,13 +118,13 @@ func (suite *UtilSuite) TestFiltersFailure() {
 		Status(http.StatusUnprocessableEntity).
 		End()
 
-	apitest.New(). // Operators must be "lt" || "le"|| "gt" || "ge" || "eq"
+	apitest.New(). // Invalid operator
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, err := utils.GetFilters(boardgame.Boardgame{}, "price.asd.10")
+			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "playernumber.asd.10")
 			if err != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
+				return
 			}
-
 			w.WriteHeader(http.StatusOK)
 		}).
 		Get("").
@@ -115,15 +133,15 @@ func (suite *UtilSuite) TestFiltersFailure() {
 		Status(http.StatusUnprocessableEntity).
 		End()
 
-	apitest.New(). // Fields must exist on Struct and be of the correct type (In this case Boardgame)
+	apitest.New(). // Type mismatches
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, err := utils.GetFilters(boardgame.Boardgame{}, "test.a")       // Unknown field
-			_, _, err2 := utils.GetFilters(boardgame.Boardgame{}, "price.lt.a")  // Incorrect type
-			_, _, err3 := utils.GetFilters(boardgame.Boardgame{}, "name.eq.a")   // Incorrect type
-			_, _, err4 := utils.GetFilters(boardgame.Boardgame{}, "price.10")    // Incorrect type
-			_, _, err5 := utils.GetFilters(boardgame.Boardgame{}, "name.test_a") // Incorrect type
-			if err != nil && err2 != nil && err3 != nil && err4 != nil && err5 != nil {
+			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "unknown.asc")       // Unknown field
+			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.lt.abc") // Non-numeric value
+			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name.lt.5")          // Numeric op on string
+			_, _, _, err4 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.hello")  // Like on non-string
+			if err != nil && err2 != nil && err3 != nil && err4 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
+				return
 			}
 			w.WriteHeader(http.StatusOK)
 		}).

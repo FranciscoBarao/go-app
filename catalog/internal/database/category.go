@@ -9,8 +9,8 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/category"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 // CreateCategory inserts a new category into the database.
@@ -30,18 +30,20 @@ func (p *Postgres) GetCategory(ctx context.Context, name string) (category.Categ
 }
 
 // GetAllCategories retrieves all categories, optionally ordered by the given sort column.
-func (p *Postgres) GetAllCategories(ctx context.Context, filter query.Filter) ([]category.Category, error) {
-	col, err := categorySortColumn(filter.SortColumn)
-	if err != nil {
-		return nil, err
-	}
-
+func (p *Postgres) GetAllCategories(ctx context.Context, filter listopt.Params) ([]category.Category, error) {
 	q := dbsql.SelectAllCategories
-	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
+	var args []any
+
+	if where, arg := filterClause(filter); where != "" {
+		q += where
+		args = append(args, arg)
 	}
 
-	rows, err := p.pool.Query(ctx, q)
+	if filter.Sort.Column != "" {
+		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
+	}
+
+	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, mapPgError(err)
 	}
@@ -59,17 +61,4 @@ func (p *Postgres) DeleteCategory(ctx context.Context, name string) error {
 		return middleware.NewError(http.StatusNotFound, "record not found")
 	}
 	return nil
-}
-
-// categorySortColumn validates and returns the sort column for categories.
-func categorySortColumn(sort string) (string, error) {
-	if sort == "" {
-		return "", nil
-	}
-	switch sort {
-	case "name", "created_at", "updated_at":
-		return sort, nil
-	default:
-		return "", middleware.NewError(http.StatusBadRequest, fmt.Sprintf("invalid sort column: %s", sort))
-	}
 }

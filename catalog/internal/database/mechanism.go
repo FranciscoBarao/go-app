@@ -8,9 +8,9 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 )
 
 // CreateMechanism inserts a new mechanism into the database.
@@ -30,18 +30,21 @@ func (p *Postgres) GetMechanism(ctx context.Context, name string) (mechanism.Mec
 }
 
 // GetAllMechanisms retrieves all mechanisms, optionally ordered by the given sort column.
-func (p *Postgres) GetAllMechanisms(ctx context.Context, filter query.Filter) ([]mechanism.Mechanism, error) {
-	col, err := mechanismSortColumn(filter.SortColumn)
-	if err != nil {
-		return nil, err
-	}
+func (p *Postgres) GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]mechanism.Mechanism, error) {
 
 	q := dbsql.SelectAllMechanisms
-	if col != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, col, filter.SortOrder)
+	var args []any
+
+	if where, arg := filterClause(filter); where != "" {
+		q += where
+		args = append(args, arg)
 	}
 
-	rows, err := p.pool.Query(ctx, q)
+	if filter.Sort.Column != "" {
+		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
+	}
+
+	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {
 		return nil, mapPgError(err)
 	}
@@ -59,17 +62,4 @@ func (p *Postgres) DeleteMechanism(ctx context.Context, name string) error {
 		return middleware.NewError(http.StatusNotFound, "record not found")
 	}
 	return nil
-}
-
-// mechanismSortColumn validates and returns the sort column for mechanisms.
-func mechanismSortColumn(sort string) (string, error) {
-	if sort == "" {
-		return "", nil
-	}
-	switch sort {
-	case "name", "created_at", "updated_at":
-		return sort, nil
-	default:
-		return "", middleware.NewError(http.StatusBadRequest, fmt.Sprintf("invalid sort column: %s", sort))
-	}
 }

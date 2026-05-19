@@ -9,7 +9,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -18,7 +18,7 @@ import (
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(ctx context.Context, bg *boardgame.Boardgame, id uint) error
-	GetAll(ctx context.Context, opts ...query.Option) ([]boardgame.Boardgame, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]boardgame.Boardgame, error)
 	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	Update(ctx context.Context, req *boardgame.UpdateBoardgameRequest, id uint) error
 	DeleteByID(ctx context.Context, id uint) error
@@ -99,23 +99,20 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	var opts []query.Option
+	var opts []listopt.Option
 	if col != "" {
-		opts = append(opts, query.WithSort(col, order))
+		opts = append(opts, listopt.WithSort(col, order))
 	}
 
-	/*
-		TODO - Reevaluate and rething this filter strategy
-
-		// @Param  filterBy query string  false  "Filter using field.value (For String partial find) OR field.operator.value"
-
-		filterBy := r.URL.Query().Get("filterBy")
-		filterBody, filterValue, err := utils.GetFilters(boardgame.Boardgame{}, filterBy)
-		if err != nil {
-			middleware.ErrorHandler(w, err)
-			return
-		}
-	*/
+	filterBy := r.URL.Query().Get("filterBy")
+	fcol, fop, fval, err := utils.GetFilter(boardgame.Boardgame{}, filterBy)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	if fcol != "" {
+		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
+	}
 
 	boardgames, err := controller.service.GetAll(context.Background(), opts...)
 	if err != nil {

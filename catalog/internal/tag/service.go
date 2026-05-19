@@ -3,7 +3,7 @@ package tag
 import (
 	"context"
 
-	"github.com/FranciscoBarao/catalog/internal/query"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 )
 
 //go:generate mockgen -package tag -destination service_mock.go . Database
@@ -12,7 +12,7 @@ import (
 type Database interface {
 	CreateTag(ctx context.Context, t *Tag) error
 	GetTag(ctx context.Context, name string) (Tag, error)
-	GetAllTags(ctx context.Context, filter query.Filter) ([]Tag, error)
+	GetAllTags(ctx context.Context, filter listopt.Params) ([]Tag, error)
 	DeleteTag(ctx context.Context, name string) error
 }
 
@@ -35,8 +35,8 @@ func (svc *Service) Create(ctx context.Context, tag *Tag) error {
 }
 
 // GetAll retrieves all Tags from the database, optionally sorted.
-func (svc *Service) GetAll(ctx context.Context, opts ...query.Option) ([]Tag, error) {
-	return svc.db.GetAllTags(ctx, query.Apply(opts...))
+func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Tag, error) {
+	return svc.db.GetAllTags(ctx, listopt.Apply(opts...))
 }
 
 // Get retrieves a single Tag by name.

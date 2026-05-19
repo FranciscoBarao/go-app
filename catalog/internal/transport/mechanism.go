@@ -6,9 +6,9 @@ import (
 
 	"github.com/unrolled/render"
 
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -17,7 +17,7 @@ import (
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(ctx context.Context, mechanism *mechanism.Mechanism) error
-	GetAll(ctx context.Context, opts ...query.Option) ([]mechanism.Mechanism, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]mechanism.Mechanism, error)
 	Get(ctx context.Context, name string) (mechanism.Mechanism, error)
 	Delete(ctx context.Context, name string) error
 }
@@ -75,6 +75,8 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 // @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
+	var opts []listopt.Option
+
 	sortBy := r.URL.Query().Get("sortBy")
 	col, order, err := utils.GetSort(mechanism.Mechanism{}, sortBy)
 	if err != nil {
@@ -82,9 +84,18 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	var opts []query.Option
 	if col != "" {
-		opts = append(opts, query.WithSort(col, order))
+		opts = append(opts, listopt.WithSort(col, order))
+	}
+
+	filterBy := r.URL.Query().Get("filterBy")
+	fcol, fop, fval, err := utils.GetFilter(mechanism.Mechanism{}, filterBy)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	if fcol != "" {
+		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
 	mechanisms, err := controller.service.GetAll(context.Background(), opts...)

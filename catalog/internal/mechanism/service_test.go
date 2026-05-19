@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -37,16 +37,16 @@ func (suite *MechanismServiceSuite) TestCreate() {
 
 func (suite *MechanismServiceSuite) TestGetAll() {
 	expected := []Mechanism{{Name: "deckbuilding"}, {Name: "workerplacement"}}
-	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), query.Filter{SortColumn: "name", SortOrder: "asc"}).Return(expected, nil)
+	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{Sort: listopt.Sort{Column: "name", Order: "asc"}}).Return(expected, nil)
 
-	mechanisms, err := suite.service.GetAll(context.Background(), query.WithSort("name", "asc"))
+	mechanisms, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, mechanisms)
 }
 
 func (suite *MechanismServiceSuite) TestGetAllNoSort() {
 	expected := []Mechanism{{Name: "deckbuilding"}}
-	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), query.Filter{}).Return(expected, nil)
+	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{}).Return(expected, nil)
 
 	mechanisms, err := suite.service.GetAll(context.Background())
 	suite.Assert().NoError(err)

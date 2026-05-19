@@ -6,8 +6,8 @@ import (
 
 	"github.com/unrolled/render"
 
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
@@ -17,7 +17,7 @@ import (
 // TagService defines the interface for tag business logic.
 type TagService interface {
 	Create(ctx context.Context, t *tag.Tag) error
-	GetAll(ctx context.Context, opts ...query.Option) ([]tag.Tag, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]tag.Tag, error)
 	Get(ctx context.Context, name string) (tag.Tag, error)
 	Delete(ctx context.Context, name string) error
 }
@@ -75,6 +75,8 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 // @Success 	200 {object} tag.Tag
 // @Router 		/tag [get]
 func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) {
+	var opts []listopt.Option
+
 	sortBy := r.URL.Query().Get("sortBy")
 	col, order, err := utils.GetSort(tag.Tag{}, sortBy)
 	if err != nil {
@@ -82,9 +84,18 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var opts []query.Option
 	if col != "" {
-		opts = append(opts, query.WithSort(col, order))
+		opts = append(opts, listopt.WithSort(col, order))
+	}
+
+	filterBy := r.URL.Query().Get("filterBy")
+	fcol, fop, fval, err := utils.GetFilter(tag.Tag{}, filterBy)
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	if fcol != "" {
+		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
 	tags, err := controller.service.GetAll(context.Background(), opts...)

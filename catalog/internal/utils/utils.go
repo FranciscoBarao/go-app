@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"net/http"
-	"regexp"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
@@ -34,9 +33,4 @@ func GetUsernameFromToken(r *http.Request) (string, error) {
 		return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
 	}
 	return username, nil
-}
-
-// isAlphanumeric checks if a string is alphanumeric
-func isAlphanumeric(word string) bool {
-	return regexp.MustCompile(`^[a-zA-Z0-9]*$`).MatchString(word)
 }

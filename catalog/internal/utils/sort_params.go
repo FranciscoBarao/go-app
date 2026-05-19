@@ -3,7 +3,6 @@ package utils
 import (
 	"context"
 	"net/http"
-	"reflect"
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/middleware"
@@ -42,25 +41,10 @@ func GetSort(model any, sortBy string) (string, string, error) {
 		return "", "", middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
 	}
 
-	column, err := dbTag(model, field)
+	column, err := resolveField(model, field)
 	if err != nil {
 		return "", "", err
 	}
 
-	return column, order, nil
-}
-
-// dbTag finds the struct field by name (case-insensitive) and returns its db tag value.
-func dbTag(model any, fieldName string) (string, error) {
-	fields := reflect.VisibleFields(reflect.TypeOf(model))
-	for _, f := range fields {
-		if strings.EqualFold(f.Name, fieldName) {
-			col := f.Tag.Get("db")
-			if col == "" || col == "-" {
-				return "", middleware.NewError(http.StatusUnprocessableEntity, "Field not sortable")
-			}
-			return col, nil
-		}
-	}
-	return "", middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
+	return column.Column, order, nil
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/query"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -98,7 +98,7 @@ func (suite *BoardgameSuite) TestGetAll() {
 	err = suite.postgres.CreateBoardgame(ctx, bg2)
 	suite.Require().NoError(err)
 
-	all, err := suite.postgres.GetAllBoardgames(ctx, query.Filter{SortColumn: "id", SortOrder: "asc"})
+	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Sort: listopt.Sort{Column: "id", Order: "asc"}})
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 2)
 }
@@ -160,4 +160,37 @@ func (suite *BoardgameSuite) TestDelete_NotFound() {
 
 func TestBoardgameSuite(t *testing.T) {
 	suite.Run(t, new(BoardgameSuite))
+}
+
+func (suite *BoardgameSuite) TestGetAll_FilterLike() {
+	ctx := context.Background()
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}))
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Vagrantsong", Publisher: "Wyrd", PlayerNumber: 2}))
+
+	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Filter: listopt.Filter{Column: "name", Op: "like", Value: "cat"}})
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal("Catan", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_FilterNumeric() {
+	ctx := context.Background()
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}))
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Vagrantsong", Publisher: "Wyrd", PlayerNumber: 2}))
+
+	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Filter: listopt.Filter{Column: "player_number", Op: "lt", Value: "3"}})
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal("Vagrantsong", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_FilterEq() {
+	ctx := context.Background()
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Catan", Publisher: "Kosmos", PlayerNumber: 4}))
+	suite.Require().NoError(suite.postgres.CreateBoardgame(ctx, &boardgame.Boardgame{Name: "Vagrantsong", Publisher: "Wyrd", PlayerNumber: 2}))
+
+	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Filter: listopt.Filter{Column: "name", Op: listopt.OpEq, Value: "Catan"}})
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal("Catan", all[0].Name)
 }

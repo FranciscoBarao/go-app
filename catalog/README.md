@@ -94,19 +94,38 @@ curl "localhost:8081/api/boardgame?sortBy=tags.asc"      # -> "Field not sortabl
 
 ### Filtering
 
-Filters use 2 formats depending on what is being evaluated:
-```
-filterBy -> Field.Value 
-filterBy -> Field.Operator.Value 	
+The `filterBy` query parameter supports three modes:
+
+| Format | Mode | SQL Generated |
+|--------|------|---------------|
+| `field.value` | Partial string match | `WHERE name ILIKE '%value%'` |
+| `field.eq.value` | Exact equality | `WHERE name = 'value'` |
+| `field.lt\|le\|gt\|ge.value` | Numeric comparison | `WHERE player_number < value` |
+
+**Operators:** `eq` (=), `lt` (<), `le` (<=), `gt` (>), `ge` (>=)
+
+**Examples:**
+```bash
+# Partial match — boardgames with "cat" in the name
+curl -X GET "localhost:8081/api/boardgame?filterBy=name.cat"
+
+# Exact equality
+curl -X GET "localhost:8081/api/boardgame?filterBy=name.eq.Catan"
+
+# Numeric — player number less than 4
+curl -X GET "localhost:8081/api/boardgame?filterBy=playernumber.lt.4"
+
+# Combined with sort
+curl -X GET "localhost:8081/api/boardgame?filterBy=name.cat&sortBy=name.asc"
 ```
 
-Examples:
+**Error cases (422):**
+```bash
+curl "localhost:8081/api/boardgame?filterBy=name"              # -> too few parts
+curl "localhost:8081/api/boardgame?filterBy=name.lt.5"          # -> numeric op on string field
+curl "localhost:8081/api/boardgame?filterBy=playernumber.hello"  # -> like on non-string field
+curl "localhost:8081/api/boardgame?filterBy=playernumber.lt.abc" # -> value not numeric
 ```
-name.a         --->   name LIKE ?    %a%
-price.le.10    --->   price <= ?     10
-```
-
-Filters will require an update sometime in the future because it doesnt allow floats cause we can't do ```price.lt.10,4```.
 
 
 Read
@@ -153,17 +172,19 @@ ReadAll
 curl -X GET localhost:8081/api/tag
 ```
 
-ReadAll can be sorted. 
+ReadAll can be sorted and filtered.
 ```
-sortBy -> Field.Order
+sortBy   -> Field.Order
+filterBy -> Field.Value | Field.Operator.Value
 ```
 
-Sortable fields: `name`, `createdat`, `updatedat`
+Sortable/filterable fields: `name`, `createdat`, `updatedat`
 
 Examples:
 ```bash
 curl -X GET "localhost:8081/api/tag?sortBy=name.asc"
-curl -X GET "localhost:8081/api/tag?sortBy=createdat.desc"
+curl -X GET "localhost:8081/api/tag?filterBy=name.strategy"
+curl -X GET "localhost:8081/api/tag?filterBy=name.eq.Strategy&sortBy=name.asc"
 ```
 
 
