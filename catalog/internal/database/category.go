@@ -10,6 +10,7 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/category"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
@@ -42,6 +43,8 @@ func (p *Postgres) GetAllCategories(ctx context.Context, filter listopt.Params) 
 	if filter.Sort.Column != "" {
 		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
 	}
+
+	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllCategories")
 
 	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {

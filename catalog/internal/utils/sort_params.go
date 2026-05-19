@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
@@ -24,8 +25,7 @@ func GetSort(model any, sortBy string) (string, string, error) {
 		return "", "", nil
 	}
 
-	log := middleware.FromCtx(context.Background())
-	log.Debug().Str("sort_by", sortBy).Msg("sorting")
+	logging.FromCtx(context.Background()).Debug().Str("sort_by", sortBy).Msg("sorting")
 
 	splits := strings.Split(sortBy, ".")
 	if len(splits) != 2 {

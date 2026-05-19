@@ -9,9 +9,9 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
-	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
+	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/route"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/FranciscoBarao/catalog/internal/transport"
@@ -59,7 +59,7 @@ type Base struct {
 
 // Prepares test environment
 func NewBase(t *testing.T) *Base {
-	log := middleware.FromCtx(context.Background())
+	log := logging.FromCtx(context.Background())
 	log.Debug().Msg("setup starting..")
 
 	// Setup database mock

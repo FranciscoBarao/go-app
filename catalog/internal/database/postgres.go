@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/FranciscoBarao/catalog/config"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
@@ -54,6 +55,7 @@ func Connect(ctx context.Context, cfg *config.PostgresConfig) (*Postgres, error)
 		}
 	}
 
+	logging.FromCtx(ctx).Debug().Str("host", cfg.Host).Str("port", cfg.Port).Str("database", cfg.Database).Msg("database connected")
 	return &Postgres{pool: pool}, nil
 }
 
@@ -85,6 +87,7 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, dir string) error {
 		if _, err := pool.Exec(ctx, string(sql)); err != nil {
 			return fmt.Errorf("exec migration %s: %w", f, err)
 		}
+		logging.FromCtx(ctx).Debug().Str("file", f).Msg("migration applied")
 	}
 
 	return nil
@@ -100,6 +103,7 @@ func mapPgError(err error) error {
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
+		logging.FromCtx(context.Background()).Error().Str("code", pgErr.Code).Str("message", pgErr.Message).Msg("postgres error")
 		switch pgErr.Code {
 		case uniqueViolationCode:
 			return middleware.NewError(http.StatusConflict, "entry already registered")

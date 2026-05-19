@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"os"
 
-	logging "github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
@@ -29,6 +29,8 @@ import (
 // @contact.email s.franciscobarao@gmail.com
 // @BasePath /api/
 func main() {
+	logging.Init(config.LogLevel())
+
 	ctx := context.Background()
 	log := logging.FromCtx(ctx)
 
@@ -78,10 +80,11 @@ func main() {
 	// documentation for developers
 	router.Get("/swagger/*", httpSwagger.Handler())
 
+	log.Debug().Msg("routes registered")
+
 	// Starts server
+	log.Info().Str("port", port).Msg("server starting")
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatal().Err(err).Msg("failed to create http server")
-
 	}
-	log.Debug().Str("port", port).Str("ip", "localhost").Msg("server running")
 }

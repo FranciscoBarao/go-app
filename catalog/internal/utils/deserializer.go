@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,12 +10,13 @@ import (
 
 	"github.com/golang/gddo/httputil/header"
 
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 // DecodeJSONBody decodes a JSON request body into the given destination struct.
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
-	log := middleware.FromCtx(context.Background())
+	log := logging.FromCtx(r.Context())
 	if r.Header.Get("Content-Type") != "" { // Only allow requests with application/json as header
 		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
 		if value != "application/json" {

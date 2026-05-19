@@ -9,6 +9,7 @@ import (
 
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
@@ -43,6 +44,8 @@ func (p *Postgres) GetAllMechanisms(ctx context.Context, filter listopt.Params) 
 	if filter.Sort.Column != "" {
 		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
 	}
+
+	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllMechanisms")
 
 	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {

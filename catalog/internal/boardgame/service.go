@@ -5,9 +5,10 @@ import (
 	"net/http"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 )
 
@@ -59,6 +60,8 @@ func NewService(db Database, tagSvc TagService, catSvc CategoryService, mechSvc 
 
 // Create validates associations, connects expansions if needed, and persists a new Boardgame.
 func (svc *Service) Create(ctx context.Context, boardgame *Boardgame, id uint) error {
+	logging.FromCtx(ctx).Debug().Uint("parent_id", id).Msg("creating boardgame")
+
 	// Check if Expansion -> Connect if needed
 	if err := svc.connectBoardgameToExpansion(ctx, boardgame, id); err != nil {
 		return err
@@ -84,6 +87,7 @@ func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
 
 // Update fetches the existing boardgame, applies partial changes from the request, validates associations, and persists.
 func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, id uint) error {
+	logging.FromCtx(ctx).Debug().Uint("id", id).Msg("updating boardgame")
 	// Get Boardgame by id
 	boardgame, err := svc.GetByID(ctx, id)
 	if err != nil {
@@ -108,6 +112,7 @@ func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, id 
 
 // DeleteByID deletes a boardgame by its ID.
 func (svc *Service) DeleteByID(ctx context.Context, id uint) error {
+	logging.FromCtx(ctx).Debug().Uint("id", id).Msg("deleting boardgame")
 	return svc.db.DeleteBoardgame(ctx, id)
 }
 
@@ -138,7 +143,7 @@ func (svc *Service) connectBoardgameToExpansion(ctx context.Context, boardgame *
 	}
 
 	if boardgameParent.IsExpansion() {
-		middleware.FromCtx(ctx).Error().Msg("an expansion cannot have other expansions")
+		logging.FromCtx(ctx).Error().Msg("an expansion cannot have other expansions")
 		return middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
 	}
 
@@ -148,27 +153,29 @@ func (svc *Service) connectBoardgameToExpansion(ctx context.Context, boardgame *
 
 // validateAssociations validates if tags, categories and mechanisms exist when boardgames are created.
 func (svc *Service) validateAssociations(ctx context.Context, boardgame *Boardgame) error {
-	// Boardgame can contain Associations like Tags or Categories ->  We omit them which means that if they don't previously exist, the db returns an error -> Check if they exist before hand
 	if boardgame.HasTags() {
 		for _, tempTag := range boardgame.Tags {
-			if _, err := svc.tagSvc.Get(ctx, tempTag.Name); err != nil { // Get tag by name
-				return err // That tag does not exist -> Return Error
+			if _, err := svc.tagSvc.Get(ctx, tempTag.Name); err != nil {
+				logging.FromCtx(ctx).Error().Str("tag", tempTag.Name).Msg("tag not found")
+				return err
 			}
 		}
 	}
 
 	if boardgame.HasCategories() {
 		for _, tempCategory := range boardgame.Categories {
-			if _, err := svc.categorySvc.Get(ctx, tempCategory.Name); err != nil { // Get category by name
-				return err // That category does not exist -> Return Error
+			if _, err := svc.categorySvc.Get(ctx, tempCategory.Name); err != nil {
+				logging.FromCtx(ctx).Error().Str("category", tempCategory.Name).Msg("category not found")
+				return err
 			}
 		}
 	}
 
 	if boardgame.HasMechanisms() {
 		for _, tempMechanism := range boardgame.Mechanisms {
-			if _, err := svc.mechanismSvc.Get(ctx, tempMechanism.Name); err != nil { // Get mechanism by name
-				return err // That mechanism does not exist -> Return Error
+			if _, err := svc.mechanismSvc.Get(ctx, tempMechanism.Name); err != nil {
+				logging.FromCtx(ctx).Error().Str("mechanism", tempMechanism.Name).Msg("mechanism not found")
+				return err
 			}
 		}
 	}

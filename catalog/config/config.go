@@ -5,6 +5,14 @@ import (
 	"os"
 )
 
+// LogLevel returns the configured log level, defaulting to "debug".
+func LogLevel() string {
+	if lvl, ok := os.LookupEnv("LOG_LEVEL"); ok {
+		return lvl
+	}
+	return "debug"
+}
+
 // PostgresConfig holds the configuration for connecting to a PostgreSQL database.
 type PostgresConfig struct {
 	Host          string

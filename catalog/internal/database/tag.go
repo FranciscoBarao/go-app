@@ -9,6 +9,7 @@ import (
 
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/tag"
 )
@@ -43,6 +44,8 @@ func (p *Postgres) GetAllTags(ctx context.Context, filter listopt.Params) ([]tag
 	if filter.Sort.Column != "" {
 		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
 	}
+
+	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllTags")
 
 	rows, err := p.pool.Query(ctx, q, args...)
 	if err != nil {

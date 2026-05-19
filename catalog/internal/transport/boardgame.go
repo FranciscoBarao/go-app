@@ -8,8 +8,8 @@ import (
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
