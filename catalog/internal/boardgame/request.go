@@ -59,3 +59,11 @@ func (r *UpdateBoardgameRequest) ToBoardgame(bg *Boardgame) {
 		bg.Mechanisms = *r.Mechanisms
 	}
 }
+
+// UpdateAssociations signals which association tables should be replaced during an update.
+// Only non-nil slices trigger a delete+re-insert of that association.
+type UpdateAssociations struct {
+	Tags       *[]tag.Tag
+	Categories *[]category.Category
+	Mechanisms *[]mechanism.Mechanism
+}

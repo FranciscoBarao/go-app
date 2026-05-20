@@ -3,6 +3,7 @@ package listopt
 // Op represents a validated filter operator.
 type Op string
 
+// Filter operators.
 const (
 	OpLike Op = "like"
 	OpEq   Op = "eq"

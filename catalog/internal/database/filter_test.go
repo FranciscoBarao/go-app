@@ -8,10 +8,10 @@ import (
 
 func TestFilterClause(t *testing.T) {
 	tests := []struct {
-		name     string
-		params   listopt.Params
-		wantSQL  string
-		wantArg  any
+		name    string
+		params  listopt.Params
+		wantSQL string
+		wantArg any
 	}{
 		{
 			name:    "empty filter returns nothing",

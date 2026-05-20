@@ -45,8 +45,8 @@ type Database interface {
 	GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	GetAllBoardgames(ctx context.Context, filter listopt.Params) ([]boardgame.Boardgame, error)
 	UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error
+	UpdateBoardgameWithAssociations(ctx context.Context, bg *boardgame.Boardgame, assoc boardgame.UpdateAssociations) error
 	DeleteBoardgame(ctx context.Context, id uint) error
-	ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error
 }
 
 const oauthKey = "secret-key"

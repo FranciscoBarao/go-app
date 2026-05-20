@@ -135,9 +135,9 @@ func (suite *UtilSuite) TestFiltersFailure() {
 
 	apitest.New(). // Type mismatches
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "unknown.asc")       // Unknown field
+			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "unknown.asc")          // Unknown field
 			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.lt.abc") // Non-numeric value
-			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name.lt.5")          // Numeric op on string
+			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name.lt.5")           // Numeric op on string
 			_, _, _, err4 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.hello")  // Like on non-string
 			if err != nil && err2 != nil && err3 != nil && err4 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)

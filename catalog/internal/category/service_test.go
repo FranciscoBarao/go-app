@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )

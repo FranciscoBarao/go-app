@@ -5,10 +5,8 @@ GOLANGCI_LINT_VERSION ?= v2.11.4
 
 ## ---------- Linting ----------
 lint: ## Runs golangci-lint
-	@docker run --rm -v "$(shell pwd):/app" -w /app \
-		golangci/golangci-lint:$(GOLANGCI_LINT_VERSION)-alpine \
-		golangci-lint run --concurrency 5 -v ./... --color always
-
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	$$(go env GOPATH)/bin/golangci-lint run --concurrency 5 -v ./...
 
 ## ---------- Build ----------
 build:

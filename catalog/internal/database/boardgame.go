@@ -23,7 +23,7 @@ func (p *Postgres) CreateBoardgame(ctx context.Context, bg *boardgame.Boardgame)
 	if err != nil {
 		return mapPgError(err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	err = tx.QueryRow(ctx, dbsql.InsertBoardgame,
 		bg.Name, bg.Publisher, bg.PlayerNumber, bg.BoardgameID,
@@ -121,13 +121,65 @@ func (p *Postgres) UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame)
 	return nil
 }
 
+// UpdateBoardgameWithAssociations updates a boardgame and conditionally replaces associations in a single transaction.
+func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boardgame.Boardgame, assoc boardgame.UpdateAssociations) error {
+	tx, err := p.pool.Begin(ctx)
+	if err != nil {
+		return mapPgError(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	cmd, err := tx.Exec(ctx, dbsql.UpdateBoardgame, bg.Name, bg.Publisher, bg.PlayerNumber, bg.BoardgameID, bg.ID)
+	if err != nil {
+		return mapPgError(err)
+	}
+	if cmd.RowsAffected() == 0 {
+		return middleware.NewError(http.StatusNotFound, "record not found")
+	}
+
+	if assoc.Tags != nil {
+		if _, err := tx.Exec(ctx, dbsql.DeleteBoardgameTags, bg.ID); err != nil {
+			return mapPgError(err)
+		}
+		for _, t := range *assoc.Tags {
+			if _, err := tx.Exec(ctx, dbsql.InsertBoardgameTag, bg.ID, t.Name); err != nil {
+				return mapPgError(err)
+			}
+		}
+	}
+
+	if assoc.Categories != nil {
+		if _, err := tx.Exec(ctx, dbsql.DeleteBoardgameCategories, bg.ID); err != nil {
+			return mapPgError(err)
+		}
+		for _, c := range *assoc.Categories {
+			if _, err := tx.Exec(ctx, dbsql.InsertBoardgameCategory, bg.ID, c.Name); err != nil {
+				return mapPgError(err)
+			}
+		}
+	}
+
+	if assoc.Mechanisms != nil {
+		if _, err := tx.Exec(ctx, dbsql.DeleteBoardgameMechanisms, bg.ID); err != nil {
+			return mapPgError(err)
+		}
+		for _, m := range *assoc.Mechanisms {
+			if _, err := tx.Exec(ctx, dbsql.InsertBoardgameMechanism, bg.ID, m.Name); err != nil {
+				return mapPgError(err)
+			}
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
 // DeleteBoardgame removes a boardgame and its join table entries within a transaction.
 func (p *Postgres) DeleteBoardgame(ctx context.Context, id uint) error {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
 		return mapPgError(err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, dbsql.DeleteBoardgameTags, id); err != nil {
 		return mapPgError(err)
@@ -145,27 +197,6 @@ func (p *Postgres) DeleteBoardgame(ctx context.Context, id uint) error {
 	}
 	if cmd.RowsAffected() == 0 {
 		return middleware.NewError(http.StatusNotFound, "record not found")
-	}
-
-	return tx.Commit(ctx)
-}
-
-// ReplaceBoardgameTags replaces all tag associations for a boardgame within a transaction.
-func (p *Postgres) ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error {
-	tx, err := p.pool.Begin(ctx)
-	if err != nil {
-		return mapPgError(err)
-	}
-	defer tx.Rollback(ctx)
-
-	if _, err := tx.Exec(ctx, dbsql.DeleteBoardgameTags, boardgameID); err != nil {
-		return mapPgError(err)
-	}
-
-	for _, t := range tags {
-		if _, err := tx.Exec(ctx, dbsql.InsertBoardgameTag, boardgameID, t.Name); err != nil {
-			return mapPgError(err)
-		}
 	}
 
 	return tx.Commit(ctx)

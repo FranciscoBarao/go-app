@@ -146,8 +146,7 @@ func (suite *BoardgameServiceSuite) TestUpdate() {
 
 	suite.mockDB.EXPECT().GetBoardgameByID(gomock.Any(), uint(1)).Return(existing, nil)
 	suite.mockTag.EXPECT().Get(gomock.Any(), "strategy").Return(tag.Tag{Name: "strategy"}, nil)
-	suite.mockDB.EXPECT().UpdateBoardgame(gomock.Any(), gomock.Any()).Return(nil)
-	suite.mockDB.EXPECT().ReplaceBoardgameTags(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
+	suite.mockDB.EXPECT().UpdateBoardgameWithAssociations(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 	err := suite.service.Update(context.Background(), input, 1)
 	suite.Assert().NoError(err)

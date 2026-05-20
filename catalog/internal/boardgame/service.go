@@ -20,8 +20,8 @@ type Database interface {
 	GetBoardgameByID(ctx context.Context, id uint) (Boardgame, error)
 	GetAllBoardgames(ctx context.Context, filter listopt.Params) ([]Boardgame, error)
 	UpdateBoardgame(ctx context.Context, bg *Boardgame) error
+	UpdateBoardgameWithAssociations(ctx context.Context, bg *Boardgame, assoc UpdateAssociations) error
 	DeleteBoardgame(ctx context.Context, id uint) error
-	ReplaceBoardgameTags(ctx context.Context, boardgameID uint, tags []tag.Tag) error
 }
 
 // TagService is a local interface for retrieving tags by name.
@@ -102,12 +102,11 @@ func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, id 
 		return err
 	}
 
-	if err := svc.db.UpdateBoardgame(ctx, &boardgame); err != nil {
-		return err
-	}
-
-	// Replace tag associations
-	return svc.db.ReplaceBoardgameTags(ctx, boardgame.ID, boardgame.Tags)
+	return svc.db.UpdateBoardgameWithAssociations(ctx, &boardgame, UpdateAssociations{
+		Tags:       req.Tags,
+		Categories: req.Categories,
+		Mechanisms: req.Mechanisms,
+	})
 }
 
 // DeleteByID deletes a boardgame by its ID.
