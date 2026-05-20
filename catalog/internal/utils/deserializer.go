@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
-
-	"github.com/golang/gddo/httputil/header"
 
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
@@ -17,12 +16,12 @@ import (
 // DecodeJSONBody decodes a JSON request body into the given destination struct.
 func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	log := logging.FromCtx(r.Context())
-	if r.Header.Get("Content-Type") != "" { // Only allow requests with application/json as header
-		value, _ := header.ParseValueAndParams(r.Header, "Content-Type")
-		if value != "application/json" {
-			log.Error().Str("content-type", value).Msg("content-type header of request must be application/json")
-			return middleware.NewError(http.StatusBadRequest, "Content-Type header is not application/json")
-		}
+
+	// Only allow requests with application/json as header
+	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if mediaType != "application/json" {
+		log.Error().Str("content-type", mediaType).Msg("content-type header of request must be application/json")
+		return middleware.NewError(http.StatusBadRequest, "Content-Type header is not application/json")
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // Dont allow bodies that are over 1MB
