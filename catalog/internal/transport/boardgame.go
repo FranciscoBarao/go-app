@@ -74,7 +74,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 		parentID = uint(parsedID)
 	}
 
-	if err := controller.service.Create(context.Background(), bg, parentID); err != nil {
+	if err := controller.service.Create(r.Context(), bg, parentID); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -114,7 +114,7 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
-	boardgames, err := controller.service.GetAll(context.Background(), opts...)
+	boardgames, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -142,7 +142,7 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	boardgame, err := controller.service.GetByID(context.Background(), uint(parsedID))
+	boardgame, err := controller.service.GetByID(r.Context(), uint(parsedID))
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -185,7 +185,7 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 	}
 
 	// Updates Boardgame
-	if err := controller.service.Update(context.Background(), &req, uint(parsedID)); err != nil {
+	if err := controller.service.Update(r.Context(), &req, uint(parsedID)); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -214,7 +214,7 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 	}
 
 	// Delete by Id
-	if err := controller.service.DeleteByID(context.Background(), uint(parsedID)); err != nil {
+	if err := controller.service.DeleteByID(r.Context(), uint(parsedID)); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -263,7 +263,7 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := controller.service.Rate(context.Background(), rating, uint(parsedID), user); err != nil {
+	if err := controller.service.Rate(r.Context(), rating, uint(parsedID), user); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

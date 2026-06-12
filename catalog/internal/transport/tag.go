@@ -56,7 +56,7 @@ func (controller *TagController) Create(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	if err := controller.service.Create(context.Background(), t); err != nil {
+	if err := controller.service.Create(r.Context(), t); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -98,7 +98,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
-	tags, err := controller.service.GetAll(context.Background(), opts...)
+	tags, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -120,7 +120,7 @@ func (controller *TagController) GetAll(w http.ResponseWriter, r *http.Request) 
 // @Router 		/tag/{name} [get]
 func (controller *TagController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
-	tag, err := controller.service.Get(context.Background(), name)
+	tag, err := controller.service.Get(r.Context(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -144,7 +144,7 @@ func (controller *TagController) Delete(w http.ResponseWriter, r *http.Request) 
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(context.Background(), name); err != nil {
+	if err := controller.service.Delete(r.Context(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

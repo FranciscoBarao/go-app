@@ -56,7 +56,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := controller.service.Create(context.Background(), c); err != nil {
+	if err := controller.service.Create(r.Context(), c); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -98,7 +98,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
-	categories, err := controller.service.GetAll(context.Background(), opts...)
+	categories, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -120,7 +120,7 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 // @Router 		/category/{name} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
-	c, err := controller.service.Get(context.Background(), name)
+	c, err := controller.service.Get(r.Context(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -144,7 +144,7 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(context.Background(), name); err != nil {
+	if err := controller.service.Delete(r.Context(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

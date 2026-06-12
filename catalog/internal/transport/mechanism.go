@@ -56,7 +56,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if err := controller.service.Create(context.Background(), m); err != nil {
+	if err := controller.service.Create(r.Context(), m); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
@@ -98,7 +98,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
 	}
 
-	mechanisms, err := controller.service.GetAll(context.Background(), opts...)
+	mechanisms, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -121,7 +121,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
 	name := utils.GetFieldFromURL(r, "name")
 
-	m, err := controller.service.Get(context.Background(), name)
+	m, err := controller.service.Get(r.Context(), name)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
@@ -145,7 +145,7 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 	name := utils.GetFieldFromURL(r, "name")
 
 	// Delete by id
-	if err := controller.service.Delete(context.Background(), name); err != nil {
+	if err := controller.service.Delete(r.Context(), name); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}

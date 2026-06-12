@@ -8,8 +8,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/oauth"
 
-	"github.com/FranciscoBarao/marketplace/internal/logging"
-	"github.com/FranciscoBarao/marketplace/internal/middleware"
+	"github.com/FranciscoBarao/user-management/internal/logging"
+	"github.com/FranciscoBarao/user-management/internal/middleware"
 )
 
 // ValidateStruct executes govalidator to check struct fields.

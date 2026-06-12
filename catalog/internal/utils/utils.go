@@ -28,7 +28,11 @@ func GetFieldFromURL(r *http.Request, field string) string {
 
 // GetUsernameFromToken extracts the username from context
 func GetUsernameFromToken(r *http.Request) (string, error) {
-	claims := r.Context().Value(oauth.ClaimsContext).(map[string]string)
+	claims, ok := r.Context().Value(oauth.ClaimsContext).(map[string]string)
+	if !ok {
+		return "", middleware.NewError(http.StatusUnauthorized, "Error - Missing or invalid auth claims")
+	}
+
 	username, ok := claims["username"]
 	if !ok {
 		return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")

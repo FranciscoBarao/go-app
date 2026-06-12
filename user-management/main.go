@@ -1,67 +1,79 @@
 package main
 
 import (
-	"log"
+	"context"
 	"net/http"
 	"os"
 	"time"
 
-	"user-management/controllers"
-	"user-management/database"
-
-	"user-management/repositories"
-	"user-management/services"
-
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/oauth"
+
+	"github.com/FranciscoBarao/user-management/config"
+	"github.com/FranciscoBarao/user-management/internal/auth"
+	"github.com/FranciscoBarao/user-management/internal/database"
+	"github.com/FranciscoBarao/user-management/internal/logging"
+	"github.com/FranciscoBarao/user-management/internal/route"
+	"github.com/FranciscoBarao/user-management/internal/transport"
+	"github.com/FranciscoBarao/user-management/internal/user"
 )
 
 func main() {
-	// Connect to Database
-	db, err := database.Connect()
+	logging.Init(config.LogLevel())
+
+	ctx := context.Background()
+	log := logging.FromCtx(ctx)
+
+	// Fetch DB config
+	cfg, err := config.NewPostgresConfig()
 	if err != nil {
-		log.Println("Error occurred while connecting to database")
-		return
+		log.Fatal().Err(err).Msg("failed to fetch database env variables")
 	}
+	cfg.MigrationPath = "database/migrations"
 
-	// Fetch oauth key
+	// Connect to Database
+	db, err := database.Connect(ctx, cfg)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to connect to database")
+	}
+	defer db.Close()
+
+	// Fetch Env variables
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
-	if !oauthKeyPresent {
-		log.Println("Error occurred while fetching Oauth Key")
-		return
+	port, portPresent := os.LookupEnv("PORT")
+	if !oauthKeyPresent || !portPresent {
+		log.Fatal().Msg("failed to fetch essential env variables")
 	}
 
-	// Initialize Repositories & Services & controllers
-	repositories := repositories.InitRepositories(db)
-	services := services.InitServices(repositories)
-	controllers := controllers.InitControllers(services)
+	// Initialize Services
+	userSvc := user.NewService(db)
+
+	// Initialize Auth Verifier
+	verifier := auth.NewVerifier(userSvc)
+
+	// Initialize Controllers
+	userController := transport.NewUserController(userSvc)
+
+	// OAuth server
+	oauthServer := oauth.NewBearerServer(oauthKey, time.Minute*60, verifier, nil)
 
 	// Creates routing
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	router.Use(chiMiddleware.Logger)
 
-	oauthServer := oauth.NewBearerServer(
-		oauthKey,
-		time.Minute*60,
-		&controllers.VerifierController,
-		nil)
-
-	// Adds Routers
-	router.Post("/api/register", controllers.UserController.Register)
+	// Auth routes
 	router.Post("/api/login", oauthServer.UserCredentials)
 	router.Post("/api/auth", oauthServer.ClientCredentials)
 
-	// Starts server
-	port, portPresent := os.LookupEnv("PORT")
-	if !portPresent {
-		log.Println("Error occurred while fetching Port")
-		return
-	}
+	// User routes
+	route.AddUserRouter(router, oauthKey, userController)
 
+	log.Debug().Msg("routes registered")
+
+	// Starts server
+	log.Info().Str("port", port).Msg("server starting")
 	if err := http.ListenAndServe(":"+port, router); err != nil {
-		log.Println("Error occured while creating Server" + err.Error())
-		return
+		log.Fatal().Err(err).Msg("failed to create http server")
 	}
-	log.Println("Server is Running on localhost:" + port)
 }
