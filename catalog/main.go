@@ -5,26 +5,24 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-
-	httpSwagger "github.com/swaggo/http-swagger"
-
 	"github.com/FranciscoBarao/catalog/config"
 	_ "github.com/FranciscoBarao/catalog/docs"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/database"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/route"
-	"github.com/FranciscoBarao/catalog/internal/tag"
 	"github.com/FranciscoBarao/catalog/internal/transport"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 // @title Catalog App Swagger
 // @version 1.0
-// @description This microservice is a catalog for holding the possibly objects that can be used to create offers in the marketplace.
+// @description Catalog service for boardgames and related metadata.
 // @contact.name Francisco Barao
 // @contact.email s.franciscobarao@gmail.com
 // @BasePath /api/
@@ -34,55 +32,45 @@ func main() {
 	ctx := context.Background()
 	log := logging.FromCtx(ctx)
 
-	// Fetch DB configs
-	config, err := config.NewPostgresConfig()
+	cfg, err := config.NewPostgresConfig()
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to fetch database env variables")
 	}
-	config.MigrationPath = "database/migrations"
+	cfg.MigrationPath = "internal/database/migrations"
 
-	// Connect to Database
-	db, err := database.Connect(ctx, config)
+	db, err := database.Connect(ctx, cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
 	defer db.Close()
 
-	// Fetch Env variables
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
 	port, portPresent := os.LookupEnv("PORT")
 	if !oauthKeyPresent || !portPresent {
 		log.Fatal().Msg("failed to fetch essential env variables")
 	}
 
-	// Initialize Services
-	tagSvc := tag.NewService(db)
 	categorySvc := category.NewService(db)
 	mechanismSvc := mechanism.NewService(db)
-	boardgameSvc := boardgame.NewService(db, tagSvc, categorySvc, mechanismSvc)
+	contributorSvc := contributor.NewService(db)
+	boardgameSvc := boardgame.NewService(db, categorySvc, mechanismSvc, contributorSvc)
 
-	// Initialize Controllers
 	bgController := transport.NewBoardgameController(boardgameSvc)
-	tagController := transport.NewTagController(tagSvc)
 	categoryController := transport.NewCategoryController(categorySvc)
 	mechanismController := transport.NewMechanismController(mechanismSvc)
+	contributorController := transport.NewContributorController(contributorSvc)
 
-	// Creates routing
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 
-	// Adds Routers
 	route.AddBoardGameRouter(router, oauthKey, bgController)
-	route.AddTagRouter(router, oauthKey, tagController)
 	route.AddCategoryRouter(router, oauthKey, categoryController)
 	route.AddMechanismRouter(router, oauthKey, mechanismController)
+	route.AddContributorRouter(router, oauthKey, contributorController)
 
-	// documentation for developers
 	router.Get("/swagger/*", httpSwagger.Handler())
 
 	log.Debug().Msg("routes registered")
-
-	// Starts server
 	log.Info().Str("port", port).Msg("server starting")
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatal().Err(err).Msg("failed to create http server")

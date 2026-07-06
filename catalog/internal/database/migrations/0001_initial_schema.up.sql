@@ -1,4 +1,5 @@
--- Trigger function shared by all resource tables
+-- Catalog initial schema
+
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -7,64 +8,94 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TABLE IF NOT EXISTS boardgames (
-    id            SERIAL PRIMARY KEY,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    name          VARCHAR(100) NOT NULL UNIQUE,
-    publisher     VARCHAR(100) NOT NULL,
-    player_number INTEGER NOT NULL CHECK (player_number BETWEEN 1 AND 16),
-    boardgame_id  INTEGER REFERENCES boardgames(id) ON DELETE SET NULL
+CREATE TABLE boardgames (
+    id             SERIAL PRIMARY KEY,
+    slug           VARCHAR(120) NOT NULL UNIQUE,
+    name           VARCHAR(120) NOT NULL,
+    description    TEXT,
+    year_published SMALLINT,
+    min_players    SMALLINT NOT NULL,
+    max_players    SMALLINT NOT NULL,
+    min_play_time  SMALLINT,
+    max_play_time  SMALLINT,
+    min_age        SMALLINT,
+    bgg_id         INTEGER UNIQUE,
+    boardgame_id   INTEGER REFERENCES boardgames(id) ON DELETE SET NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at     TIMESTAMPTZ,
+    CONSTRAINT boardgames_slug_not_empty CHECK (slug <> ''),
+    CONSTRAINT boardgames_min_players_check CHECK (min_players BETWEEN 1 AND 16),
+    CONSTRAINT boardgames_max_players_check CHECK (max_players BETWEEN 1 AND 16),
+    CONSTRAINT boardgames_players_order_check CHECK (min_players <= max_players)
 );
 
 CREATE TRIGGER boardgames_updated_at
     BEFORE UPDATE ON boardgames
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TABLE IF NOT EXISTS tags (
-    name       VARCHAR(30) PRIMARY KEY,
+CREATE TABLE categories (
+    id         SERIAL PRIMARY KEY,
+    slug       VARCHAR(100) NOT NULL UNIQUE,
+    name       VARCHAR(100) NOT NULL,
+    bgg_id     INTEGER UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TRIGGER tags_updated_at
-    BEFORE UPDATE ON tags
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TABLE IF NOT EXISTS categories (
-    name       VARCHAR(30) PRIMARY KEY,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ,
+    CONSTRAINT categories_slug_not_empty CHECK (slug <> '')
 );
 
 CREATE TRIGGER categories_updated_at
     BEFORE UPDATE ON categories
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TABLE IF NOT EXISTS mechanisms (
-    name       VARCHAR(30) PRIMARY KEY,
+CREATE TABLE mechanisms (
+    id         SERIAL PRIMARY KEY,
+    slug       VARCHAR(100) NOT NULL UNIQUE,
+    name       VARCHAR(100) NOT NULL,
+    bgg_id     INTEGER UNIQUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ,
+    CONSTRAINT mechanisms_slug_not_empty CHECK (slug <> '')
 );
 
 CREATE TRIGGER mechanisms_updated_at
     BEFORE UPDATE ON mechanisms
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TABLE IF NOT EXISTS boardgame_tags (
+CREATE TABLE contributors (
+    id         SERIAL PRIMARY KEY,
+    slug       VARCHAR(100) NOT NULL UNIQUE,
+    name       VARCHAR(100) NOT NULL,
+    bio        TEXT,
+    bgg_id     INTEGER UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    deleted_at TIMESTAMPTZ,
+    CONSTRAINT contributors_slug_not_empty CHECK (slug <> '')
+);
+
+CREATE TRIGGER contributors_updated_at
+    BEFORE UPDATE ON contributors
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TABLE boardgame_categories (
     boardgame_id INTEGER NOT NULL REFERENCES boardgames(id) ON DELETE CASCADE,
-    tag_name     VARCHAR(30) NOT NULL REFERENCES tags(name) ON DELETE CASCADE,
-    PRIMARY KEY (boardgame_id, tag_name)
+    category_id  INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+    PRIMARY KEY (boardgame_id, category_id)
 );
 
-CREATE TABLE IF NOT EXISTS boardgame_categories (
-    boardgame_id  INTEGER NOT NULL REFERENCES boardgames(id) ON DELETE CASCADE,
-    category_name VARCHAR(30) NOT NULL REFERENCES categories(name) ON DELETE CASCADE,
-    PRIMARY KEY (boardgame_id, category_name)
+CREATE TABLE boardgame_mechanisms (
+    boardgame_id INTEGER NOT NULL REFERENCES boardgames(id) ON DELETE CASCADE,
+    mechanism_id INTEGER NOT NULL REFERENCES mechanisms(id) ON DELETE CASCADE,
+    PRIMARY KEY (boardgame_id, mechanism_id)
 );
 
-CREATE TABLE IF NOT EXISTS boardgame_mechanisms (
+CREATE TABLE boardgame_contributions (
     boardgame_id   INTEGER NOT NULL REFERENCES boardgames(id) ON DELETE CASCADE,
-    mechanism_name VARCHAR(30) NOT NULL REFERENCES mechanisms(name) ON DELETE CASCADE,
-    PRIMARY KEY (boardgame_id, mechanism_name)
+    contributor_id INTEGER NOT NULL REFERENCES contributors(id) ON DELETE CASCADE,
+    role           VARCHAR(30) NOT NULL,
+    credit_order   SMALLINT,
+    PRIMARY KEY (boardgame_id, contributor_id, role)
 );

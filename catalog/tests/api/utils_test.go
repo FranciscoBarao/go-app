@@ -38,10 +38,10 @@ func (suite *UtilSuite) TestGetFilters() {
 		Status(http.StatusOK).
 		End()
 
-	apitest.New(). // playernumber.lt.5 -> numeric comparison
+	apitest.New(). // maxplayers.lt.5 -> numeric comparison
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "playernumber.lt.5")
-			if err != nil || col != "player_number" || op != listopt.OpLt || val != "5" {
+			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "maxplayers.lt.5")
+			if err != nil || col != "max_players" || op != listopt.OpLt || val != "5" {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -169,8 +169,8 @@ func (suite *UtilSuite) TestGetSorts() {
 
 	apitest.New(). //
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, order, err := utils.GetSort(boardgame.Boardgame{}, "playernumber.desc")
-			if err != nil || col != "player_number" || order != "desc" {
+			col, order, err := utils.GetSort(boardgame.Boardgame{}, "maxplayers.desc")
+			if err != nil || col != "max_players" || order != "desc" {
 				w.WriteHeader(http.StatusBadRequest)
 			}
 			w.WriteHeader(http.StatusOK)
@@ -245,8 +245,8 @@ func (suite *UtilSuite) TestSortsFailure() {
 
 	apitest.New(). // Sorts must exist on Struct and be of a sortable type
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, err := utils.GetSort(boardgame.Boardgame{}, "test.asc")  // Unknown field
-			_, _, err2 := utils.GetSort(boardgame.Boardgame{}, "tags.asc") // Unsortable field
+			_, _, err := utils.GetSort(boardgame.Boardgame{}, "test.asc")        // Unknown field
+			_, _, err2 := utils.GetSort(boardgame.Boardgame{}, "mechanisms.asc") // Unsortable field
 			if err != nil && err2 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 			}

@@ -16,10 +16,10 @@ import (
 
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
-	Create(ctx context.Context, mechanism *mechanism.Mechanism) error
+	Create(ctx context.Context, req *mechanism.CreateMechanismRequest) (mechanism.Mechanism, error)
 	GetAll(ctx context.Context, opts ...listopt.Option) ([]mechanism.Mechanism, error)
-	Get(ctx context.Context, name string) (mechanism.Mechanism, error)
-	Delete(ctx context.Context, name string) error
+	Get(ctx context.Context, slug string) (mechanism.Mechanism, error)
+	Delete(ctx context.Context, slug string, hard bool) error
 }
 
 // MechanismController handles HTTP requests for mechanism operations.
@@ -29,49 +29,40 @@ type MechanismController struct {
 
 // NewMechanismController initializes the mechanism controller.
 func NewMechanismController(mechanismSvc MechanismService) *MechanismController {
-	return &MechanismController{
-		service: mechanismSvc,
-	}
+	return &MechanismController{service: mechanismSvc}
 }
 
 // Create Mechanism godoc
-// @Summary 	Creates a Mechanism using a name
-// @Tags 	mechanisms
+// @Summary 	Creates a Mechanism
+// @Tags 		mechanisms
 // @Produce 	json
-// @Param 		data body mechanism.Mechanism true "The Mechanism name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		data body mechanism.CreateMechanismRequest true "The Mechanism"
 // @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism [post]
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
-	// Deserialize Mechanism input
-	var m = &mechanism.Mechanism{}
-	if err := utils.DecodeJSONBody(w, r, m); err != nil {
+	var req mechanism.CreateMechanismRequest
+	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	// Validate Mechanism input
-	if err := utils.ValidateStruct(m); err != nil {
+	if err := utils.ValidateStruct(&req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	if err := controller.service.Create(r.Context(), m); err != nil {
+	m, err := controller.service.Create(r.Context(), &req)
+	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
 // GetAll Mechanisms godoc
 // @Summary 	Fetches all Mechanisms
-// @Tags 	mechanisms
+// @Tags 		mechanisms
 // @Produce 	json
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +74,6 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if col != "" {
 		opts = append(opts, listopt.WithSort(col, order))
 	}
@@ -103,55 +93,45 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, mechanisms); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
 // Get Mechanism godoc
-// @Summary 	Fetches a specific Mechanism using a name
-// @Tags 	mechanisms
+// @Summary 	Fetches a Mechanism by slug
+// @Tags 		mechanisms
 // @Produce 	json
-// @Param 		name path string true "The Mechanism name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		slug path string true "Mechanism slug"
 // @Success 	200 {object} mechanism.Mechanism
-// @Router 		/mechanism/{name} [get]
+// @Router 		/mechanism/{slug} [get]
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
-	name := utils.GetFieldFromURL(r, "name")
-
-	m, err := controller.service.Get(r.Context(), name)
+	slugStr := utils.GetFieldFromURL(r, "slug")
+	m, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
 // Delete Mechanism godoc
-// @Summary 	Deletes a specific Mechanism
-// @Tags 	mechanisms
+// @Summary 	Deletes a Mechanism
+// @Tags 		mechanisms
 // @Produce 	json
-// @Param 		name path string true "The Mechanism name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		slug path string true "Mechanism slug"
+// @Param 		hard query bool false "Hard delete"
 // @Success 	204
-// @Router 		/mechanism/{name} [delete]
+// @Router 		/mechanism/{slug} [delete]
 func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Request) {
-	name := utils.GetFieldFromURL(r, "name")
+	slugStr := utils.GetFieldFromURL(r, "slug")
+	hard := r.URL.Query().Get("hard") == "true"
 
-	// Delete by id
-	if err := controller.service.Delete(r.Context(), name); err != nil {
+	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	if err := render.New().JSON(w, http.StatusNoContent, name); err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
+	w.WriteHeader(http.StatusNoContent)
 }

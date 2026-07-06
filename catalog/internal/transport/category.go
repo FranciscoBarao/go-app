@@ -16,10 +16,10 @@ import (
 
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
-	Create(ctx context.Context, c *category.Category) error
+	Create(ctx context.Context, req *category.CreateCategoryRequest) (category.Category, error)
 	GetAll(ctx context.Context, opts ...listopt.Option) ([]category.Category, error)
-	Get(ctx context.Context, name string) (category.Category, error)
-	Delete(ctx context.Context, name string) error
+	Get(ctx context.Context, slug string) (category.Category, error)
+	Delete(ctx context.Context, slug string, hard bool) error
 }
 
 // CategoryController handles HTTP requests for category operations.
@@ -29,41 +29,33 @@ type CategoryController struct {
 
 // NewCategoryController initializes the category controller.
 func NewCategoryController(categorySvc CategoryService) *CategoryController {
-	return &CategoryController{
-		service: categorySvc,
-	}
+	return &CategoryController{service: categorySvc}
 }
 
 // Create Category godoc
-// @Summary 	Creates a Category using a name
+// @Summary 	Creates a Category
 // @Tags 		categories
 // @Produce 	json
-// @Param 		data body category.Category true "The Category name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		data body category.CreateCategoryRequest true "The Category"
 // @Success 	200 {object} category.Category
 // @Router 		/category [post]
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
-	// Deserialize Category input
-	var c = &category.Category{}
-	if err := utils.DecodeJSONBody(w, r, c); err != nil {
+	var req category.CreateCategoryRequest
+	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	// Validate Category input
-	if err := utils.ValidateStruct(c); err != nil {
+	if err := utils.ValidateStruct(&req); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	if err := controller.service.Create(r.Context(), c); err != nil {
+	c, err := controller.service.Create(r.Context(), &req)
+	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
@@ -71,7 +63,6 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 // @Summary 	Fetches all Categories
 // @Tags 		categories
 // @Produce 	json
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
 // @Success 	200 {object} category.Category
 // @Router 		/category [get]
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +74,6 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if col != "" {
 		opts = append(opts, listopt.WithSort(col, order))
 	}
@@ -103,54 +93,45 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, categories); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
 // Get Category godoc
-// @Summary 	Fetches a specific Category using a name
+// @Summary 	Fetches a Category by slug
 // @Tags 		categories
 // @Produce 	json
-// @Param 		name path string true "The Category name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		slug path string true "Category slug"
 // @Success 	200 {object} category.Category
-// @Router 		/category/{name} [get]
+// @Router 		/category/{slug} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {
-	name := utils.GetFieldFromURL(r, "name")
-	c, err := controller.service.Get(r.Context(), name)
+	slugStr := utils.GetFieldFromURL(r, "slug")
+	c, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
 		middleware.ErrorHandler(w, err)
-		return
 	}
 }
 
 // Delete Category godoc
-// @Summary 	Deletes a specific Category
+// @Summary 	Deletes a Category
 // @Tags 		categories
 // @Produce 	json
-// @Param 		name path string true "The Category name"
-// @Param 		Authorization header string true "Insert your access token" default(Bearer <Add access token here>)
+// @Param 		slug path string true "Category slug"
+// @Param 		hard query bool false "Hard delete"
 // @Success 	204
-// @Router 		/category/{name} [delete]
+// @Router 		/category/{slug} [delete]
 func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Request) {
-	name := utils.GetFieldFromURL(r, "name")
+	slugStr := utils.GetFieldFromURL(r, "slug")
+	hard := r.URL.Query().Get("hard") == "true"
 
-	// Delete by id
-	if err := controller.service.Delete(r.Context(), name); err != nil {
+	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-
-	if err := render.New().JSON(w, http.StatusNoContent, name); err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
+	w.WriteHeader(http.StatusNoContent)
 }

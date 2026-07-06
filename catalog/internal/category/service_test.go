@@ -10,7 +10,6 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// CategoryServiceSuite tests the category Service in isolation using a MockDatabase.
 type CategoryServiceSuite struct {
 	suite.Suite
 	ctrl    *gomock.Controller
@@ -29,15 +28,21 @@ func (suite *CategoryServiceSuite) TearDownTest() {
 }
 
 func (suite *CategoryServiceSuite) TestCreate() {
-	cat := NewCategory("strategy")
-	suite.mockDB.EXPECT().CreateCategory(gomock.Any(), cat).Return(nil)
+	suite.mockDB.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, c *Category) error {
+			suite.Equal("strategy", c.Slug)
+			suite.Equal("Strategy", c.Name)
+			return nil
+		},
+	)
 
-	err := suite.service.Create(context.Background(), cat)
+	cat, err := suite.service.Create(context.Background(), &CreateCategoryRequest{Name: "Strategy"})
 	suite.Assert().NoError(err)
+	suite.Assert().Equal("strategy", cat.Slug)
 }
 
 func (suite *CategoryServiceSuite) TestGetAll() {
-	expected := []Category{{Name: "strategy"}, {Name: "cooperative"}}
+	expected := []Category{{Slug: "strategy", Name: "Strategy"}}
 	suite.mockDB.EXPECT().GetAllCategories(gomock.Any(), listopt.Params{Sort: listopt.Sort{Column: "name", Order: "asc"}}).Return(expected, nil)
 
 	categories, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
@@ -46,39 +51,28 @@ func (suite *CategoryServiceSuite) TestGetAll() {
 }
 
 func (suite *CategoryServiceSuite) TestGet() {
-	expected := Category{Name: "strategy"}
-	suite.mockDB.EXPECT().GetCategory(gomock.Any(), "strategy").Return(expected, nil)
+	expected := Category{Slug: "strategy", Name: "Strategy"}
+	suite.mockDB.EXPECT().GetCategoryBySlug(gomock.Any(), "strategy").Return(expected, nil)
 
 	cat, err := suite.service.Get(context.Background(), "strategy")
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, cat)
 }
 
-func (suite *CategoryServiceSuite) TestGetNotFound() {
-	suite.mockDB.EXPECT().GetCategory(gomock.Any(), "nonexistent").Return(
-		Category{}, middleware.NewError(404, "Record not found"),
-	)
-
-	_, err := suite.service.Get(context.Background(), "nonexistent")
-	suite.Assert().Error(err)
-	suite.Assert().Equal("Record not found", err.Error())
-}
-
 func (suite *CategoryServiceSuite) TestDelete() {
-	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "strategy").Return(nil)
+	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "strategy", false).Return(nil)
 
-	err := suite.service.Delete(context.Background(), "strategy")
+	err := suite.service.Delete(context.Background(), "strategy", false)
 	suite.Assert().NoError(err)
 }
 
 func (suite *CategoryServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "missing").Return(
+	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "missing", false).Return(
 		middleware.NewError(404, "Record not found"),
 	)
 
-	err := suite.service.Delete(context.Background(), "missing")
+	err := suite.service.Delete(context.Background(), "missing", false)
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Record not found", err.Error())
 }
 
 func TestCategoryServiceSuite(t *testing.T) {

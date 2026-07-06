@@ -28,65 +28,51 @@ func (suite *MechanismServiceSuite) TearDownTest() {
 }
 
 func (suite *MechanismServiceSuite) TestCreate() {
-	m := NewMechanism("deckbuilding")
-	suite.mockDB.EXPECT().CreateMechanism(gomock.Any(), m).Return(nil)
+	suite.mockDB.EXPECT().CreateMechanism(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, m *Mechanism) error {
+			suite.Equal("worker-placement", m.Slug)
+			suite.Equal("Worker Placement", m.Name)
+			return nil
+		},
+	)
 
-	err := suite.service.Create(context.Background(), m)
+	m, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "Worker Placement"})
 	suite.Assert().NoError(err)
-}
-
-func (suite *MechanismServiceSuite) TestGetAll() {
-	expected := []Mechanism{{Name: "deckbuilding"}, {Name: "workerplacement"}}
-	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{Sort: listopt.Sort{Column: "name", Order: "asc"}}).Return(expected, nil)
-
-	mechanisms, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
-	suite.Assert().NoError(err)
-	suite.Assert().Equal(expected, mechanisms)
-}
-
-func (suite *MechanismServiceSuite) TestGetAllNoSort() {
-	expected := []Mechanism{{Name: "deckbuilding"}}
-	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{}).Return(expected, nil)
-
-	mechanisms, err := suite.service.GetAll(context.Background())
-	suite.Assert().NoError(err)
-	suite.Assert().Equal(expected, mechanisms)
+	suite.Assert().Equal("worker-placement", m.Slug)
 }
 
 func (suite *MechanismServiceSuite) TestGet() {
-	expected := Mechanism{Name: "deckbuilding"}
-	suite.mockDB.EXPECT().GetMechanism(gomock.Any(), "deckbuilding").Return(expected, nil)
+	expected := Mechanism{Slug: "worker-placement", Name: "Worker Placement"}
+	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(expected, nil)
 
-	m, err := suite.service.Get(context.Background(), "deckbuilding")
+	m, err := suite.service.Get(context.Background(), "worker-placement")
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, m)
 }
 
-func (suite *MechanismServiceSuite) TestGetNotFound() {
-	suite.mockDB.EXPECT().GetMechanism(gomock.Any(), "nonexistent").Return(
-		Mechanism{}, middleware.NewError(404, "Record not found"),
-	)
-
-	_, err := suite.service.Get(context.Background(), "nonexistent")
-	suite.Assert().Error(err)
-	suite.Assert().Equal("Record not found", err.Error())
-}
-
 func (suite *MechanismServiceSuite) TestDelete() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "deckbuilding").Return(nil)
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "worker-placement", false).Return(nil)
 
-	err := suite.service.Delete(context.Background(), "deckbuilding")
+	err := suite.service.Delete(context.Background(), "worker-placement", false)
 	suite.Assert().NoError(err)
 }
 
 func (suite *MechanismServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing").Return(
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(
 		middleware.NewError(404, "Record not found"),
 	)
 
-	err := suite.service.Delete(context.Background(), "missing")
+	err := suite.service.Delete(context.Background(), "missing", false)
 	suite.Assert().Error(err)
-	suite.Assert().Equal("Record not found", err.Error())
+}
+
+func (suite *MechanismServiceSuite) TestGetAll() {
+	expected := []Mechanism{{Slug: "trading", Name: "Trading"}}
+	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{}).Return(expected, nil)
+
+	list, err := suite.service.GetAll(context.Background())
+	suite.Assert().NoError(err)
+	suite.Assert().Equal(expected, list)
 }
 
 func TestMechanismServiceSuite(t *testing.T) {

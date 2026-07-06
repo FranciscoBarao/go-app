@@ -1,69 +1,85 @@
 package boardgame
 
 import (
-	"github.com/FranciscoBarao/catalog/internal/category"
-	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/tag"
+	"github.com/FranciscoBarao/catalog/internal/contributor"
 )
+
+// CategoryRef references a category by slug.
+type CategoryRef struct {
+	Slug string `json:"slug" valid:"required,maxstringlength(100)"`
+}
+
+// MechanismRef references a mechanism by slug.
+type MechanismRef struct {
+	Slug string `json:"slug" valid:"required,maxstringlength(100)"`
+}
 
 // CreateBoardgameRequest is the request for POST /boardgame requests.
 type CreateBoardgameRequest struct {
-	Name         string                `json:"name" valid:"required,maxstringlength(100)"`
-	Publisher    string                `json:"publisher" valid:"required,maxstringlength(100)"`
-	PlayerNumber int                   `json:"playerNumber" valid:"required,range(1|16)"`
-	Tags         []tag.Tag             `json:"tags,omitempty"`
-	Categories   []category.Category   `json:"categories,omitempty"`
-	Mechanisms   []mechanism.Mechanism `json:"mechanisms,omitempty"`
+	Name          string                          `json:"name" valid:"required,maxstringlength(120)"`
+	Description   *string                         `json:"description,omitempty"`
+	YearPublished *int                            `json:"year_published,omitempty" valid:"optional,range(1900|2100)"`
+	MinPlayers    int                             `json:"min_players" valid:"required,range(1|16)"`
+	MaxPlayers    int                             `json:"max_players" valid:"required,range(1|16)"`
+	MinPlayTime   *int                            `json:"min_play_time,omitempty" valid:"optional,range(1|9999)"`
+	MaxPlayTime   *int                            `json:"max_play_time,omitempty" valid:"optional,range(1|9999)"`
+	MinAge        *int                            `json:"min_age,omitempty" valid:"optional,range(0|99)"`
+	BggID         *int                            `json:"bgg_id,omitempty"`
+	Categories    []CategoryRef                   `json:"categories,omitempty"`
+	Mechanisms    []MechanismRef                  `json:"mechanisms,omitempty"`
+	Contributions []contributor.ContributionInput `json:"contributions,omitempty"`
 }
 
-// NewBoardgame creates a Boardgame domain model from a CreateBoardgameRequest.
-func NewBoardgame(req *CreateBoardgameRequest) *Boardgame {
-	return &Boardgame{
-		Name:         req.Name,
-		Publisher:    req.Publisher,
-		PlayerNumber: req.PlayerNumber,
-		Tags:         req.Tags,
-		Categories:   req.Categories,
-		Mechanisms:   req.Mechanisms,
-	}
-}
-
-// UpdateBoardgameRequest is the request for PATCH /boardgame/{id} requests.
+// UpdateBoardgameRequest is the request for PATCH /boardgame/{slug} requests.
 type UpdateBoardgameRequest struct {
-	Name         *string                `json:"name,omitempty" valid:"optional,maxstringlength(100)"`
-	Publisher    *string                `json:"publisher,omitempty" valid:"optional,maxstringlength(100)"`
-	PlayerNumber *int                   `json:"playerNumber,omitempty" valid:"optional,range(1|16)"`
-	Tags         *[]tag.Tag             `json:"tags,omitempty"`
-	Categories   *[]category.Category   `json:"categories,omitempty"`
-	Mechanisms   *[]mechanism.Mechanism `json:"mechanisms,omitempty"`
+	Name          *string                          `json:"name,omitempty" valid:"optional,maxstringlength(120)"`
+	Description   *string                          `json:"description,omitempty"`
+	YearPublished *int                             `json:"year_published,omitempty" valid:"optional,range(1900|2100)"`
+	MinPlayers    *int                             `json:"min_players,omitempty" valid:"optional,range(1|16)"`
+	MaxPlayers    *int                             `json:"max_players,omitempty" valid:"optional,range(1|16)"`
+	MinPlayTime   *int                             `json:"min_play_time,omitempty" valid:"optional,range(1|9999)"`
+	MaxPlayTime   *int                             `json:"max_play_time,omitempty" valid:"optional,range(1|9999)"`
+	MinAge        *int                             `json:"min_age,omitempty" valid:"optional,range(0|99)"`
+	BggID         *int                             `json:"bgg_id,omitempty"`
+	Categories    *[]CategoryRef                   `json:"categories,omitempty"`
+	Mechanisms    *[]MechanismRef                  `json:"mechanisms,omitempty"`
+	Contributions *[]contributor.ContributionInput `json:"contributions,omitempty"`
 }
 
-// ToBoardgame applies non-nil fields from UpdateBoardgameRequest onto an existing Boardgame.
+// ToBoardgame applies non-nil scalar fields from UpdateBoardgameRequest onto an existing Boardgame.
 func (r *UpdateBoardgameRequest) ToBoardgame(bg *Boardgame) {
 	if r.Name != nil {
 		bg.Name = *r.Name
 	}
-	if r.Publisher != nil {
-		bg.Publisher = *r.Publisher
+	if r.Description != nil {
+		bg.Description = r.Description
 	}
-	if r.PlayerNumber != nil {
-		bg.PlayerNumber = *r.PlayerNumber
+	if r.YearPublished != nil {
+		bg.YearPublished = r.YearPublished
 	}
-	if r.Tags != nil {
-		bg.Tags = *r.Tags
+	if r.MinPlayers != nil {
+		bg.MinPlayers = *r.MinPlayers
 	}
-	if r.Categories != nil {
-		bg.Categories = *r.Categories
+	if r.MaxPlayers != nil {
+		bg.MaxPlayers = *r.MaxPlayers
 	}
-	if r.Mechanisms != nil {
-		bg.Mechanisms = *r.Mechanisms
+	if r.MinPlayTime != nil {
+		bg.MinPlayTime = r.MinPlayTime
+	}
+	if r.MaxPlayTime != nil {
+		bg.MaxPlayTime = r.MaxPlayTime
+	}
+	if r.MinAge != nil {
+		bg.MinAge = r.MinAge
+	}
+	if r.BggID != nil {
+		bg.BggID = r.BggID
 	}
 }
 
 // UpdateAssociations signals which association tables should be replaced during an update.
-// Only non-nil slices trigger a delete+re-insert of that association.
 type UpdateAssociations struct {
-	Tags       *[]tag.Tag
-	Categories *[]category.Category
-	Mechanisms *[]mechanism.Mechanism
+	Categories    *[]uint
+	Mechanisms    *[]uint
+	Contributions *[]ContributionDTO
 }

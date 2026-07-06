@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
@@ -16,27 +18,35 @@ import (
 
 // CreateCategory inserts a new category into the database.
 func (p *Postgres) CreateCategory(ctx context.Context, c *category.Category) error {
-	_, err := p.pool.Exec(ctx, dbsql.InsertCategory, c.Name)
+	err := p.pool.QueryRow(ctx, dbsql.InsertCategory, c.Slug, c.Name, c.BggID).
+		Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
 	return mapPgError(err)
 }
 
-// GetCategory retrieves a single category by name.
-func (p *Postgres) GetCategory(ctx context.Context, name string) (category.Category, error) {
-	rows, err := p.pool.Query(ctx, dbsql.SelectCategory, name)
+// GetCategoryBySlug retrieves a single category by slug.
+func (p *Postgres) GetCategoryBySlug(ctx context.Context, slug string) (category.Category, error) {
+	rows, err := p.pool.Query(ctx, dbsql.SelectCategoryBySlug, slug)
 	if err != nil {
 		return category.Category{}, mapPgError(err)
 	}
-	c, err := pgx.CollectOneRow(rows, pgx.RowToStructByPos[category.Category])
+	c, err := pgx.CollectOneRow(rows, scanCategoryRow)
 	return c, mapPgError(err)
 }
 
-// GetAllCategories retrieves all categories, optionally ordered by the given sort column.
+// GetCategoryIDBySlug retrieves only the id of an active category by slug.
+func (p *Postgres) GetCategoryIDBySlug(ctx context.Context, slug string) (uint, error) {
+	var id uint
+	err := p.pool.QueryRow(ctx, dbsql.SelectCategoryIDBySlug, slug).Scan(&id)
+	return id, mapPgError(err)
+}
+
+// GetAllCategories retrieves all categories, optionally filtered and sorted.
 func (p *Postgres) GetAllCategories(ctx context.Context, filter listopt.Params) ([]category.Category, error) {
 	q := dbsql.SelectAllCategories
 	var args []any
 
 	if where, arg := filterClause(filter); where != "" {
-		q += where
+		q += strings.Replace(where, " WHERE ", " AND ", 1)
 		args = append(args, arg)
 	}
 
@@ -50,13 +60,21 @@ func (p *Postgres) GetAllCategories(ctx context.Context, filter listopt.Params) 
 	if err != nil {
 		return nil, mapPgError(err)
 	}
-	categories, err := pgx.CollectRows(rows, pgx.RowToStructByPos[category.Category])
+	categories, err := pgx.CollectRows(rows, scanCategoryRow)
 	return categories, mapPgError(err)
 }
 
-// DeleteCategory removes a category by name. Returns 404 if the category does not exist.
-func (p *Postgres) DeleteCategory(ctx context.Context, name string) error {
-	cmd, err := p.pool.Exec(ctx, dbsql.DeleteCategory, name)
+// DeleteCategory soft-deletes or hard-deletes a category by slug.
+func (p *Postgres) DeleteCategory(ctx context.Context, slug string, hard bool) error {
+	var (
+		cmd pgconn.CommandTag
+		err error
+	)
+	if hard {
+		cmd, err = p.pool.Exec(ctx, dbsql.HardDeleteCategory, slug)
+	} else {
+		cmd, err = p.pool.Exec(ctx, dbsql.SoftDeleteCategory, slug)
+	}
 	if err != nil {
 		return mapPgError(err)
 	}
@@ -64,4 +82,10 @@ func (p *Postgres) DeleteCategory(ctx context.Context, name string) error {
 		return middleware.NewError(http.StatusNotFound, "record not found")
 	}
 	return nil
+}
+
+func scanCategoryRow(row pgx.CollectableRow) (category.Category, error) {
+	var c category.Category
+	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.BggID, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
+	return c, err
 }

@@ -1,16 +1,29 @@
 package sql
 
-// InsertCategory inserts a new category. Name is the primary key so duplicates will error.
-const InsertCategory = `INSERT INTO categories (name) VALUES ($1)`
+const categoryColumns = `id, slug, name, bgg_id, created_at, updated_at, deleted_at`
 
-// SelectCategory retrieves a single category by name.
-const SelectCategory = `SELECT name, created_at, updated_at
+// InsertCategory inserts a new category and returns generated fields.
+const InsertCategory = `INSERT INTO categories (slug, name, bgg_id)
+VALUES ($1, $2, $3)
+RETURNING id, created_at, updated_at`
+
+// SelectCategoryBySlug retrieves a single active category by slug.
+const SelectCategoryBySlug = `SELECT ` + categoryColumns + `
 FROM categories
-WHERE name = $1`
+WHERE slug = $1 AND deleted_at IS NULL`
 
-// SelectAllCategories retrieves all categories.
-const SelectAllCategories = `SELECT name, created_at, updated_at
-FROM categories`
+// SelectCategoryIDBySlug retrieves only the id of an active category by slug.
+const SelectCategoryIDBySlug = `SELECT id FROM categories
+WHERE slug = $1 AND deleted_at IS NULL`
 
-// DeleteCategory removes a category by name.
-const DeleteCategory = `DELETE FROM categories WHERE name = $1`
+// SelectAllCategories retrieves all active categories.
+const SelectAllCategories = `SELECT ` + categoryColumns + `
+FROM categories
+WHERE deleted_at IS NULL`
+
+// SoftDeleteCategory sets deleted_at on a category.
+const SoftDeleteCategory = `UPDATE categories SET deleted_at = NOW()
+WHERE slug = $1 AND deleted_at IS NULL`
+
+// HardDeleteCategory removes a category by slug.
+const HardDeleteCategory = `DELETE FROM categories WHERE slug = $1`

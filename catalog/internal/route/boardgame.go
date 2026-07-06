@@ -8,23 +8,17 @@ import (
 
 // AddBoardGameRouter registers boardgame routes on the given router.
 func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *transport.BoardgameController) {
-	// Protected layer
 	router.Group(func(router chi.Router) {
-		// Use the Bearer Authentication middleware
-		//router.Use(oauth.Authorize(oauthKey, nil))
-
 		router.Post("/api/boardgame", boardGameControler.Create)
-		router.Patch("/api/boardgame/{id}", boardGameControler.Update)
-		router.Delete("/api/boardgame/{id}", boardGameControler.Delete)
-		router.Post("/api/boardgame/{id}/rate", boardGameControler.Rate)
-
-		router.Post("/api/boardgame/{id}/expansion", boardGameControler.Create)
-
+		router.Post("/api/boardgame/{slug}/expansion", boardGameControler.Create)
+		router.Patch("/api/boardgame/{slug}", boardGameControler.Update)
+		router.Delete("/api/boardgame/{slug}", boardGameControler.Delete)
+		router.Post("/api/boardgame/{slug}/rate", boardGameControler.Rate)
 	})
 
-	// Public layer
 	router.Group(func(r chi.Router) {
 		router.Get("/api/boardgame", boardGameControler.GetAll)
-		router.Get("/api/boardgame/{id}", boardGameControler.Get)
+		router.Get("/api/boardgame/by-id/{id}", boardGameControler.GetByID)
+		router.Get("/api/boardgame/{slug}", boardGameControler.Get)
 	})
 }
