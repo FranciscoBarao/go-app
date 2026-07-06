@@ -28,6 +28,7 @@ func (suite *MechanismServiceSuite) TearDownTest() {
 }
 
 func (suite *MechanismServiceSuite) TestCreate() {
+	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{}, middleware.NewError(404, "record not found"))
 	suite.mockDB.EXPECT().CreateMechanism(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, m *Mechanism) error {
 			suite.Equal("worker-placement", m.Slug)
@@ -39,6 +40,26 @@ func (suite *MechanismServiceSuite) TestCreate() {
 	m, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "Worker Placement"})
 	suite.Assert().NoError(err)
 	suite.Assert().Equal("worker-placement", m.Slug)
+}
+
+func (suite *MechanismServiceSuite) TestCreate_DuplicateSlug() {
+	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{Slug: "worker-placement", Name: "Worker Placement"}, nil)
+
+	_, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "Worker Placement"})
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(409, mr.GetStatus())
+}
+
+func (suite *MechanismServiceSuite) TestCreate_EmptySlug() {
+	_, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "!!!"})
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(400, mr.GetStatus())
 }
 
 func (suite *MechanismServiceSuite) TestGet() {

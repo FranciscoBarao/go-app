@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 )
@@ -34,8 +35,13 @@ func NewService(db Database) *Service {
 
 // Create builds a Contributor from the request, derives its slug, and persists it.
 func (svc *Service) Create(ctx context.Context, req *CreateContributorRequest) (Contributor, error) {
+	slugStr, err := svc.ensureUniqueSlug(ctx, req.Name)
+	if err != nil {
+		return Contributor{}, err
+	}
+
 	c := Contributor{
-		Slug:  slug.FromName(req.Name),
+		Slug:  slugStr,
 		Name:  req.Name,
 		Bio:   req.Bio,
 		BggID: req.BggID,
@@ -44,6 +50,25 @@ func (svc *Service) Create(ctx context.Context, req *CreateContributorRequest) (
 		return Contributor{}, err
 	}
 	return c, nil
+}
+
+// ensureUniqueSlug derives a slug from name, rejects empty slugs, and fails on collision with an active contributor.
+func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, error) {
+	slugStr := slug.FromName(name)
+	if slugStr == "" {
+		return "", middleware.NewError(http.StatusBadRequest, "name must contain slug-able characters")
+	}
+
+	_, err := svc.db.GetContributorBySlug(ctx, slugStr)
+	switch {
+	case err == nil:
+		logging.FromCtx(ctx).Error().Str("slug", slugStr).Msg("slug already in use")
+		return "", middleware.NewError(http.StatusConflict, "slug '"+slugStr+"' already in use; disambiguate the name")
+	case middleware.IsNotFound(err):
+		return slugStr, nil
+	default:
+		return "", err
+	}
 }
 
 // Update applies request fields onto the contributor identified by slug and persists it.

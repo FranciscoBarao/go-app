@@ -2,7 +2,6 @@ package boardgame
 
 import (
 	"github.com/FranciscoBarao/catalog/internal/contributor"
-	"github.com/FranciscoBarao/catalog/internal/slug"
 )
 
 // ContributionDTO carries the resolved contributor id and its credit metadata.
@@ -32,13 +31,14 @@ type CreateBoardgameDTO struct {
 
 func newCreateBoardgameDTO(
 	req *CreateBoardgameRequest,
+	slugStr string,
 	parentID *uint,
 	categoryIDs []uint,
 	mechanismIDs []uint,
 	contributions []ContributionDTO,
 ) CreateBoardgameDTO {
 	return CreateBoardgameDTO{
-		Slug:          slug.FromName(req.Name),
+		Slug:          slugStr,
 		Name:          req.Name,
 		Description:   req.Description,
 		YearPublished: req.YearPublished,

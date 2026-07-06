@@ -28,6 +28,7 @@ func (suite *CategoryServiceSuite) TearDownTest() {
 }
 
 func (suite *CategoryServiceSuite) TestCreate() {
+	suite.mockDB.EXPECT().GetCategoryBySlug(gomock.Any(), "strategy").Return(Category{}, middleware.NewError(404, "record not found"))
 	suite.mockDB.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, c *Category) error {
 			suite.Equal("strategy", c.Slug)
@@ -39,6 +40,26 @@ func (suite *CategoryServiceSuite) TestCreate() {
 	cat, err := suite.service.Create(context.Background(), &CreateCategoryRequest{Name: "Strategy"})
 	suite.Assert().NoError(err)
 	suite.Assert().Equal("strategy", cat.Slug)
+}
+
+func (suite *CategoryServiceSuite) TestCreate_DuplicateSlug() {
+	suite.mockDB.EXPECT().GetCategoryBySlug(gomock.Any(), "strategy").Return(Category{Slug: "strategy", Name: "Strategy"}, nil)
+
+	_, err := suite.service.Create(context.Background(), &CreateCategoryRequest{Name: "Strategy"})
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(409, mr.GetStatus())
+}
+
+func (suite *CategoryServiceSuite) TestCreate_EmptySlug() {
+	_, err := suite.service.Create(context.Background(), &CreateCategoryRequest{Name: "!!!"})
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(400, mr.GetStatus())
 }
 
 func (suite *CategoryServiceSuite) TestGetAll() {

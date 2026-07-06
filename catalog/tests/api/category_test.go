@@ -23,6 +23,9 @@ func (suite *CategorySuite) SetupSuite() {
 
 func (suite *CategorySuite) TestPostCategory() {
 	suite.base.dbMock.EXPECT().
+		GetCategoryBySlug(gomock.Any(), "test").
+		Return(category.Category{}, middleware.NewError(http.StatusNotFound, "record not found"))
+	suite.base.dbMock.EXPECT().
 		CreateCategory(gomock.Any(), gomock.Any()).
 		Return(nil)
 

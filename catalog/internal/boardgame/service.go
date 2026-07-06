@@ -8,6 +8,7 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/slug"
 )
 
 //go:generate mockgen -package boardgame -destination service_mock.go . Database,CategoryService,MechanismService,ContributorService
@@ -67,6 +68,11 @@ func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, par
 		return Boardgame{}, err
 	}
 
+	slugStr, err := svc.ensureUniqueSlug(ctx, req.Name)
+	if err != nil {
+		return Boardgame{}, err
+	}
+
 	parentID, err := svc.resolveParentID(ctx, parentSlug)
 	if err != nil {
 		return Boardgame{}, err
@@ -85,8 +91,27 @@ func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, par
 		return Boardgame{}, err
 	}
 
-	dto := newCreateBoardgameDTO(req, parentID, categoryIDs, mechanismIDs, contributions)
+	dto := newCreateBoardgameDTO(req, slugStr, parentID, categoryIDs, mechanismIDs, contributions)
 	return svc.db.CreateBoardgame(ctx, dto)
+}
+
+// ensureUniqueSlug derives a slug from name, rejects empty slugs, and fails on collision with an active boardgame.
+func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, error) {
+	slugStr := slug.FromName(name)
+	if slugStr == "" {
+		return "", middleware.NewError(http.StatusBadRequest, "name must contain slug-able characters")
+	}
+
+	_, err := svc.GetBySlug(ctx, slugStr)
+	switch {
+	case err == nil:
+		logging.FromCtx(ctx).Error().Str("slug", slugStr).Msg("slug already in use")
+		return "", middleware.NewError(http.StatusConflict, "slug '"+slugStr+"' already in use; disambiguate the name, e.g. add a year or edition")
+	case middleware.IsNotFound(err):
+		return slugStr, nil
+	default:
+		return "", err
+	}
 }
 
 // GetAll retrieves boardgames with optional sort, filter, and deleted inclusion.

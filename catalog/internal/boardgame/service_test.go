@@ -33,10 +33,15 @@ func testCreateReq(name string) *CreateBoardgameRequest {
 	return &CreateBoardgameRequest{Name: name, MinPlayers: 2, MaxPlayers: 4}
 }
 
+func notFound() error {
+	return middleware.NewError(http.StatusNotFound, "record not found")
+}
+
 func (suite *BoardgameServiceSuite) TestCreate() {
 	req := testCreateReq("Catan")
 	expected := Boardgame{ID: 1, Slug: "catan", Name: "Catan", MinPlayers: 2, MaxPlayers: 4}
 
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(Boardgame{}, notFound())
 	suite.mockDB.EXPECT().CreateBoardgame(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, input CreateBoardgameDTO) (Boardgame, error) {
 			suite.Equal("catan", input.Slug)
@@ -56,6 +61,7 @@ func (suite *BoardgameServiceSuite) TestCreateWithExpansion() {
 	parentID := uint(1)
 	expected := Boardgame{ID: 2, Slug: "catan-seafarers", Name: "Catan: Seafarers", MinPlayers: 2, MaxPlayers: 4, BoardgameID: &parentID}
 
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan-seafarers").Return(Boardgame{}, notFound())
 	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(parent, nil)
 	suite.mockDB.EXPECT().CreateBoardgame(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, input CreateBoardgameDTO) (Boardgame, error) {
@@ -75,6 +81,7 @@ func (suite *BoardgameServiceSuite) TestCreate_ExpansionOfExpansionFails() {
 	parentID := uint(2)
 	parent := Boardgame{Slug: "seafarers", Name: "Seafarers", MinPlayers: 2, MaxPlayers: 4, BoardgameID: &parentID}
 
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "scenario").Return(Boardgame{}, notFound())
 	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "seafarers").Return(parent, nil)
 
 	_, err := suite.service.Create(context.Background(), req, "seafarers")
@@ -94,6 +101,7 @@ func (suite *BoardgameServiceSuite) TestCreateWithCategories() {
 		Categories: []CategoryRef{{Slug: "economic"}},
 	}
 
+	suite.mockDB.EXPECT().GetBoardgameBySlug(ctx, "catan").Return(Boardgame{}, notFound())
 	suite.mockCat.EXPECT().GetIDBySlug(ctx, "economic").Return(uint(1), nil)
 	suite.mockDB.EXPECT().CreateBoardgame(ctx, gomock.Any()).DoAndReturn(
 		func(_ context.Context, input CreateBoardgameDTO) (Boardgame, error) {
@@ -168,7 +176,48 @@ func (suite *BoardgameServiceSuite) TestCreate_InvalidContributionRole() {
 		}},
 	}
 
+	suite.mockDB.EXPECT().GetBoardgameBySlug(ctx, "catan").Return(Boardgame{}, notFound())
+
 	_, err := suite.service.Create(ctx, req, "")
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+}
+
+func (suite *BoardgameServiceSuite) TestCreate_DuplicateSlug() {
+	req := testCreateReq("Catan")
+	existing := Boardgame{ID: 1, Slug: "catan", Name: "Catan", MinPlayers: 2, MaxPlayers: 4}
+
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(existing, nil)
+
+	_, err := suite.service.Create(context.Background(), req, "")
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(http.StatusConflict, mr.GetStatus())
+}
+
+func (suite *BoardgameServiceSuite) TestCreate_NormalizationCollision() {
+	req := testCreateReq("Catan!")
+	existing := Boardgame{ID: 1, Slug: "catan", Name: "Catan", MinPlayers: 2, MaxPlayers: 4}
+
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(existing, nil)
+
+	_, err := suite.service.Create(context.Background(), req, "")
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(http.StatusConflict, mr.GetStatus())
+}
+
+func (suite *BoardgameServiceSuite) TestCreate_EmptySlug() {
+	req := testCreateReq("!!!")
+
+	_, err := suite.service.Create(context.Background(), req, "")
 	suite.Assert().Error(err)
 
 	var mr *middleware.MalformedRequest

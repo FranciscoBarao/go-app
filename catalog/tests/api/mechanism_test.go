@@ -23,6 +23,9 @@ func (suite *MechanismSuite) SetupSuite() {
 
 func (suite *MechanismSuite) TestPostMechanism() {
 	suite.base.dbMock.EXPECT().
+		GetMechanismBySlug(gomock.Any(), "test").
+		Return(mechanism.Mechanism{}, middleware.NewError(http.StatusNotFound, "record not found"))
+	suite.base.dbMock.EXPECT().
 		CreateMechanism(gomock.Any(), gomock.Any()).
 		Return(nil)
 

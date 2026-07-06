@@ -10,6 +10,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 type BoardGameSuite struct {
@@ -22,6 +23,9 @@ func (suite *BoardGameSuite) SetupSuite() {
 }
 
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "test").
+		Return(boardgame.Boardgame{}, middleware.NewError(http.StatusNotFound, "record not found"))
 	suite.base.dbMock.EXPECT().
 		CreateBoardgame(gomock.Any(), gomock.Any()).
 		Return(boardgame.Boardgame{Slug: "test", Name: "test", MinPlayers: 1, MaxPlayers: 4}, nil)
@@ -39,6 +43,9 @@ func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 
 func (suite *BoardGameSuite) TestPostExpansion() {
 	parent := boardgame.Boardgame{ID: 1, Slug: "parent", Name: "parent", MinPlayers: 1, MaxPlayers: 4}
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "expansion").
+		Return(boardgame.Boardgame{}, middleware.NewError(http.StatusNotFound, "record not found"))
 	suite.base.dbMock.EXPECT().
 		GetBoardgameBySlug(gomock.Any(), "parent").
 		Return(parent, nil)
