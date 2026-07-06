@@ -16,12 +16,12 @@ type Boardgame struct {
 	UpdatedAt     time.Time                  `json:"updated_at" db:"updated_at"`
 	DeletedAt     *time.Time                 `json:"deleted_at,omitempty" db:"deleted_at"`
 	Name          string                     `json:"name" db:"name" valid:"required,maxstringlength(120)"`
-	Description   *string                    `json:"description,omitempty" db:"description"`
-	YearPublished *int                       `json:"year_published,omitempty" db:"year_published"`
+	Description   string                     `json:"description" db:"description"`
+	YearPublished int                        `json:"year_published" db:"year_published"`
 	MinPlayers    int                        `json:"min_players" db:"min_players" valid:"required,range(1|16)"`
 	MaxPlayers    int                        `json:"max_players" db:"max_players" valid:"required,range(1|16)"`
-	MinPlayTime   *int                       `json:"min_play_time,omitempty" db:"min_play_time"`
-	MaxPlayTime   *int                       `json:"max_play_time,omitempty" db:"max_play_time"`
+	MinPlayTime   int                        `json:"min_play_time" db:"min_play_time"`
+	MaxPlayTime   int                        `json:"max_play_time" db:"max_play_time"`
 	MinAge        *int                       `json:"min_age,omitempty" db:"min_age"`
 	BggID         *int                       `json:"bgg_id,omitempty" db:"bgg_id"`
 	Categories    []category.Category        `json:"categories,omitempty" db:"-"`

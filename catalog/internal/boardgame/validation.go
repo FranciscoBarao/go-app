@@ -13,11 +13,11 @@ func validatePlayersOrder(min, max int) error {
 	return nil
 }
 
-func validatePlayTimeOrder(min, max *int) error {
-	if min == nil || max == nil {
+func validatePlayTimeOrder(min, max int) error {
+	if min == 0 || max == 0 {
 		return nil
 	}
-	if *min > *max {
+	if min > max {
 		return middleware.NewError(http.StatusBadRequest, "min_play_time cannot exceed max_play_time")
 	}
 	return nil

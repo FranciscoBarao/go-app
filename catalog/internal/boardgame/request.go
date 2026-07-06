@@ -17,12 +17,12 @@ type MechanismRef struct {
 // CreateBoardgameRequest is the request for POST /boardgame requests.
 type CreateBoardgameRequest struct {
 	Name          string                          `json:"name" valid:"required,maxstringlength(120)"`
-	Description   *string                         `json:"description,omitempty"`
-	YearPublished *int                            `json:"year_published,omitempty" valid:"optional,range(1900|2100)"`
+	Description   string                          `json:"description" valid:"optional"`
+	YearPublished int                             `json:"year_published" valid:"optional,range(1900|2100)"`
 	MinPlayers    int                             `json:"min_players" valid:"required,range(1|16)"`
 	MaxPlayers    int                             `json:"max_players" valid:"required,range(1|16)"`
-	MinPlayTime   *int                            `json:"min_play_time,omitempty" valid:"optional,range(1|9999)"`
-	MaxPlayTime   *int                            `json:"max_play_time,omitempty" valid:"optional,range(1|9999)"`
+	MinPlayTime   int                             `json:"min_play_time" valid:"optional,range(1|9999)"`
+	MaxPlayTime   int                             `json:"max_play_time" valid:"optional,range(1|9999)"`
 	MinAge        *int                            `json:"min_age,omitempty" valid:"optional,range(0|99)"`
 	BggID         *int                            `json:"bgg_id,omitempty"`
 	Categories    []CategoryRef                   `json:"categories,omitempty"`
@@ -52,10 +52,10 @@ func (r *UpdateBoardgameRequest) ToBoardgame(bg *Boardgame) {
 		bg.Name = *r.Name
 	}
 	if r.Description != nil {
-		bg.Description = r.Description
+		bg.Description = *r.Description
 	}
 	if r.YearPublished != nil {
-		bg.YearPublished = r.YearPublished
+		bg.YearPublished = *r.YearPublished
 	}
 	if r.MinPlayers != nil {
 		bg.MinPlayers = *r.MinPlayers
@@ -64,10 +64,10 @@ func (r *UpdateBoardgameRequest) ToBoardgame(bg *Boardgame) {
 		bg.MaxPlayers = *r.MaxPlayers
 	}
 	if r.MinPlayTime != nil {
-		bg.MinPlayTime = r.MinPlayTime
+		bg.MinPlayTime = *r.MinPlayTime
 	}
 	if r.MaxPlayTime != nil {
-		bg.MaxPlayTime = r.MaxPlayTime
+		bg.MaxPlayTime = *r.MaxPlayTime
 	}
 	if r.MinAge != nil {
 		bg.MinAge = r.MinAge

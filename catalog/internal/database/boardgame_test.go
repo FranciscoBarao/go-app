@@ -88,6 +88,32 @@ func (suite *BoardgameSuite) TestGet() {
 	suite.Assert().Equal(created.Slug, bg.Slug)
 }
 
+func (suite *BoardgameSuite) TestCreate_ScalarFieldsRoundTrip() {
+	ctx := context.Background()
+	input := testCreateInput("Scalar Fields")
+	input.Description = "A trading game"
+	input.YearPublished = 1995
+	input.MinPlayTime = 45
+	input.MaxPlayTime = 90
+
+	created, err := suite.postgres.CreateBoardgame(ctx, input)
+	suite.Require().NoError(err)
+	suite.Assert().Equal("A trading game", created.Description)
+	suite.Assert().Equal(1995, created.YearPublished)
+	suite.Assert().Equal(45, created.MinPlayTime)
+	suite.Assert().Equal(90, created.MaxPlayTime)
+}
+
+func (suite *BoardgameSuite) TestCreate_ScalarDefaultsWhenUnset() {
+	ctx := context.Background()
+	created, err := suite.postgres.CreateBoardgame(ctx, testCreateInput("Unset Scalars"))
+	suite.Require().NoError(err)
+	suite.Assert().Equal("", created.Description)
+	suite.Assert().Equal(0, created.YearPublished)
+	suite.Assert().Equal(0, created.MinPlayTime)
+	suite.Assert().Equal(0, created.MaxPlayTime)
+}
+
 func (suite *BoardgameSuite) TestGetAll() {
 	ctx := context.Background()
 	_, err := suite.postgres.CreateBoardgame(ctx, testCreateInput("name01"))

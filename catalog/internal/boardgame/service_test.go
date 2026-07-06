@@ -164,6 +164,43 @@ func (suite *BoardgameServiceSuite) TestCreate_InvalidPlayersOrder() {
 	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
 }
 
+func (suite *BoardgameServiceSuite) TestCreate_InvalidPlayTimeOrder() {
+	req := &CreateBoardgameRequest{Name: "Bad Time", MinPlayers: 2, MaxPlayers: 4, MinPlayTime: 90, MaxPlayTime: 30}
+
+	_, err := suite.service.Create(context.Background(), req, "")
+	suite.Assert().Error(err)
+
+	var mr *middleware.MalformedRequest
+	suite.Assert().ErrorAs(err, &mr)
+	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+}
+
+func (suite *BoardgameServiceSuite) TestCreate_PropagatesScalarFields() {
+	req := &CreateBoardgameRequest{
+		Name:          "Catan",
+		MinPlayers:    2,
+		MaxPlayers:    4,
+		Description:   "A trading game",
+		YearPublished: 1995,
+		MinPlayTime:   45,
+		MaxPlayTime:   90,
+	}
+
+	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(Boardgame{}, notFound())
+	suite.mockDB.EXPECT().CreateBoardgame(gomock.Any(), gomock.Any()).DoAndReturn(
+		func(_ context.Context, input CreateBoardgameDTO) (Boardgame, error) {
+			suite.Equal("A trading game", input.Description)
+			suite.Equal(1995, input.YearPublished)
+			suite.Equal(45, input.MinPlayTime)
+			suite.Equal(90, input.MaxPlayTime)
+			return Boardgame{Slug: "catan", Name: "Catan"}, nil
+		},
+	)
+
+	_, err := suite.service.Create(context.Background(), req, "")
+	suite.Assert().NoError(err)
+}
+
 func (suite *BoardgameServiceSuite) TestCreate_InvalidContributionRole() {
 	ctx := context.Background()
 	req := &CreateBoardgameRequest{

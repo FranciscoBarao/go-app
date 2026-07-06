@@ -15,12 +15,12 @@ type ContributionDTO struct {
 type CreateBoardgameDTO struct {
 	Slug          string
 	Name          string
-	Description   *string
-	YearPublished *int
+	Description   string
+	YearPublished int
 	MinPlayers    int
 	MaxPlayers    int
-	MinPlayTime   *int
-	MaxPlayTime   *int
+	MinPlayTime   int
+	MaxPlayTime   int
 	MinAge        *int
 	BggID         *int
 	ParentID      *uint
