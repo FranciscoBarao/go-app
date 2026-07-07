@@ -1,231 +1,289 @@
 # Catalog
-Readme for the catalog service
 
+The **catalog** service is the system of record for boardgame reference data. It stores the games themselves along with the metadata used to describe and classify them, and exposes a read/write HTTP API so that other services (e.g. the marketplace) and admin tooling can browse and manage that data.
 
-**Objective -** In the catalog, we are suppose to maintain a private repository of products that can be queried within the marketplace. This service contains the different boardgame related products that can be browsed. These products are the base for the marketplace.  
-At the moment, we have:
-- Boardgames
-- Expansions
+### Purpose
 
-Each product can be classified with:
-- Tags
-- Mechanisms
-- Categories
+Provide a single, authoritative source for "what a boardgame is" — its attributes, how it is classified, who made it, and how expansions relate to base games — independent of pricing, inventory, or user activity.
 
+### Scope
 
-**Future -** This repository is to be handled exclusively by admins and possibly have some integration with BoardGameGeeks. 
-## Entity Relationship
+- **In scope:** boardgames and expansions, their descriptive attributes, classification (categories, mechanisms), industry credits (contributors), and CRUD + list/sort/filter over all of the above.
+- **Out of scope:** pricing, stock, orders, user accounts, and reviews. Those belong to other services. The catalog only exposes a lightweight `rate` hook that is forwarded elsewhere.
 
-![Entity Relationship](doc/Catalog_ER.drawio.png)
+### Design notes
 
+- Data is **admin-managed**; there is no public write path. Future work may add BoardGameGeek import.
+- Persistence is **PostgreSQL** via `pgx`. The schema is defined in `internal/database/migrations` and is the source of truth for column types and constraints.
+
+## Domain model
+
+The catalog has one central entity, **Boardgame**, that everything else hangs off of.
+
+- A **Boardgame** may be a base game or an **expansion**. An expansion points at exactly one parent boardgame; a base game can have many expansions. This is a self-relationship (`boardgame_id`), and it is one level deep — an expansion cannot itself have expansions.
+- **Categories** and **Mechanisms** are independent taxonomies. Each is a simple named entity that can be attached to many boardgames, and a boardgame can have many of each (many-to-many).
+- **Contributors** are people or companies (designers, artists, publishers, …). A contributor is attached to a boardgame through a **Contribution**, which is the many-to-many link *plus* two extra attributes: the `role` played and an optional `credit_order`. The same contributor can appear on a game in more than one role.
+
+### Relationships
+
+```mermaid
+erDiagram
+    BOARDGAME ||--o{ BOARDGAME : "has expansions"
+    BOARDGAME }o--o{ CATEGORY : "boardgame_categories"
+    BOARDGAME }o--o{ MECHANISM : "boardgame_mechanisms"
+    BOARDGAME ||--o{ CONTRIBUTION : "credited via"
+    CONTRIBUTOR ||--o{ CONTRIBUTION : "credited on"
+
+    BOARDGAME {
+        uint id PK
+        string slug UK
+        string name
+        int year_published
+        int min_players
+        int max_players
+        uint boardgame_id FK "parent (expansions)"
+    }
+    CATEGORY {
+        uint id PK
+        string slug UK
+        string name
+    }
+    MECHANISM {
+        uint id PK
+        string slug UK
+        string name
+    }
+    CONTRIBUTOR {
+        uint id PK
+        string slug UK
+        string name
+    }
+    CONTRIBUTION {
+        uint boardgame_id FK
+        uint contributor_id FK
+        string role
+        int credit_order
+    }
+```
+
+| Relationship              | Cardinality                   | Backed by                                          |
+| ------------------------- | ----------------------------- | -------------------------------------------------- |
+| Boardgame -> expansions   | one-to-many (self, one level) | `boardgames.boardgame_id`                          |
+| Boardgame <-> Category    | many-to-many                  | `boardgame_categories`                             |
+| Boardgame <-> Mechanism   | many-to-many                  | `boardgame_mechanisms`                             |
+| Boardgame <-> Contributor | many-to-many with attributes  | `boardgame_contributions` (`role`, `credit_order`) |
+
+## Conventions
+
+These apply consistently across all endpoints unless noted otherwise.
+
+### Addressing & identifiers
+
+- **Base path:** everything is served under `/api`.
+- **Slug is the public key.** Every boardgame, category, mechanism, and contributor is addressed by a URL-safe `slug`. The numeric `id` is internal.
+- **Slugs are derived, not supplied.** The slug is generated from `name` on creation and is **immutable** thereafter; it is never read from the request body. To change a game's canonical name, create a new record.
+
+### Fields & nullability
+
+- **Required on create:** boardgame needs `name`, `min_players`, `max_players`; taxonomies and contributors need `name`.
+- **Empty vs. set (non-nullable):** `description`, `year_published`, `min_play_time`, `max_play_time` are non-nullable. Omit them (or send `""` / `0`) to mean "unset"; there is no separate "null" state.
+- **Truly optional (nullable):** `min_age`, `bgg_id`, and the expansion parent (`boardgame_id`) may be absent.
+- **Partial updates:** `PATCH` only touches fields present in the body; omitted fields are left unchanged.
+
+### Associations
+
+- **Reference-only.** When you attach `categories`, `mechanisms`, or `contributions` to a boardgame, each referenced slug **must already exist** (created via its own endpoint). The catalog does not create associated records on the fly; unknown references fail the request.
+
+### Deletion
+
+- **Soft by default.** `DELETE` sets `deleted_at` and hides the record from reads. Add `?hard=true` to remove it permanently.
+- **Cascade.** Deleting a base boardgame also deletes its expansions (soft or hard, matching the request).
+
+### Errors
+
+- `400 Bad Request` — invalid body, or a `name` that produces an empty slug (e.g. `"!!!"`).
+- `404 Not Found` — unknown slug/id, or a referenced association that does not exist.
+- `409 Conflict` — slug already in use (disambiguate the name, e.g. add a year/edition), or attempting to give an expansion its own expansion.
+- `422 Unprocessable Entity` — malformed `sortBy` / `filterBy` query parameters.
+
+## Swagger
+
+Interactive API docs are generated with [`swag`](https://github.com/swaggo/swag) and served at:
+
+```
+GET /swagger/index.html
+```
+
+Regenerate after changing handler annotations:
+
+```bash
+make swag svc=catalog
+```
 
 ## Boardgame API
-Boardgame JSON
-```
+
+Create request body:
+
+```json
 {
-    "Name": "name",
-	"Publisher": "publisher",
-	"PlayerNumber": 1,
-	"Tags": [
-		{ "Name": "A" }
-	],
-    "Categories": [
-		{ "Name": "A" }
-	],
-    "Mechanisms": [
-		{ "Name": "A" }
-	]
+  "name": "Catan",
+  "description": "A trading and building game.",
+  "year_published": 1995,
+  "min_players": 3,
+  "max_players": 4,
+  "min_play_time": 45,
+  "max_play_time": 90,
+  "min_age": 10,
+  "bgg_id": 13,
+  "categories": [{ "slug": "economic" }],
+  "mechanisms": [{ "slug": "trading" }],
+  "contributions": [
+    { "slug": "klaus-teuber", "role": "designer", "credit_order": 1 }
+  ]
 }
 ```
 
+Only `name`, `min_players`, and `max_players` are required.
 
-Create
-```
-curl -X POST localhost:8081/api/boardgame -H 'Content-Type: application/json' -d '{ "Name": "DS", "Publisher": "pub", "PlayerNumber": 1}'
-```
+### Endpoints
 
-ReadAll
-```
-curl -X GET localhost:8081/api/boardgame
-```
+| Method | Path                              | Description                                     |
+| ------ | --------------------------------- | ----------------------------------------------- |
+| POST   | `/api/boardgame`                  | Create a boardgame                              |
+| POST   | `/api/boardgame/{slug}/expansion` | Create an expansion of `{slug}`                 |
+| GET    | `/api/boardgame`                  | List boardgames (sort/filter/`include_deleted`) |
+| GET    | `/api/boardgame/{slug}`           | Fetch one by slug                               |
+| GET    | `/api/boardgame/by-id/{id}`       | Fetch one by numeric id (internal)              |
+| PATCH  | `/api/boardgame/{slug}`           | Partial update                                  |
+| DELETE | `/api/boardgame/{slug}`           | Soft delete (`?hard=true` to hard delete)       |
+| POST   | `/api/boardgame/{slug}/rate`      | Rate a boardgame                                |
 
-ReadAll can be filtered and sorted.
+### Examples
+
+```bash
+# Create
+curl -X POST localhost:8081/api/boardgame \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Catan","min_players":3,"max_players":4,"year_published":1995}'
+
+# Create an expansion of "catan"
+curl -X POST localhost:8081/api/boardgame/catan/expansion \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Catan: Seafarers","min_players":3,"max_players":4}'
+
+# Fetch by slug
+curl localhost:8081/api/boardgame/catan
+
+# Update (partial) — omitted fields are left unchanged
+curl -X PATCH localhost:8081/api/boardgame/catan \
+  -H 'Content-Type: application/json' \
+  -d '{"max_players":6}'
+
+# Soft delete, then hard delete
+curl -X DELETE localhost:8081/api/boardgame/catan
+curl -X DELETE "localhost:8081/api/boardgame/catan?hard=true"
+
+# Include soft-deleted rows in a list
+curl "localhost:8081/api/boardgame?include_deleted=true"
+```
 
 ### Sorting
 
-The `sortBy` query parameter uses the format `Field.Order`:
-- **Field** — struct field name (case-insensitive), mapped to the DB column via `db` struct tags
-- **Order** — `asc` or `desc`
+`sortBy` uses the format `field.order` where `order` is `asc` or `desc`. Fields map to DB columns via the model's `db` struct tags.
 
-**Sortable Boardgame fields:**
-| Field | DB Column |
-|-------|-----------|
-| `name` | `name` |
-| `publisher` | `publisher` |
-| `playernumber` | `player_number` |
-| `id` | `id` |
-| `createdat` | `created_at` |
-| `updatedat` | `updated_at` |
+Sortable fields: `id`, `slug`, `name`, `description`, `year_published`, `min_players`, `max_players`, `min_play_time`, `max_play_time`, `min_age`, `bgg_id`, `boardgame_id`, `created_at`, `updated_at`, `deleted_at`.
 
-Fields with `db:"-"` (tags, categories, mechanisms, ratings, expansions) are **not sortable**.
+Not sortable (`db:"-"`): `categories`, `mechanisms`, `contributions`, `ratings`, `expansions`.
 
-**Examples:**
 ```bash
-# Sort by name ascending
-curl -X GET "localhost:8081/api/boardgame?sortBy=name.asc"
-
-# Sort by player number descending
-curl -X GET "localhost:8081/api/boardgame?sortBy=playernumber.desc"
-
-# Sort by creation date
-curl -X GET "localhost:8081/api/boardgame?sortBy=createdat.asc"
-
-# No sort (default DB order)
-curl -X GET "localhost:8081/api/boardgame"
+curl "localhost:8081/api/boardgame?sortBy=name.asc"
+curl "localhost:8081/api/boardgame?sortBy=year_published.desc"
 ```
 
 **Error cases (422):**
+
 ```bash
-curl "localhost:8081/api/boardgame?sortBy=name"         # -> "should be field.order"
-curl "localhost:8081/api/boardgame?sortBy=name.random"   # -> "order should be asc or desc"
-curl "localhost:8081/api/boardgame?sortBy=unknown.asc"   # -> "No field with this name"
-curl "localhost:8081/api/boardgame?sortBy=tags.asc"      # -> "Field not sortable"
+curl "localhost:8081/api/boardgame?sortBy=name"           # -> should be field.order
+curl "localhost:8081/api/boardgame?sortBy=name.random"    # -> order should be asc or desc
+curl "localhost:8081/api/boardgame?sortBy=unknown.asc"    # -> no field with this name
+curl "localhost:8081/api/boardgame?sortBy=categories.asc" # -> field not sortable
 ```
 
 ### Filtering
 
-The `filterBy` query parameter supports three modes:
+`filterBy` supports three modes:
 
-| Format | Mode | SQL Generated |
-|--------|------|---------------|
-| `field.value` | Partial string match | `WHERE name ILIKE '%value%'` |
-| `field.eq.value` | Exact equality | `WHERE name = 'value'` |
-| `field.lt\|le\|gt\|ge.value` | Numeric comparison | `WHERE player_number < value` |
+| Format                         | Mode                 | SQL                          |
+| ------------------------------ | -------------------- | ---------------------------- |
+| `field.value`                  | Partial string match | `WHERE name ILIKE '%value%'` |
+| `field.eq.value`               | Exact equality       | `WHERE name = 'value'`       |
+| `field.{lt\|le\|gt\|ge}.value` | Numeric comparison   | `WHERE min_players < value`  |
 
-**Operators:** `eq` (=), `lt` (<), `le` (<=), `gt` (>), `ge` (>=)
-
-**Examples:**
 ```bash
-# Partial match — boardgames with "cat" in the name
-curl -X GET "localhost:8081/api/boardgame?filterBy=name.cat"
-
-# Exact equality
-curl -X GET "localhost:8081/api/boardgame?filterBy=name.eq.Catan"
-
-# Numeric — player number less than 4
-curl -X GET "localhost:8081/api/boardgame?filterBy=playernumber.lt.4"
-
-# Combined with sort
-curl -X GET "localhost:8081/api/boardgame?filterBy=name.cat&sortBy=name.asc"
+curl "localhost:8081/api/boardgame?filterBy=name.cat"
+curl "localhost:8081/api/boardgame?filterBy=name.eq.Catan"
+curl "localhost:8081/api/boardgame?filterBy=min_players.ge.3"
+curl "localhost:8081/api/boardgame?filterBy=name.cat&sortBy=name.asc"
 ```
 
-**Error cases (422):**
+## Category & Mechanism API
+
+Categories and mechanisms share the same shape and behavior; only the base path differs (`/api/category`, `/api/mechanism`).
+
+Create request body:
+
+```json
+{ "name": "Economic", "bgg_id": 1021 }
+```
+
+Only `name` is required; the slug is derived from it.
+
+| Method | Path                   | Description                               |
+| ------ | ---------------------- | ----------------------------------------- |
+| POST   | `/api/category`        | Create                                    |
+| GET    | `/api/category`        | List (sort/filter)                        |
+| GET    | `/api/category/{slug}` | Fetch by slug                             |
+| DELETE | `/api/category/{slug}` | Soft delete (`?hard=true` to hard delete) |
+
 ```bash
-curl "localhost:8081/api/boardgame?filterBy=name"              # -> too few parts
-curl "localhost:8081/api/boardgame?filterBy=name.lt.5"          # -> numeric op on string field
-curl "localhost:8081/api/boardgame?filterBy=playernumber.hello"  # -> like on non-string field
-curl "localhost:8081/api/boardgame?filterBy=playernumber.lt.abc" # -> value not numeric
+curl -X POST localhost:8081/api/category -H 'Content-Type: application/json' -d '{"name":"Economic"}'
+curl "localhost:8081/api/mechanism?sortBy=name.asc"
+curl localhost:8081/api/category/economic
+curl -X DELETE "localhost:8081/api/mechanism/trading?hard=true"
 ```
 
+## Contributor API
 
-Read
-```
-curl -X GET localhost:8081/api/boardgame/<id>
-```
+Contributors are the people/companies credited on a boardgame.
 
-Update
-```
-curl -X PATCH localhost:8081/api/boardgame/<id> -H 'Content-Type: application/json' -d '{ "Name": "O", "Publisher": "pub",  "PlayerNumber": 1}'
-```
+Create request body:
 
-Delete
-```
-curl -X DELETE localhost:8081/api/boardgame/<id>
+```json
+{ "name": "Klaus Teuber", "bio": "German game designer.", "bgg_id": 11 }
 ```
 
+Only `name` is required.
 
+| Method | Path                       | Description                               |
+| ------ | -------------------------- | ----------------------------------------- |
+| POST   | `/api/contributors`        | Create                                    |
+| GET    | `/api/contributors`        | List (sort/filter)                        |
+| GET    | `/api/contributors/{slug}` | Fetch by slug                             |
+| PATCH  | `/api/contributors/{slug}` | Partial update                            |
+| DELETE | `/api/contributors/{slug}` | Soft delete (`?hard=true` to hard delete) |
 
-## Tag/Mechanism/Catagory API
+A contributor is linked to a boardgame through a **contribution** in the boardgame's create/update body, using one of the supported roles:
 
-The following three many2many relations all consist of a unique string. These fields are **NOT** created in Upscale, which means that when a boardgame is being created, if these fields are added, they must previously exist or the BG creation will fail. The following endpoint description is similar to all three and just vary on the url endpoint possibly being:
-```
-/tag/
-/category/
-/mechanism/
-```
+`designer`, `artist`, `publisher`, `developer`, `graphic_designer`
 
-
-JSON
-```
-{
-    "Name": "name"
-}
-```
-
-Create
-```
-curl -X POST localhost:8081/api/tag -H 'Content-Type: application/json' -d '{ "Name": "name" }'
-```
-
-ReadAll
-```
-curl -X GET localhost:8081/api/tag
-```
-
-ReadAll can be sorted and filtered.
-```
-sortBy   -> Field.Order
-filterBy -> Field.Value | Field.Operator.Value
-```
-
-Sortable/filterable fields: `name`, `createdat`, `updatedat`
-
-Examples:
 ```bash
-curl -X GET "localhost:8081/api/tag?sortBy=name.asc"
-curl -X GET "localhost:8081/api/tag?filterBy=name.strategy"
-curl -X GET "localhost:8081/api/tag?filterBy=name.eq.Strategy&sortBy=name.asc"
+curl -X POST localhost:8081/api/contributors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Klaus Teuber"}'
+
+# then reference it when creating a boardgame
+curl -X POST localhost:8081/api/boardgame \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Catan","min_players":3,"max_players":4,
+       "contributions":[{"slug":"klaus-teuber","role":"designer"}]}'
 ```
-
-
-Read
-```
-curl -X GET localhost:8081/api/tag/<name>
-```
-
-Delete
-```
-curl -X DELETE localhost:8081/api/tag/<name>
-```
-
-
-
-# GORM Learning Examples
-
-Finds tags associated with a certain model
-```
-instance.db.Model(test).Association("Tags").Find(association)
-```
-
-Finds Boardgame with everything using Eager Loading
-```
-instance.db.Preload(clause.Associations).First(&bg, "name = ?", "bg")
-```
-
-Create while skipping all associations (Just creates boardgame and not relations)
-```
-err := instance.db.Omit(clause.Associations).Create(&bg) 
-```
-
-
-## Difference between many2many on 1 table or on both
-**Description:** Had Tags[] in boardgame like ```Tags []Tag `gorm:"many2many:boardgame_tags;"` ``` and did not have a list of BGs on the Tags. (only on 1 Table).  
-Having this one-sided allowed me to add/delete associations of Tags (with or without Upserting).  
-**Issue:** Attempting to delete a Tag that had an association to a BG would fail due to FK constraint.
-
-**Solutions:**
-- A) Get all BGs that have that tag and 1 by 1 delete the association
-- B) Add BGs list to Tags like ``` Boardgames []Boardgame `gorm:"many2many:boardgame_tags;" json:"-"` ```
-
-**Choice: B** Previously, handling associations was not bidirectional, which means that I was able to handle Tags via BGs but not the other way around.  
-**Improvements:** Ability to delete Tags that are already associated. Improved way of returning all BGs with a specific Tag. 

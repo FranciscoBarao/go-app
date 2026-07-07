@@ -37,12 +37,14 @@ func NewBoardgameController(boardGameSvc BoardgameService) *BoardgameController 
 }
 
 // Create Boardgame godoc
-// @Summary 	Creates a Boardgame
+// @Summary 	Creates a Boardgame (or an expansion when a parent slug is given)
 // @Tags 		boardgames
 // @Produce 	json
+// @Param 		slug path string false "Parent boardgame slug (when creating an expansion)"
 // @Param 		data body boardgame.CreateBoardgameRequest true "Boardgame"
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame [post]
+// @Router 		/boardgame/{slug}/expansion [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 	var req boardgame.CreateBoardgameRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {

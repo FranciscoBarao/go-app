@@ -65,5 +65,6 @@ docs/
 # Mock files
 *_mock.go
 
-# Kiro files
+# AI files
 .kiro
+.cursor
