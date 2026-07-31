@@ -19,7 +19,7 @@ type Database interface {
 	UpdateContributor(ctx context.Context, c *Contributor) error
 	GetContributorBySlug(ctx context.Context, slug string) (Contributor, error)
 	GetContributorIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllContributors(ctx context.Context, filter listopt.Params) ([]Contributor, error)
+	GetAllContributors(ctx context.Context, filter listopt.Params) ([]Contributor, int, error)
 	DeleteContributor(ctx context.Context, slug string, hard bool) error
 }
 
@@ -88,8 +88,9 @@ func (svc *Service) Update(ctx context.Context, req *UpdateContributorRequest, s
 	return c, nil
 }
 
-// GetAll retrieves all contributors.
-func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Contributor, error) {
+// GetAll retrieves contributors with optional sort, filter, and pagination,
+// returning the page of results and the total count of matching rows.
+func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Contributor, int, error) {
 	return svc.db.GetAllContributors(ctx, listopt.Apply(opts...))
 }
 

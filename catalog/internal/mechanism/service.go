@@ -17,7 +17,7 @@ type Database interface {
 	CreateMechanism(ctx context.Context, m *Mechanism) error
 	GetMechanismBySlug(ctx context.Context, slug string) (Mechanism, error)
 	GetMechanismIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]Mechanism, error)
+	GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]Mechanism, int, error)
 	DeleteMechanism(ctx context.Context, slug string, hard bool) error
 }
 
@@ -68,8 +68,9 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 	}
 }
 
-// GetAll retrieves all Mechanisms.
-func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Mechanism, error) {
+// GetAll retrieves mechanisms with optional sort, filter, and pagination,
+// returning the page of results and the total count of matching rows.
+func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Mechanism, int, error) {
 	return svc.db.GetAllMechanisms(ctx, listopt.Apply(opts...))
 }
 

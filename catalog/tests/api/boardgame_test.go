@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
@@ -103,6 +105,87 @@ func (suite *BoardGameSuite) TestDeleteBoardgameSuccess() {
 		Delete("/api/boardgame/test").
 		Expect(suite.T()).
 		Status(http.StatusNoContent).
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
+	expected := []boardgame.Boardgame{{Slug: "catan", Name: "Catan", MinPlayers: 3, MaxPlayers: 4}}
+	var gotParams listopt.Params
+	suite.base.dbMock.EXPECT().
+		GetAllBoardgames(gomock.Any(), gomock.Any(), true).
+		DoAndReturn(func(_ context.Context, params listopt.Params, _ bool) ([]boardgame.Boardgame, int, error) {
+			gotParams = params
+			return expected, 12, nil
+		})
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame").
+		QueryParams(map[string]string{
+			"page":            "2",
+			"pageSize":        "5",
+			"sort":            "name.asc",
+			"filter":          "minplayers.ge.3",
+			"include_deleted": "true",
+		}).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 2, 5, 12, 3)).
+		End()
+
+	suite.Assert().Equal("name", gotParams.Sort.Column)
+	suite.Assert().Equal("asc", gotParams.Sort.Order)
+	suite.Require().Len(gotParams.Filters, 1)
+	suite.Assert().Equal("min_players", gotParams.Filters[0].Column)
+	suite.Assert().Equal(listopt.OpGe, gotParams.Filters[0].Op)
+	suite.Assert().Equal(5, gotParams.Pagination.Limit())
+	suite.Assert().Equal(5, gotParams.Pagination.Offset())
+}
+
+func (suite *BoardGameSuite) TestGetBoardgamesMalformedQueryParam() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame").
+		QueryParams(map[string]string{"filter": "minplayers.bogus.3"}).
+		Expect(suite.T()).
+		Status(http.StatusUnprocessableEntity).
+		End()
+}
+
+func (suite *BoardGameSuite) TestQueryBoardgames() {
+	expected := []boardgame.Boardgame{{Slug: "catan", Name: "Catan", MinPlayers: 3, MaxPlayers: 4}}
+	suite.base.dbMock.EXPECT().
+		GetAllBoardgames(gomock.Any(), gomock.Any(), false).
+		Return(expected, len(expected), nil)
+
+	assertEnvelope := func(res *http.Response, _ *http.Request) error {
+		var body struct {
+			Data       []boardgame.Boardgame `json:"data"`
+			Page       int                   `json:"page"`
+			PageSize   int                   `json:"pageSize"`
+			TotalItems int                   `json:"totalItems"`
+			TotalPages int                   `json:"totalPages"`
+		}
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			return err
+		}
+		suite.Assert().Len(body.Data, 1)
+		suite.Assert().Equal(1, body.Page)
+		suite.Assert().Equal(10, body.PageSize)
+		suite.Assert().Equal(1, body.TotalItems)
+		suite.Assert().Equal(1, body.TotalPages)
+		return nil
+	}
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Method("QUERY").
+		URL("/api/boardgame").
+		Body(`{"pagination":{"page":1,"pageSize":10},"filters":[{"field":"minplayers","op":"ge","value":"3"}]}`).
+		ContentType("application/json").
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope).
 		End()
 }
 

@@ -17,7 +17,7 @@ import (
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(ctx context.Context, req *mechanism.CreateMechanismRequest) (mechanism.Mechanism, error)
-	GetAll(ctx context.Context, opts ...listopt.Option) ([]mechanism.Mechanism, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]mechanism.Mechanism, int, error)
 	Get(ctx context.Context, slug string) (mechanism.Mechanism, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -60,40 +60,55 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 }
 
 // GetAll Mechanisms godoc
-// @Summary 	Fetches all Mechanisms
+// @Summary 	Lists Mechanisms with pagination, sorting, and filtering
 // @Tags 		mechanisms
 // @Produce 	json
-// @Success 	200 {object} mechanism.Mechanism
+// @Param 		page query int false "Page number (default 1)"
+// @Param 		pageSize query int false "Items per page (default 10, max 100)"
+// @Param 		sort query string false "Sort as field.order, e.g. name.asc"
+// @Param 		filter query []string false "Filter as field.op.value, e.g. name.like.trad; repeatable, AND-combined"
+// @Success 	200 {object} MechanismPage
 // @Router 		/mechanism [get]
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
-	var opts []listopt.Option
-
-	sortBy := r.URL.Query().Get("sortBy")
-	col, order, err := utils.GetSort(mechanism.Mechanism{}, sortBy)
+	q, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if col != "" {
-		opts = append(opts, listopt.WithSort(col, order))
-	}
+	controller.list(w, r, q)
+}
 
-	filterBy := r.URL.Query().Get("filterBy")
-	fcol, fop, fval, err := utils.GetFilter(mechanism.Mechanism{}, filterBy)
+// Query lists Mechanisms with filtering, sorting, and pagination.
+//
+// It handles HTTP QUERY /api/mechanism with a JSON body (pagination, sort,
+// filters), for filters too complex to express as GET query parameters. Not
+// represented in Swagger because OpenAPI 2.0 has no QUERY method; see GetAll for
+// the same envelope.
+func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Request) {
+	var q QueryRequest
+	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	controller.list(w, r, q)
+}
+
+// list resolves a validated list request and writes the paginated envelope,
+// shared by the GET and QUERY entry points.
+func (controller *MechanismController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
+	opts, err := q.toOptions(mechanism.Mechanism{})
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if fcol != "" {
-		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
-	}
 
-	mechanisms, err := controller.service.GetAll(r.Context(), opts...)
+	p := listopt.Apply(opts...)
+	mechanisms, total, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if err := render.New().JSON(w, http.StatusOK, mechanisms); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(mechanisms, total, p.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

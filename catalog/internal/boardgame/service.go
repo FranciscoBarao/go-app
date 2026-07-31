@@ -18,7 +18,7 @@ type Database interface {
 	CreateBoardgame(ctx context.Context, input CreateBoardgameDTO) (Boardgame, error)
 	GetBoardgameByID(ctx context.Context, id uint) (Boardgame, error)
 	GetBoardgameBySlug(ctx context.Context, slug string) (Boardgame, error)
-	GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]Boardgame, error)
+	GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]Boardgame, int, error)
 	UpdateBoardgame(ctx context.Context, bg *Boardgame) error
 	UpdateBoardgameWithAssociations(ctx context.Context, bg *Boardgame, assoc UpdateAssociations) error
 	DeleteBoardgame(ctx context.Context, id uint, hard bool) error
@@ -114,8 +114,9 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 	}
 }
 
-// GetAll retrieves boardgames with optional sort, filter, and deleted inclusion.
-func (svc *Service) GetAll(ctx context.Context, includeDeleted bool, opts ...listopt.Option) ([]Boardgame, error) {
+// GetAll retrieves boardgames with optional sort, filter, pagination, and deleted
+// inclusion, returning the page of results and the total count of matching rows.
+func (svc *Service) GetAll(ctx context.Context, includeDeleted bool, opts ...listopt.Option) ([]Boardgame, int, error) {
 	return svc.db.GetAllBoardgames(ctx, listopt.Apply(opts...), includeDeleted)
 }
 

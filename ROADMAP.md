@@ -59,14 +59,19 @@ Goal: A solid domain model and slug-based API.
 
 Goal: Make the catalog usable for discovery without a frontend.
 
-- [ ] Pagination (page / pageSize + total count envelope)
-- [ ] Multi-filter (category, mechanism, contributor, player count, etc.)
+- [x] Pagination (page / pageSize + total count envelope)
+  - 2026-07-16: implemented via HTTP `QUERY` endpoints for all four list resources (boardgame, category, mechanism, contributor). JSON body carries `pagination`/`sort`/`filters`/`include_deleted`; response is a `{data, page, pageSize, totalItems, totalPages}` envelope. Pagination normalized in `listopt` (defaults page 1 / size 10, max 100). GET list endpoints now return a plain first-page array.
+- [x] `GET` list endpoints: query-param pagination/sort/filter + envelope
+  - 2026-07-28: GET lists were silently truncating (first 10, bare array, no total, no way to reach page 2). They now accept `?page/pageSize/sort=field.order/filter=field.op.value` (repeatable) and return the same envelope as `QUERY`, which becomes the escape hatch for filters too complex for a URL. Both methods share one validation path (`newQueryRequestFromURL` → `toOptions`) and each controller's `list` helper. Swagger documents the GET params and envelope via per-resource `*Page` mirrors, since the pinned swag (v1.8.x) renders generics as untyped objects.
+- [~] Multi-filter (category, mechanism, contributor, player count, etc.)
+  - 2026-07-16: scalar multi-filter shipped via `QUERY` `filters[]` (like/eq/lt/le/gt/ge, AND-combined) on model `db` columns. Association-based filters (by category/mechanism/contributor slug) still pending.
 - [ ] Text search: `q=` with ILIKE on name + slug
 - [ ] Taxonomy browse endpoints, e.g.:
   - [ ] `GET /api/category/{slug}/boardgames`
   - [ ] `GET /api/mechanism/{slug}/boardgames`
   - [ ] `GET /api/contributors/{slug}/boardgames`
-- [ ] `include_deleted` for admin use (partially exists on list)
+- [~] `include_deleted` for admin use (partially exists on list)
+  - 2026-07-16: supported on boardgame `GET` (`?include_deleted=true`) and `QUERY` (`include_deleted` body field).
 
 ## Phase 3 — Catalog images
 

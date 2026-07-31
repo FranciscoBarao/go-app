@@ -3,6 +3,7 @@ package transport
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -46,6 +47,24 @@ func (suite *MechanismControllerSuite) TestGet() {
 	rec := httptest.NewRecorder()
 	suite.controller.Get(rec, req)
 	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *MechanismControllerSuite) TestQuery() {
+	suite.mockSvc.EXPECT().GetAll(gomock.Any(), gomock.Any()).Return([]mechanism.Mechanism{{Slug: "trading"}}, 1, nil)
+
+	req := httptest.NewRequest("QUERY", "/", bytes.NewReader([]byte(`{"pagination":{"page":1,"pageSize":10}}`)))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	suite.controller.Query(rec, req)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	var resp PaginatedResponse[mechanism.Mechanism]
+	suite.Require().NoError(json.Unmarshal(rec.Body.Bytes(), &resp))
+	suite.Equal(1, resp.TotalItems)
+	suite.Equal(1, resp.Page)
+	suite.Equal(10, resp.PageSize)
+	suite.Len(resp.Data, 1)
 }
 
 func TestMechanismControllerSuite(t *testing.T) {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -260,6 +261,22 @@ func (suite *BoardgameServiceSuite) TestCreate_EmptySlug() {
 	var mr *middleware.MalformedRequest
 	suite.Assert().ErrorAs(err, &mr)
 	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+}
+
+func (suite *BoardgameServiceSuite) TestGetAll() {
+	expected := []Boardgame{{Slug: "catan", Name: "Catan"}}
+	wantParams := listopt.Params{
+		Sort:       listopt.Sort{Column: "name", Order: "asc"},
+		Pagination: listopt.Pagination{Page: listopt.DefaultPage, PageSize: listopt.DefaultPageSize},
+	}
+	suite.mockDB.EXPECT().
+		GetAllBoardgames(gomock.Any(), wantParams, true).
+		Return(expected, len(expected), nil)
+
+	all, total, err := suite.service.GetAll(context.Background(), true, listopt.WithSort("name", "asc"))
+	suite.Assert().NoError(err)
+	suite.Assert().Equal(expected, all)
+	suite.Assert().Equal(len(expected), total)
 }
 
 func TestBoardgameServiceSuite(t *testing.T) {

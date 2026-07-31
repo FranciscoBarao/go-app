@@ -18,7 +18,7 @@ import (
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(ctx context.Context, req *boardgame.CreateBoardgameRequest, parentSlug string) (boardgame.Boardgame, error)
-	GetAll(ctx context.Context, includeDeleted bool, opts ...listopt.Option) ([]boardgame.Boardgame, error)
+	GetAll(ctx context.Context, includeDeleted bool, opts ...listopt.Option) ([]boardgame.Boardgame, int, error)
 	GetBySlug(ctx context.Context, slug string) (boardgame.Boardgame, error)
 	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	Update(ctx context.Context, req *boardgame.UpdateBoardgameRequest, slug string) error
@@ -72,42 +72,56 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 }
 
 // GetAll Boardgames godoc
-// @Summary 	Fetches all Boardgames
+// @Summary 	Lists Boardgames with pagination, sorting, and filtering
 // @Tags 		boardgames
 // @Produce 	json
-// @Success 	200 {array} boardgame.Boardgame
+// @Param 		page query int false "Page number (default 1)"
+// @Param 		pageSize query int false "Items per page (default 10, max 100)"
+// @Param 		sort query string false "Sort as field.order, e.g. name.asc"
+// @Param 		filter query []string false "Filter as field.op.value, e.g. minplayers.ge.3; repeatable, AND-combined"
+// @Param 		include_deleted query bool false "Include soft-deleted boardgames"
+// @Success 	200 {object} BoardgamePage
 // @Router 		/boardgame [get]
 func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
-	sortBy := r.URL.Query().Get("sortBy")
-	col, order, err := utils.GetSort(boardgame.Boardgame{}, sortBy)
+	q, err := newQueryRequestFromURL(r.URL.Query())
+	if err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	controller.list(w, r, q)
+}
+
+// Query lists Boardgames with filtering, sorting, and pagination.
+//
+// It handles HTTP QUERY /api/boardgame with a JSON body (pagination, sort,
+// filters, include_deleted), for filters too complex to express as GET query
+// parameters. Not represented in Swagger because OpenAPI 2.0 has no QUERY
+// method; see GetAll for the same envelope.
+func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Request) {
+	var q QueryRequest
+	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	controller.list(w, r, q)
+}
+
+// list resolves a validated list request and writes the paginated envelope,
+// shared by the GET and QUERY entry points.
+func (controller *BoardgameController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
+	opts, err := q.toOptions(boardgame.Boardgame{})
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	var opts []listopt.Option
-	if col != "" {
-		opts = append(opts, listopt.WithSort(col, order))
-	}
-
-	filterBy := r.URL.Query().Get("filterBy")
-	fcol, fop, fval, err := utils.GetFilter(boardgame.Boardgame{}, filterBy)
+	p := listopt.Apply(opts...)
+	boardgames, total, err := controller.service.GetAll(r.Context(), q.IncludeDeleted, opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if fcol != "" {
-		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
-	}
-
-	includeDeleted := r.URL.Query().Get("include_deleted") == "true"
-
-	boardgames, err := controller.service.GetAll(r.Context(), includeDeleted, opts...)
-	if err != nil {
-		middleware.ErrorHandler(w, err)
-		return
-	}
-	if err := render.New().JSON(w, http.StatusOK, boardgames); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(boardgames, total, p.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

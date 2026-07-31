@@ -12,44 +12,42 @@ type testModel struct {
 	Tags         []int  `db:"-"`
 }
 
-func TestGetFilter(t *testing.T) {
+func TestGetFilterFields(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
-		col   string
-		op    listopt.Op
-		val   string
-		err   bool
+		name        string
+		field       string
+		op          string
+		value       string
+		col         string
+		wantOp      listopt.Op
+		wantNumeric bool
+		err         bool
 	}{
-		{"empty input", "", "", "", "", false},
-		{"partial match", "name.catan", "name", listopt.OpLike, "catan", false},
-		{"exact equality", "name.eq.Catan", "name", listopt.OpEq, "Catan", false},
-		{"numeric lt", "playernumber.lt.5", "player_number", listopt.OpLt, "5", false},
-		{"numeric le", "playernumber.le.10", "player_number", listopt.OpLe, "10", false},
-		{"numeric gt", "playernumber.gt.2", "player_number", listopt.OpGt, "2", false},
-		{"numeric ge", "playernumber.ge.3", "player_number", listopt.OpGe, "3", false},
-		{"too many parts", "a.b.c.d", "", "", "", true},
-		{"too few parts", "name", "", "", "", true},
-		{"empty field", ".value", "", "", "", true},
-		{"empty value", "name.", "", "", "", true},
-		{"empty operator 3-part", "name..a", "", "", "", true},
-		{"unknown field", "unknown.asc", "", "", "", true},
-		{"invalid operator", "playernumber.xx.5", "", "", "", true},
-		{"numeric op on string", "name.lt.5", "", "", "", true},
-		{"non-numeric value", "playernumber.lt.abc", "", "", "", true},
-		{"like on non-string", "playernumber.hello", "", "", "", true},
-		{"field with db:-", "tags.test", "", "", "", true},
+		{"empty op is like", "name", "", "catan", "name", listopt.OpLike, false, false},
+		{"explicit like", "name", "like", "catan", "name", listopt.OpLike, false, false},
+		{"like value with dots", "name", "like", "foo.bar", "name", listopt.OpLike, false, false},
+		{"eq value with dots", "name", "eq", "foo.bar.baz", "name", listopt.OpEq, false, false},
+		{"eq numeric-looking value on string col", "name", "eq", "123", "name", listopt.OpEq, false, false},
+		{"eq on numeric col", "playernumber", "eq", "3", "player_number", listopt.OpEq, true, false},
+		{"numeric decimal value", "playernumber", "ge", "3.5", "player_number", listopt.OpGe, true, false},
+		{"empty field", "", "eq", "x", "", "", false, true},
+		{"empty value", "name", "eq", "", "", "", false, true},
+		{"invalid op", "name", "bogus", "x", "", "", false, true},
+		{"unknown field", "unknown", "eq", "x", "", "", false, true},
+		{"like on non-string", "playernumber", "like", "3", "", "", false, true},
+		{"numeric op on string", "name", "lt", "5", "", "", false, true},
+		{"field with db:-", "tags", "eq", "x", "", "", false, true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			col, op, val, err := GetFilter(testModel{}, tt.input)
+			col, op, val, numeric, err := GetFilterFields(testModel{}, tt.field, tt.op, tt.value)
 			if (err != nil) != tt.err {
 				t.Fatalf("err = %v, wantErr = %v", err, tt.err)
 			}
 			if !tt.err {
-				if col != tt.col || op != tt.op || val != tt.val {
-					t.Errorf("got (%q, %q, %q), want (%q, %q, %q)", col, op, val, tt.col, tt.op, tt.val)
+				if col != tt.col || op != tt.wantOp || val != tt.value || numeric != tt.wantNumeric {
+					t.Errorf("got (%q, %q, %q, %t), want (%q, %q, %q, %t)", col, op, val, numeric, tt.col, tt.wantOp, tt.value, tt.wantNumeric)
 				}
 			}
 		})

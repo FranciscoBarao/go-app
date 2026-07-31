@@ -104,7 +104,7 @@ These apply consistently across all endpoints unless noted otherwise.
 - `400 Bad Request` — invalid body, or a `name` that produces an empty slug (e.g. `"!!!"`).
 - `404 Not Found` — unknown slug/id, or a referenced association that does not exist.
 - `409 Conflict` — slug already in use (disambiguate the name, e.g. add a year/edition), or attempting to give an expansion its own expansion.
-- `422 Unprocessable Entity` — malformed `sortBy` / `filterBy` query parameters.
+- `422 Unprocessable Entity` — malformed or invalid `sort`/`filter`/`page`/`pageSize`, whether sent as GET query parameters or in a `QUERY` request body.
 
 ## Swagger
 
@@ -119,6 +119,11 @@ Regenerate after changing handler annotations:
 ```bash
 make swag svc=catalog
 ```
+
+Note: the `QUERY` list endpoints are not shown in Swagger because OpenAPI 2.0
+does not support the `QUERY` HTTP method. The `GET` list endpoints are documented
+there in full and return the same envelope. See
+[Listing, filtering, sorting & pagination](#listing-filtering-sorting--pagination).
 
 ## Boardgame API
 
@@ -151,7 +156,8 @@ Only `name`, `min_players`, and `max_players` are required.
 | ------ | --------------------------------- | ----------------------------------------------- |
 | POST   | `/api/boardgame`                  | Create a boardgame                              |
 | POST   | `/api/boardgame/{slug}/expansion` | Create an expansion of `{slug}`                 |
-| GET    | `/api/boardgame`                  | List boardgames (sort/filter/`include_deleted`) |
+| GET    | `/api/boardgame`                  | List with filter/sort/pagination (envelope)     |
+| QUERY  | `/api/boardgame`                  | Same, with the request in a JSON body           |
 | GET    | `/api/boardgame/{slug}`           | Fetch one by slug                               |
 | GET    | `/api/boardgame/by-id/{id}`       | Fetch one by numeric id (internal)              |
 | PATCH  | `/api/boardgame/{slug}`           | Partial update                                  |
@@ -187,44 +193,87 @@ curl -X DELETE "localhost:8081/api/boardgame/catan?hard=true"
 curl "localhost:8081/api/boardgame?include_deleted=true"
 ```
 
-### Sorting
+### Listing, filtering, sorting & pagination
 
-`sortBy` uses the format `field.order` where `order` is `asc` or `desc`. Fields map to DB columns via the model's `db` struct tags.
+Every list resource (boardgame, category, mechanism, contributor) can be listed
+two ways, both returning the same paginated envelope:
 
-Sortable fields: `id`, `slug`, `name`, `description`, `year_published`, `min_players`, `max_players`, `min_play_time`, `max_play_time`, `min_age`, `bgg_id`, `boardgame_id`, `created_at`, `updated_at`, `deleted_at`.
+- `GET` with query parameters — cacheable, browsable, and documented in Swagger.
+  Use this by default.
+- `QUERY` with a JSON body — for filter sets too large or awkward to express in a
+  URL.
 
-Not sortable (`db:"-"`): `categories`, `mechanisms`, `contributions`, `ratings`, `expansions`.
-
-```bash
-curl "localhost:8081/api/boardgame?sortBy=name.asc"
-curl "localhost:8081/api/boardgame?sortBy=year_published.desc"
+```json
+{
+  "data": [ /* items */ ],
+  "page": 1,
+  "pageSize": 10,
+  "totalItems": 42,
+  "totalPages": 5
+}
 ```
 
-**Error cases (422):**
+GET query parameters (all optional):
 
-```bash
-curl "localhost:8081/api/boardgame?sortBy=name"           # -> should be field.order
-curl "localhost:8081/api/boardgame?sortBy=name.random"    # -> order should be asc or desc
-curl "localhost:8081/api/boardgame?sortBy=unknown.asc"    # -> no field with this name
-curl "localhost:8081/api/boardgame?sortBy=categories.asc" # -> field not sortable
+| Parameter         | Form              | Example                 |
+| ----------------- | ----------------- | ----------------------- |
+| `page`            | integer           | `page=2`                |
+| `pageSize`        | integer           | `pageSize=20`           |
+| `sort`            | `field.order`     | `sort=name.asc`         |
+| `filter`          | `field.op.value`  | `filter=minplayers.ge.3` (repeatable) |
+| `include_deleted` | boolean           | `include_deleted=true` (boardgames only) |
+
+QUERY request body (send `{}` for defaults):
+
+```json
+{
+  "pagination": { "page": 1, "pageSize": 20 },
+  "sort": { "field": "name", "order": "asc" },
+  "filters": [
+    { "field": "minplayers", "op": "ge", "value": "3" },
+    { "field": "name", "op": "like", "value": "cat" }
+  ],
+  "include_deleted": false
+}
 ```
 
-### Filtering
+- **Pagination.** `page` defaults to `1`, `pageSize` defaults to `10` and is
+  clamped to a max of `100`. Out-of-range values are clamped rather than
+  rejected; non-numeric ones return `422`.
+- **Sorting.** `field` is a struct field name (case-insensitive) mapped to its DB
+  column via the model's `db` tag; `order` is `asc` or `desc`. Fields tagged
+  `db:"-"` (`categories`, `mechanisms`, `contributions`, `ratings`,
+  `expansions`) are not sortable.
+- **Filtering.** Each filter has `field`, `op`, and `value`. Supported `op`
+  values:
 
-`filterBy` supports three modes:
+  | `op`                 | Mode                 | SQL                          |
+  | -------------------- | -------------------- | ---------------------------- |
+  | `like` (or omitted)  | Partial string match | `WHERE name ILIKE '%value%'` |
+  | `eq`                 | Exact equality       | `WHERE name = 'value'`       |
+  | `lt` `le` `gt` `ge`  | Numeric comparison   | `WHERE min_players >= value` |
 
-| Format                         | Mode                 | SQL                          |
-| ------------------------------ | -------------------- | ---------------------------- |
-| `field.value`                  | Partial string match | `WHERE name ILIKE '%value%'` |
-| `field.eq.value`               | Exact equality       | `WHERE name = 'value'`       |
-| `field.{lt\|le\|gt\|ge}.value` | Numeric comparison   | `WHERE min_players < value`  |
+  Multiple filters are combined with `AND`. In the `filter` query parameter the
+  operator is mandatory (`filter=name.like.cat`, not `filter=name.cat`), which is
+  what lets a value contain dots: `filter=name.like.foo.bar` filters on
+  `foo.bar`.
 
 ```bash
-curl "localhost:8081/api/boardgame?filterBy=name.cat"
-curl "localhost:8081/api/boardgame?filterBy=name.eq.Catan"
-curl "localhost:8081/api/boardgame?filterBy=min_players.ge.3"
-curl "localhost:8081/api/boardgame?filterBy=name.cat&sortBy=name.asc"
+# Defaults (first page)
+curl localhost:8081/api/boardgame
+
+# Page 2, 20 per page, sorted by name, filtered
+curl "localhost:8081/api/boardgame?page=2&pageSize=20&sort=name.asc&filter=minplayers.ge.3"
+
+# The same request as QUERY
+curl -X QUERY localhost:8081/api/boardgame \
+  -H 'Content-Type: application/json' \
+  -d '{"pagination":{"page":2,"pageSize":20},"sort":{"field":"name","order":"asc"},"filters":[{"field":"minplayers","op":"ge","value":"3"}]}'
 ```
+
+A `QUERY` request must send `Content-Type: application/json` and a body (use
+`{}` for defaults). Invalid sort/filter fields or operators return
+`422 Unprocessable Entity` on either method.
 
 ## Category & Mechanism API
 
@@ -241,13 +290,16 @@ Only `name` is required; the slug is derived from it.
 | Method | Path                   | Description                               |
 | ------ | ---------------------- | ----------------------------------------- |
 | POST   | `/api/category`        | Create                                    |
-| GET    | `/api/category`        | List (sort/filter)                        |
+| GET    | `/api/category`        | List with filter/sort/pagination (envelope) |
+| QUERY  | `/api/category`        | Same, with the request in a JSON body     |
 | GET    | `/api/category/{slug}` | Fetch by slug                             |
 | DELETE | `/api/category/{slug}` | Soft delete (`?hard=true` to hard delete) |
 
+See [Listing, filtering, sorting & pagination](#listing-filtering-sorting--pagination) for the parameters, body, and envelope shape.
+
 ```bash
 curl -X POST localhost:8081/api/category -H 'Content-Type: application/json' -d '{"name":"Economic"}'
-curl "localhost:8081/api/mechanism?sortBy=name.asc"
+curl "localhost:8081/api/mechanism?sort=name.asc"
 curl localhost:8081/api/category/economic
 curl -X DELETE "localhost:8081/api/mechanism/trading?hard=true"
 ```
@@ -267,7 +319,8 @@ Only `name` is required.
 | Method | Path                       | Description                               |
 | ------ | -------------------------- | ----------------------------------------- |
 | POST   | `/api/contributors`        | Create                                    |
-| GET    | `/api/contributors`        | List (sort/filter)                        |
+| GET    | `/api/contributors`        | List with filter/sort/pagination (envelope) |
+| QUERY  | `/api/contributors`        | Same, with the request in a JSON body     |
 | GET    | `/api/contributors/{slug}` | Fetch by slug                             |
 | PATCH  | `/api/contributors/{slug}` | Partial update                            |
 | DELETE | `/api/contributors/{slug}` | Soft delete (`?hard=true` to hard delete) |

@@ -17,7 +17,7 @@ import (
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(ctx context.Context, req *category.CreateCategoryRequest) (category.Category, error)
-	GetAll(ctx context.Context, opts ...listopt.Option) ([]category.Category, error)
+	GetAll(ctx context.Context, opts ...listopt.Option) ([]category.Category, int, error)
 	Get(ctx context.Context, slug string) (category.Category, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -60,40 +60,55 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 }
 
 // GetAll Categories godoc
-// @Summary 	Fetches all Categories
+// @Summary 	Lists Categories with pagination, sorting, and filtering
 // @Tags 		categories
 // @Produce 	json
-// @Success 	200 {object} category.Category
+// @Param 		page query int false "Page number (default 1)"
+// @Param 		pageSize query int false "Items per page (default 10, max 100)"
+// @Param 		sort query string false "Sort as field.order, e.g. name.asc"
+// @Param 		filter query []string false "Filter as field.op.value, e.g. name.like.eco; repeatable, AND-combined"
+// @Success 	200 {object} CategoryPage
 // @Router 		/category [get]
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
-	var opts []listopt.Option
-
-	sortBy := r.URL.Query().Get("sortBy")
-	col, order, err := utils.GetSort(category.Category{}, sortBy)
+	q, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if col != "" {
-		opts = append(opts, listopt.WithSort(col, order))
-	}
+	controller.list(w, r, q)
+}
 
-	filterBy := r.URL.Query().Get("filterBy")
-	fcol, fop, fval, err := utils.GetFilter(category.Category{}, filterBy)
+// Query lists Categories with filtering, sorting, and pagination.
+//
+// It handles HTTP QUERY /api/category with a JSON body (pagination, sort,
+// filters), for filters too complex to express as GET query parameters. Not
+// represented in Swagger because OpenAPI 2.0 has no QUERY method; see GetAll for
+// the same envelope.
+func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Request) {
+	var q QueryRequest
+	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
+		middleware.ErrorHandler(w, err)
+		return
+	}
+	controller.list(w, r, q)
+}
+
+// list resolves a validated list request and writes the paginated envelope,
+// shared by the GET and QUERY entry points.
+func (controller *CategoryController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
+	opts, err := q.toOptions(category.Category{})
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if fcol != "" {
-		opts = append(opts, listopt.WithFilter(fcol, fop, fval))
-	}
 
-	categories, err := controller.service.GetAll(r.Context(), opts...)
+	p := listopt.Apply(opts...)
+	categories, total, err := controller.service.GetAll(r.Context(), opts...)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if err := render.New().JSON(w, http.StatusOK, categories); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(categories, total, p.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

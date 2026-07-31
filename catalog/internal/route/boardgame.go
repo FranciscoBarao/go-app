@@ -18,6 +18,10 @@ func AddBoardGameRouter(router chi.Router, oauthKey string, boardGameControler *
 
 	router.Group(func(r chi.Router) {
 		router.Get("/api/boardgame", boardGameControler.GetAll)
+		// MethodFunc because chi has no Query helper: QUERY is not one of its
+		// built-in methods and relies on chi.RegisterMethod in main.go.
+		// TODO: switch to router.Query once chi supports QUERY natively.
+		router.MethodFunc("QUERY", "/api/boardgame", boardGameControler.Query)
 		router.Get("/api/boardgame/by-id/{id}", boardGameControler.GetByID)
 		router.Get("/api/boardgame/{slug}", boardGameControler.Get)
 	})

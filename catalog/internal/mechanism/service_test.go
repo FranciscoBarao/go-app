@@ -89,11 +89,15 @@ func (suite *MechanismServiceSuite) TestDeleteNotFound() {
 
 func (suite *MechanismServiceSuite) TestGetAll() {
 	expected := []Mechanism{{Slug: "trading", Name: "Trading"}}
-	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), listopt.Params{}).Return(expected, nil)
+	wantParams := listopt.Params{
+		Pagination: listopt.Pagination{Page: listopt.DefaultPage, PageSize: listopt.DefaultPageSize},
+	}
+	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), wantParams).Return(expected, len(expected), nil)
 
-	list, err := suite.service.GetAll(context.Background())
+	list, total, err := suite.service.GetAll(context.Background())
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, list)
+	suite.Assert().Equal(len(expected), total)
 }
 
 func TestMechanismServiceSuite(t *testing.T) {

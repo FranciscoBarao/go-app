@@ -3,12 +3,14 @@ package transport
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
@@ -57,6 +59,38 @@ func (suite *CategoryControllerSuite) TestGet() {
 	rec := httptest.NewRecorder()
 	suite.controller.Get(rec, req)
 	suite.Equal(http.StatusOK, rec.Code)
+}
+
+func (suite *CategoryControllerSuite) TestQuery() {
+	var gotParams listopt.Params
+	// ctx + 3 opts (sort, filter, pagination).
+	suite.mockSvc.EXPECT().
+		GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, opts ...listopt.Option) ([]category.Category, int, error) {
+			gotParams = listopt.Apply(opts...)
+			return []category.Category{{Slug: "strategy"}}, 1, nil
+		})
+
+	body := `{"pagination":{"page":2,"pageSize":20},"sort":{"field":"name","order":"asc"},"filters":[{"field":"name","op":"like","value":"str"}]}`
+	req := httptest.NewRequest("QUERY", "/", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	suite.controller.Query(rec, req)
+	suite.Equal(http.StatusOK, rec.Code)
+
+	suite.Equal("name", gotParams.Sort.Column)
+	suite.Equal("asc", gotParams.Sort.Order)
+	suite.Require().Len(gotParams.Filters, 1)
+	suite.Equal(listopt.OpLike, gotParams.Filters[0].Op)
+	suite.Equal(2, gotParams.Pagination.Page)
+	suite.Equal(20, gotParams.Pagination.PageSize)
+
+	var resp PaginatedResponse[category.Category]
+	suite.Require().NoError(json.Unmarshal(rec.Body.Bytes(), &resp))
+	suite.Equal(1, resp.TotalItems)
+	suite.Equal(1, resp.TotalPages)
+	suite.Len(resp.Data, 1)
 }
 
 func TestCategoryControllerSuite(t *testing.T) {

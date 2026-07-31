@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
@@ -83,43 +81,44 @@ func (p *Postgres) getBoardgame(ctx context.Context, query string, arg any) (boa
 	return bg, nil
 }
 
-// GetAllBoardgames retrieves active boardgames with optional filtering and sorting.
-func (p *Postgres) GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]boardgame.Boardgame, error) {
-	q := dbsql.SelectAllBoardgames
+// GetAllBoardgames retrieves active boardgames with optional filtering, sorting,
+// and pagination. It returns the page of results and the total count of matching
+// rows (before pagination).
+func (p *Postgres) GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]boardgame.Boardgame, int, error) {
+	selectBase := dbsql.SelectAllBoardgames
+	countBase := dbsql.CountBoardgames
 	if includeDeleted {
-		q = dbsql.SelectAllBoardgamesIncludingDeleted
+		selectBase = dbsql.SelectAllBoardgamesIncludingDeleted
+		countBase = dbsql.CountBoardgamesIncludingDeleted
 	}
 
-	var args []any
+	countQuery, countArgs := buildCountQuery(countBase, filter)
+	selectQuery, selectArgs := buildPaginatedQuery(selectBase, filter)
 
-	if where, arg := filterClause(filter); where != "" {
-		q += strings.Replace(where, " WHERE ", " AND ", 1)
-		args = append(args, arg)
+	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllBoardgames")
+
+	var total int
+	if err := p.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, mapPgError(err)
 	}
 
-	if filter.Sort.Column != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
-	}
-
-	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllBoardgames")
-
-	rows, err := p.pool.Query(ctx, q, args...)
+	rows, err := p.pool.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, 0, mapPgError(err)
 	}
 
 	boardgames, err := pgx.CollectRows(rows, scanBoardgameRow)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, 0, mapPgError(err)
 	}
 
 	for i := range boardgames {
 		if err := loadBoardgameAssociations(ctx, p.pool, &boardgames[i]); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
-	return boardgames, nil
+	return boardgames, total, nil
 }
 
 // UpdateBoardgame updates a boardgame's mutable fields.

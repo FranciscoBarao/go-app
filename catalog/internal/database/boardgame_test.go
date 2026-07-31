@@ -121,9 +121,10 @@ func (suite *BoardgameSuite) TestGetAll() {
 	_, err = suite.postgres.CreateBoardgame(ctx, testCreateInput("name02"))
 	suite.Require().NoError(err)
 
-	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Sort: listopt.Sort{Column: "id", Order: "asc"}}, false)
+	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(listopt.WithSort("id", "asc")), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 2)
+	suite.Assert().Equal(2, total)
 }
 
 func (suite *BoardgameSuite) TestUpdate() {
@@ -176,9 +177,10 @@ func (suite *BoardgameSuite) TestGetAll_FilterLike() {
 	_, err = suite.postgres.CreateBoardgame(ctx, testCreateInput("Vagrantsong"))
 	suite.Require().NoError(err)
 
-	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Filter: listopt.Filter{Column: "name", Op: "like", Value: "cat"}}, false)
+	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(listopt.WithFilter("name", listopt.OpLike, "cat", false)), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
+	suite.Assert().Equal(1, total)
 	suite.Assert().Equal("Catan", all[0].Name)
 }
 
@@ -194,10 +196,133 @@ func (suite *BoardgameSuite) TestGetAll_FilterNumeric() {
 	_, err = suite.postgres.CreateBoardgame(ctx, input2)
 	suite.Require().NoError(err)
 
-	all, err := suite.postgres.GetAllBoardgames(ctx, listopt.Params{Filter: listopt.Filter{Column: "max_players", Op: "lt", Value: "3"}}, false)
+	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(listopt.WithFilter("max_players", listopt.OpLt, "3", true)), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
+	suite.Assert().Equal(1, total)
 	suite.Assert().Equal("Vagrantsong", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_Pagination() {
+	ctx := context.Background()
+	for i := 0; i < 25; i++ {
+		_, err := suite.postgres.CreateBoardgame(ctx, testCreateInput(fmt.Sprintf("game-%02d", i)))
+		suite.Require().NoError(err)
+	}
+
+	// Page 2 with pageSize 10 -> 10 items, total 25.
+	page2, total, err := suite.postgres.GetAllBoardgames(ctx,
+		listopt.Apply(listopt.WithSort("name", "asc"), listopt.WithPagination(2, 10)), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(page2, 10)
+	suite.Assert().Equal(25, total)
+	suite.Assert().Equal("game-10", page2[0].Name)
+
+	// Last page is partial (5 items).
+	page3, total, err := suite.postgres.GetAllBoardgames(ctx,
+		listopt.Apply(listopt.WithSort("name", "asc"), listopt.WithPagination(3, 10)), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(page3, 5)
+	suite.Assert().Equal(25, total)
+}
+
+func (suite *BoardgameSuite) TestGetAll_IncludeDeleted() {
+	ctx := context.Background()
+	_, err := suite.postgres.CreateBoardgame(ctx, testCreateInput("Active"))
+	suite.Require().NoError(err)
+	deleted, err := suite.postgres.CreateBoardgame(ctx, testCreateInput("Deleted"))
+	suite.Require().NoError(err)
+	suite.Require().NoError(suite.postgres.DeleteBoardgame(ctx, deleted.ID, false))
+
+	active, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(listopt.WithSort("name", "asc")), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(active, 1)
+	suite.Assert().Equal(1, total)
+	suite.Assert().Equal("Active", active[0].Name)
+
+	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(listopt.WithSort("name", "asc")), true)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 2)
+	suite.Assert().Equal(2, total)
+}
+
+func (suite *BoardgameSuite) TestGetAll_MultipleFiltersAnd() {
+	ctx := context.Background()
+	catan := testCreateInput("Catan")
+	catan.MaxPlayers = 4
+	_, err := suite.postgres.CreateBoardgame(ctx, catan)
+	suite.Require().NoError(err)
+
+	carcassonne := testCreateInput("Carcassonne")
+	carcassonne.MaxPlayers = 2
+	_, err = suite.postgres.CreateBoardgame(ctx, carcassonne)
+	suite.Require().NoError(err)
+
+	vagrant := testCreateInput("Vagrantsong")
+	vagrant.MaxPlayers = 5
+	_, err = suite.postgres.CreateBoardgame(ctx, vagrant)
+	suite.Require().NoError(err)
+
+	// name ILIKE '%ca%' AND max_players >= 3 -> only Catan.
+	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.Apply(
+		listopt.WithFilter("name", listopt.OpLike, "ca", false),
+		listopt.WithFilter("max_players", listopt.OpGe, "3", true),
+	), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal(1, total)
+	suite.Assert().Equal("Catan", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_EqNumericColumn() {
+	ctx := context.Background()
+	four := testCreateInput("Catan")
+	four.MaxPlayers = 4
+	_, err := suite.postgres.CreateBoardgame(ctx, four)
+	suite.Require().NoError(err)
+
+	two := testCreateInput("Carcassonne")
+	two.MaxPlayers = 2
+	_, err = suite.postgres.CreateBoardgame(ctx, two)
+	suite.Require().NoError(err)
+
+	all, total, err := suite.postgres.GetAllBoardgames(ctx,
+		listopt.Apply(listopt.WithFilter("max_players", listopt.OpEq, "4", true)), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal(1, total)
+	suite.Assert().Equal("Catan", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_EqStringColumnNumericValue() {
+	ctx := context.Background()
+	_, err := suite.postgres.CreateBoardgame(ctx, testCreateInput("123"))
+	suite.Require().NoError(err)
+	_, err = suite.postgres.CreateBoardgame(ctx, testCreateInput("Catan"))
+	suite.Require().NoError(err)
+
+	// eq on the string "name" column with a numeric-looking value must be matched
+	// as text, not coerced to an integer.
+	all, total, err := suite.postgres.GetAllBoardgames(ctx,
+		listopt.Apply(listopt.WithFilter("name", listopt.OpEq, "123", false)), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(all, 1)
+	suite.Assert().Equal(1, total)
+	suite.Assert().Equal("123", all[0].Name)
+}
+
+func (suite *BoardgameSuite) TestGetAll_PageOutOfRange() {
+	ctx := context.Background()
+	for i := 0; i < 25; i++ {
+		_, err := suite.postgres.CreateBoardgame(ctx, testCreateInput(fmt.Sprintf("game-%02d", i)))
+		suite.Require().NoError(err)
+	}
+
+	page, total, err := suite.postgres.GetAllBoardgames(ctx,
+		listopt.Apply(listopt.WithSort("name", "asc"), listopt.WithPagination(100, 10)), false)
+	suite.Assert().NoError(err)
+	suite.Assert().Len(page, 0)
+	suite.Assert().Equal(25, total)
 }
 
 func TestBoardgameSuite(t *testing.T) {

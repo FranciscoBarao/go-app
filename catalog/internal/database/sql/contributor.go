@@ -27,6 +27,9 @@ const SelectAllContributors = `SELECT ` + contributorColumns + `
 FROM contributors
 WHERE deleted_at IS NULL`
 
+// CountContributors counts active contributors (before pagination).
+const CountContributors = `SELECT COUNT(*) FROM contributors WHERE deleted_at IS NULL`
+
 // SoftDeleteContributor sets deleted_at on a contributor.
 const SoftDeleteContributor = `UPDATE contributors SET deleted_at = NOW()
 WHERE slug = $1 AND deleted_at IS NULL`

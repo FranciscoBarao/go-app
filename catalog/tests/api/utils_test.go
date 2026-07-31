@@ -23,10 +23,10 @@ func (suite *UtilSuite) SetupSuite() {
 }
 
 func (suite *UtilSuite) TestGetFilters() {
-	apitest.New(). // name.a -> partial match
+	apitest.New(). // empty op -> partial match
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "name.a")
-			if err != nil || col != "name" || op != "like" || val != "a" {
+			col, op, val, numeric, err := utils.GetFilterFields(boardgame.Boardgame{}, "name", "", "a")
+			if err != nil || col != "name" || op != "like" || val != "a" || numeric {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -38,10 +38,10 @@ func (suite *UtilSuite) TestGetFilters() {
 		Status(http.StatusOK).
 		End()
 
-	apitest.New(). // maxplayers.lt.5 -> numeric comparison
+	apitest.New(). // lt -> numeric comparison
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "maxplayers.lt.5")
-			if err != nil || col != "max_players" || op != listopt.OpLt || val != "5" {
+			col, op, val, numeric, err := utils.GetFilterFields(boardgame.Boardgame{}, "maxplayers", "lt", "5")
+			if err != nil || col != "max_players" || op != listopt.OpLt || val != "5" || !numeric {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -53,10 +53,10 @@ func (suite *UtilSuite) TestGetFilters() {
 		Status(http.StatusOK).
 		End()
 
-	apitest.New(). // name.eq.Catan -> exact equality
+	apitest.New(). // eq -> exact equality
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "name.eq.Catan")
-			if err != nil || col != "name" || op != "eq" || val != "Catan" {
+			col, op, val, numeric, err := utils.GetFilterFields(boardgame.Boardgame{}, "name", "eq", "Catan")
+			if err != nil || col != "name" || op != "eq" || val != "Catan" || numeric {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -68,10 +68,10 @@ func (suite *UtilSuite) TestGetFilters() {
 		Status(http.StatusOK).
 		End()
 
-	apitest.New(). // No filter
+	apitest.New(). // decimal value (dot in value) -> numeric comparison
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			col, op, val, err := utils.GetFilter(boardgame.Boardgame{}, "")
-			if err != nil || col != "" || op != "" || val != "" {
+			col, op, val, numeric, err := utils.GetFilterFields(boardgame.Boardgame{}, "maxplayers", "ge", "3.5")
+			if err != nil || col != "max_players" || op != listopt.OpGe || val != "3.5" || !numeric {
 				w.WriteHeader(http.StatusBadRequest)
 				return
 			}
@@ -85,28 +85,11 @@ func (suite *UtilSuite) TestGetFilters() {
 }
 
 func (suite *UtilSuite) TestFiltersFailure() {
-	apitest.New(). // Too many or too few parts
-			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "name.a.a.a")
-			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "name")
-			if err != nil && err2 != nil {
-				w.WriteHeader(http.StatusUnprocessableEntity)
-				return
-			}
-			w.WriteHeader(http.StatusOK)
-		}).
-		Get("").
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusUnprocessableEntity).
-		End()
-
 	apitest.New(). // Empty field or value
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, ".name")
-			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "name.")
-			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name..a")
-			if err != nil && err2 != nil && err3 != nil {
+			_, _, _, _, err := utils.GetFilterFields(boardgame.Boardgame{}, "", "eq", "name")
+			_, _, _, _, err2 := utils.GetFilterFields(boardgame.Boardgame{}, "name", "eq", "")
+			if err != nil && err2 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				return
 			}
@@ -120,7 +103,7 @@ func (suite *UtilSuite) TestFiltersFailure() {
 
 	apitest.New(). // Invalid operator
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "playernumber.asd.10")
+			_, _, _, _, err := utils.GetFilterFields(boardgame.Boardgame{}, "playernumber", "asd", "10")
 			if err != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				return
@@ -135,10 +118,10 @@ func (suite *UtilSuite) TestFiltersFailure() {
 
 	apitest.New(). // Type mismatches
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			_, _, _, err := utils.GetFilter(boardgame.Boardgame{}, "unknown.asc")          // Unknown field
-			_, _, _, err2 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.lt.abc") // Non-numeric value
-			_, _, _, err3 := utils.GetFilter(boardgame.Boardgame{}, "name.lt.5")           // Numeric op on string
-			_, _, _, err4 := utils.GetFilter(boardgame.Boardgame{}, "playernumber.hello")  // Like on non-string
+			_, _, _, _, err := utils.GetFilterFields(boardgame.Boardgame{}, "unknown", "eq", "asc")        // Unknown field
+			_, _, _, _, err2 := utils.GetFilterFields(boardgame.Boardgame{}, "playernumber", "lt", "abc") // Non-numeric value
+			_, _, _, _, err3 := utils.GetFilterFields(boardgame.Boardgame{}, "name", "lt", "5")           // Numeric op on string
+			_, _, _, _, err4 := utils.GetFilterFields(boardgame.Boardgame{}, "playernumber", "", "hello") // Like on non-string
 			if err != nil && err2 != nil && err3 != nil && err4 != nil {
 				w.WriteHeader(http.StatusUnprocessableEntity)
 				return

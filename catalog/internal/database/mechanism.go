@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -40,28 +38,25 @@ func (p *Postgres) GetMechanismIDBySlug(ctx context.Context, slug string) (uint,
 	return id, mapPgError(err)
 }
 
-// GetAllMechanisms retrieves all mechanisms.
-func (p *Postgres) GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]mechanism.Mechanism, error) {
-	q := dbsql.SelectAllMechanisms
-	var args []any
+// GetAllMechanisms retrieves active mechanisms with optional filtering, sorting,
+// and pagination, returning the page and the total count of matching rows.
+func (p *Postgres) GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]mechanism.Mechanism, int, error) {
+	countQuery, countArgs := buildCountQuery(dbsql.CountMechanisms, filter)
+	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllMechanisms, filter)
 
-	if where, arg := filterClause(filter); where != "" {
-		q += strings.Replace(where, " WHERE ", " AND ", 1)
-		args = append(args, arg)
+	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllMechanisms")
+
+	var total int
+	if err := p.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, mapPgError(err)
 	}
 
-	if filter.Sort.Column != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
-	}
-
-	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllMechanisms")
-
-	rows, err := p.pool.Query(ctx, q, args...)
+	rows, err := p.pool.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, 0, mapPgError(err)
 	}
 	mechanisms, err := pgx.CollectRows(rows, scanMechanismRow)
-	return mechanisms, mapPgError(err)
+	return mechanisms, total, mapPgError(err)
 }
 
 // DeleteMechanism soft-deletes or hard-deletes a mechanism by slug.

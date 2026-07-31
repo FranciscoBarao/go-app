@@ -2,9 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -47,28 +45,25 @@ func (p *Postgres) GetContributorIDBySlug(ctx context.Context, slug string) (uin
 	return id, mapPgError(err)
 }
 
-// GetAllContributors retrieves all contributors.
-func (p *Postgres) GetAllContributors(ctx context.Context, filter listopt.Params) ([]contributor.Contributor, error) {
-	q := dbsql.SelectAllContributors
-	var args []any
+// GetAllContributors retrieves active contributors with optional filtering,
+// sorting, and pagination, returning the page and the total count of matching rows.
+func (p *Postgres) GetAllContributors(ctx context.Context, filter listopt.Params) ([]contributor.Contributor, int, error) {
+	countQuery, countArgs := buildCountQuery(dbsql.CountContributors, filter)
+	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllContributors, filter)
 
-	if where, arg := filterClause(filter); where != "" {
-		q += strings.Replace(where, " WHERE ", " AND ", 1)
-		args = append(args, arg)
+	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllContributors")
+
+	var total int
+	if err := p.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, mapPgError(err)
 	}
 
-	if filter.Sort.Column != "" {
-		q += fmt.Sprintf(dbsql.OrderBy, filter.Sort.Column, filter.Sort.Order)
-	}
-
-	logging.FromCtx(ctx).Debug().Str("query", q).Msg("GetAllContributors")
-
-	rows, err := p.pool.Query(ctx, q, args...)
+	rows, err := p.pool.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, 0, mapPgError(err)
 	}
 	contributors, err := pgx.CollectRows(rows, scanContributorRow)
-	return contributors, mapPgError(err)
+	return contributors, total, mapPgError(err)
 }
 
 // DeleteContributor soft-deletes or hard-deletes a contributor.

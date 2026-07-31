@@ -21,6 +21,9 @@ const SelectAllCategories = `SELECT ` + categoryColumns + `
 FROM categories
 WHERE deleted_at IS NULL`
 
+// CountCategories counts active categories (before pagination).
+const CountCategories = `SELECT COUNT(*) FROM categories WHERE deleted_at IS NULL`
+
 // SoftDeleteCategory sets deleted_at on a category.
 const SoftDeleteCategory = `UPDATE categories SET deleted_at = NOW()
 WHERE slug = $1 AND deleted_at IS NULL`

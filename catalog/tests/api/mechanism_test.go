@@ -79,6 +79,40 @@ func (suite *MechanismSuite) TestGetMechanismFailure() {
 		End()
 }
 
+func (suite *MechanismSuite) TestGetMechanisms() {
+	expected := []mechanism.Mechanism{{Slug: "trading", Name: "Trading"}}
+	suite.base.dbMock.EXPECT().
+		GetAllMechanisms(gomock.Any(), gomock.Any()).
+		Return(expected, len(expected), nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/mechanism").
+		QueryParams(map[string]string{"filter": "name.like.trad"}).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 1, 10, 1, 1)).
+		End()
+}
+
+func (suite *MechanismSuite) TestQueryMechanisms() {
+	expected := []mechanism.Mechanism{{Slug: "trading", Name: "Trading"}}
+	suite.base.dbMock.EXPECT().
+		GetAllMechanisms(gomock.Any(), gomock.Any()).
+		Return(expected, len(expected), nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Method("QUERY").
+		URL("/api/mechanism").
+		Body(`{"pagination":{"page":1,"pageSize":10}}`).
+		ContentType("application/json").
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 1, 10, 1, 1)).
+		End()
+}
+
 func TestMechanismSuite(t *testing.T) {
 	suite.Run(t, new(MechanismSuite))
 }

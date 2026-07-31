@@ -31,6 +31,12 @@ const SelectAllBoardgamesIncludingDeleted = `SELECT ` + boardgameColumns + `
 FROM boardgames
 WHERE TRUE`
 
+// CountBoardgames counts active boardgames (before pagination).
+const CountBoardgames = `SELECT COUNT(*) FROM boardgames WHERE deleted_at IS NULL`
+
+// CountBoardgamesIncludingDeleted counts all boardgames including soft-deleted (before pagination).
+const CountBoardgamesIncludingDeleted = `SELECT COUNT(*) FROM boardgames WHERE TRUE`
+
 // UpdateBoardgame updates a boardgame's mutable fields (slug is immutable).
 const UpdateBoardgame = `UPDATE boardgames
 SET name = $1, description = $2, year_published = $3,

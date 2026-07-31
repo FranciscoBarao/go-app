@@ -64,11 +64,16 @@ func (suite *CategoryServiceSuite) TestCreate_EmptySlug() {
 
 func (suite *CategoryServiceSuite) TestGetAll() {
 	expected := []Category{{Slug: "strategy", Name: "Strategy"}}
-	suite.mockDB.EXPECT().GetAllCategories(gomock.Any(), listopt.Params{Sort: listopt.Sort{Column: "name", Order: "asc"}}).Return(expected, nil)
+	wantParams := listopt.Params{
+		Sort:       listopt.Sort{Column: "name", Order: "asc"},
+		Pagination: listopt.Pagination{Page: listopt.DefaultPage, PageSize: listopt.DefaultPageSize},
+	}
+	suite.mockDB.EXPECT().GetAllCategories(gomock.Any(), wantParams).Return(expected, len(expected), nil)
 
-	categories, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
+	categories, total, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, categories)
+	suite.Assert().Equal(len(expected), total)
 }
 
 func (suite *CategoryServiceSuite) TestGet() {

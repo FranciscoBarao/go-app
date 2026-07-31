@@ -60,6 +60,14 @@ func main() {
 	mechanismController := transport.NewMechanismController(mechanismSvc)
 	contributorController := transport.NewContributorController(contributorSvc)
 
+	// chi keys handlers off a fixed table of the nine standard methods, so
+	// registering a QUERY route panics and incoming QUERY requests get a 405
+	// before the routing tree is consulted. RegisterMethod adds QUERY to that
+	// table; it mutates package-level state, so it must run before any route is
+	// registered.
+	// TODO: drop once QUERY leaves IETF draft and chi supports it natively.
+	chi.RegisterMethod("QUERY")
+
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
 

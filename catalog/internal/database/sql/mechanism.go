@@ -21,6 +21,9 @@ const SelectAllMechanisms = `SELECT ` + mechanismColumns + `
 FROM mechanisms
 WHERE deleted_at IS NULL`
 
+// CountMechanisms counts active mechanisms (before pagination).
+const CountMechanisms = `SELECT COUNT(*) FROM mechanisms WHERE deleted_at IS NULL`
+
 // SoftDeleteMechanism sets deleted_at on a mechanism.
 const SoftDeleteMechanism = `UPDATE mechanisms SET deleted_at = NOW()
 WHERE slug = $1 AND deleted_at IS NULL`
