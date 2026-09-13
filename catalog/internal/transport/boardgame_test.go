@@ -66,13 +66,13 @@ func (suite *BoardgameControllerSuite) TestGetAll() {
 	expected := []boardgame.Boardgame{{Slug: "catan"}}
 	var gotParams listopt.Params
 	suite.mockSvc.EXPECT().GetAll(gomock.Any(), true, gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ bool, opts ...listopt.Option) ([]boardgame.Boardgame, int, error) {
-			gotParams = listopt.Apply(opts...)
+		func(_ context.Context, _ bool, params listopt.Params) ([]boardgame.Boardgame, int, error) {
+			gotParams = params
 			return expected, 42, nil
 		},
 	)
 
-	httpReq := httptest.NewRequest(http.MethodGet, "/?page=2&pageSize=20&sort=name.desc&filter=minplayers.ge.3&include_deleted=true", nil)
+	httpReq := httptest.NewRequest(http.MethodGet, "/?page=2&pageSize=20&sort=name.desc&filter=min_players.ge.3&include_deleted=true", nil)
 	rec := httptest.NewRecorder()
 
 	suite.controller.GetAll(rec, httpReq)

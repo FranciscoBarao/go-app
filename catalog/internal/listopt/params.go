@@ -1,16 +1,15 @@
 package listopt
 
-// Op represents a validated filter operator.
-type Op string
+// Operator is a validated filter comparison (like, eq, lt, le, gt, ge).
+type Operator string
 
-// Filter operators.
 const (
-	OpLike Op = "like"
-	OpEq   Op = "eq"
-	OpLt   Op = "lt"
-	OpLe   Op = "le"
-	OpGt   Op = "gt"
-	OpGe   Op = "ge"
+	Like Operator = "like"
+	Eq   Operator = "eq"
+	Lt   Operator = "lt"
+	Le   Operator = "le"
+	Gt   Operator = "gt"
+	Ge   Operator = "ge"
 )
 
 // Pagination defaults and bounds.
@@ -23,6 +22,13 @@ const (
 	MaxPageSize = 100
 )
 
+// Params is the query contract passed from the service layer to the database layer.
+type Params struct {
+	Sort       Sort
+	Filters    []Filter
+	Pagination Pagination
+}
+
 // Sort holds the sorting parameters.
 type Sort struct {
 	Column string
@@ -31,18 +37,21 @@ type Sort struct {
 
 // Filter holds a single filtering clause.
 type Filter struct {
-	Column string
-	Op     Op
-	Value  string
-	// Numeric indicates the target column is a numeric type, so the database
-	// layer should bind Value as a number rather than a string.
-	Numeric bool
+	Column   string
+	Operator Operator
+	Value    string
+	Kind     FieldKind
 }
 
 // Pagination holds validated pagination parameters.
 type Pagination struct {
 	Page     int
 	PageSize int
+}
+
+// NewPagination builds a Pagination from request ints and normalizes it.
+func NewPagination(page, pageSize int) Pagination {
+	return Pagination{Page: page, PageSize: pageSize}.Normalize()
 }
 
 // Limit returns the SQL LIMIT (page size) for the pagination window.
@@ -55,9 +64,16 @@ func (p Pagination) Offset() int {
 	return (p.Page - 1) * p.PageSize
 }
 
-// Params is the query contract passed from the service layer to the database layer.
-type Params struct {
-	Sort       Sort
-	Filters    []Filter
-	Pagination Pagination
+// Normalize clamps page/pageSize into valid bounds (defaults and max size).
+func (p Pagination) Normalize() Pagination {
+	if p.Page < 1 {
+		p.Page = DefaultPage
+	}
+	if p.PageSize < 1 {
+		p.PageSize = DefaultPageSize
+	}
+	if p.PageSize > MaxPageSize {
+		p.PageSize = MaxPageSize
+	}
+	return p
 }

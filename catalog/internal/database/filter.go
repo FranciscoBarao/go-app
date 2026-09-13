@@ -22,12 +22,12 @@ func filterConditions(filters []listopt.Filter, startIdx int) (string, []any) {
 		if f.Column == "" {
 			continue
 		}
-		if f.Op == listopt.OpLike {
+		if f.Operator == listopt.Like {
 			fmt.Fprintf(&query, " AND %s ILIKE $%d", f.Column, idx)
 			args = append(args, "%"+f.Value+"%")
 		} else {
-			fmt.Fprintf(&query, " AND %s %s $%d", f.Column, opToSQL(f.Op), idx)
-			args = append(args, parseFilterValue(f.Value, f.Numeric))
+			fmt.Fprintf(&query, " AND %s %s $%d", f.Column, operatorToSQL(f.Operator), idx)
+			args = append(args, parseFilterValue(f.Value, f.Kind))
 		}
 		idx++
 	}
@@ -67,30 +67,30 @@ func buildPaginatedQuery(baseSelect string, params listopt.Params) (string, []an
 	return query, args
 }
 
-func opToSQL(op listopt.Op) string {
-	switch op {
-	case listopt.OpLt:
+func operatorToSQL(operator listopt.Operator) string {
+	switch operator {
+	case listopt.Lt:
 		return "<"
-	case listopt.OpLe:
+	case listopt.Le:
 		return "<="
-	case listopt.OpGt:
+	case listopt.Gt:
 		return ">"
-	case listopt.OpGe:
+	case listopt.Ge:
 		return ">="
-	case listopt.OpEq:
+	case listopt.Eq:
 		return "="
 	default:
-		panic(fmt.Sprintf("unreachable: invalid filter operator %q", op))
+		panic(fmt.Sprintf("unreachable: invalid filter operator %q", operator))
 	}
 }
 
 // parseFilterValue binds a filter value with a type appropriate for the column.
-// Numeric columns are coerced to int/float so pgx can encode them for numeric
+// KindInt columns are coerced to int/float so pgx can encode them for numeric
 // comparisons and equality. String columns keep the raw value, so an eq on a
 // string column with a numeric-looking value (e.g. "123") is matched as text
 // rather than silently coerced to a number.
-func parseFilterValue(value string, numeric bool) any {
-	if !numeric {
+func parseFilterValue(value string, kind listopt.FieldKind) any {
+	if kind != listopt.KindInt {
 		return value
 	}
 	if i, err := strconv.Atoi(value); err == nil {

@@ -70,8 +70,8 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 
 // GetAll retrieves mechanisms with optional sort, filter, and pagination,
 // returning the page of results and the total count of matching rows.
-func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Mechanism, int, error) {
-	return svc.db.GetAllMechanisms(ctx, listopt.Apply(opts...))
+func (svc *Service) GetAll(ctx context.Context, params listopt.Params) ([]Mechanism, int, error) {
+	return svc.db.GetAllMechanisms(ctx, params)
 }
 
 // Get retrieves a Mechanism by slug.

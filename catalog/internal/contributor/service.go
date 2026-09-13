@@ -90,8 +90,8 @@ func (svc *Service) Update(ctx context.Context, req *UpdateContributorRequest, s
 
 // GetAll retrieves contributors with optional sort, filter, and pagination,
 // returning the page of results and the total count of matching rows.
-func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Contributor, int, error) {
-	return svc.db.GetAllContributors(ctx, listopt.Apply(opts...))
+func (svc *Service) GetAll(ctx context.Context, params listopt.Params) ([]Contributor, int, error) {
+	return svc.db.GetAllContributors(ctx, params)
 }
 
 // Get retrieves a contributor by slug.

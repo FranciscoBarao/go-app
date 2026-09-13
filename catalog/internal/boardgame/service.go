@@ -116,8 +116,8 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 
 // GetAll retrieves boardgames with optional sort, filter, pagination, and deleted
 // inclusion, returning the page of results and the total count of matching rows.
-func (svc *Service) GetAll(ctx context.Context, includeDeleted bool, opts ...listopt.Option) ([]Boardgame, int, error) {
-	return svc.db.GetAllBoardgames(ctx, listopt.Apply(opts...), includeDeleted)
+func (svc *Service) GetAll(ctx context.Context, includeDeleted bool, params listopt.Params) ([]Boardgame, int, error) {
+	return svc.db.GetAllBoardgames(ctx, params, includeDeleted)
 }
 
 // GetBySlug retrieves a boardgame by slug.

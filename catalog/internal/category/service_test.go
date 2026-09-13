@@ -70,7 +70,7 @@ func (suite *CategoryServiceSuite) TestGetAll() {
 	}
 	suite.mockDB.EXPECT().GetAllCategories(gomock.Any(), wantParams).Return(expected, len(expected), nil)
 
-	categories, total, err := suite.service.GetAll(context.Background(), listopt.WithSort("name", "asc"))
+	categories, total, err := suite.service.GetAll(context.Background(), listopt.Apply(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, categories)
 	suite.Assert().Equal(len(expected), total)

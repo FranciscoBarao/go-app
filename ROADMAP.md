@@ -65,6 +65,10 @@ Goal: Make the catalog usable for discovery without a frontend.
   - 2026-07-28: GET lists were silently truncating (first 10, bare array, no total, no way to reach page 2). They now accept `?page/pageSize/sort=field.order/filter=field.op.value` (repeatable) and return the same envelope as `QUERY`, which becomes the escape hatch for filters too complex for a URL. Both methods share one validation path (`newQueryRequestFromURL` → `toOptions`) and each controller's `list` helper. Swagger documents the GET params and envelope via per-resource `*Page` mirrors, since the pinned swag (v1.8.x) renders generics as untyped objects.
 - [~] Multi-filter (category, mechanism, contributor, player count, etc.)
   - 2026-07-16: scalar multi-filter shipped via `QUERY` `filters[]` (like/eq/lt/le/gt/ge, AND-combined) on model `db` columns. Association-based filters (by category/mechanism/contributor slug) still pending.
+  - 2026-09-12: scalar filters/sorts use per-resource `listopt.Schema` allowlists (JSON names). Association-based filters still pending.
+  - 2026-09-13: list handlers `Apply` once and pass `listopt.Params` into `GetAll` (no second merge in the service).
+  - 2026-09-13: `eq` on int columns requires a parseable number; string `eq` of `"123"` stays text.
+  - 2026-09-13: per-resource `QuerySchema` allowlists locked in `query_test.go`; operator tests stay in `listopt/schema_test.go`.
 - [ ] Text search: `q=` with ILIKE on name + slug
 - [ ] Taxonomy browse endpoints, e.g.:
   - [ ] `GET /api/category/{slug}/boardgames`

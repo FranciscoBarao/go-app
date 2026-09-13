@@ -18,7 +18,7 @@ import (
 type ContributorService interface {
 	Create(ctx context.Context, req *contributor.CreateContributorRequest) (contributor.Contributor, error)
 	Update(ctx context.Context, req *contributor.UpdateContributorRequest, slug string) (contributor.Contributor, error)
-	GetAll(ctx context.Context, opts ...listopt.Option) ([]contributor.Contributor, int, error)
+	GetAll(ctx context.Context, params listopt.Params) ([]contributor.Contributor, int, error)
 	Get(ctx context.Context, slug string) (contributor.Contributor, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -97,14 +97,14 @@ func (c *ContributorController) Query(w http.ResponseWriter, r *http.Request) {
 // list resolves a validated list request and writes the paginated envelope,
 // shared by the GET and QUERY entry points.
 func (c *ContributorController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
-	opts, err := q.toOptions(contributor.Contributor{})
+	opts, err := q.toOptions(contributor.QuerySchema)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	p := listopt.Apply(opts...)
-	list, total, err := c.service.GetAll(r.Context(), opts...)
+	list, total, err := c.service.GetAll(r.Context(), p)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

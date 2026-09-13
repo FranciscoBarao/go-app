@@ -17,7 +17,7 @@ import (
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(ctx context.Context, req *category.CreateCategoryRequest) (category.Category, error)
-	GetAll(ctx context.Context, opts ...listopt.Option) ([]category.Category, int, error)
+	GetAll(ctx context.Context, params listopt.Params) ([]category.Category, int, error)
 	Get(ctx context.Context, slug string) (category.Category, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -96,14 +96,14 @@ func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Reque
 // list resolves a validated list request and writes the paginated envelope,
 // shared by the GET and QUERY entry points.
 func (controller *CategoryController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
-	opts, err := q.toOptions(category.Category{})
+	opts, err := q.toOptions(category.QuerySchema)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
 	p := listopt.Apply(opts...)
-	categories, total, err := controller.service.GetAll(r.Context(), opts...)
+	categories, total, err := controller.service.GetAll(r.Context(), p)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return

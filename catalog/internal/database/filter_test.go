@@ -22,39 +22,39 @@ func TestFilterConditions(t *testing.T) {
 		},
 		{
 			name:     "like op produces ILIKE clause",
-			filters:  []listopt.Filter{{Column: "name", Op: listopt.OpLike, Value: "catan"}},
+			filters:  []listopt.Filter{{Column: "name", Operator: listopt.Like, Value: "catan"}},
 			wantSQL:  " AND name ILIKE $1",
 			wantArgs: []any{"%catan%"},
 		},
 		{
 			name:     "eq op on string column keeps string value",
-			filters:  []listopt.Filter{{Column: "name", Op: listopt.OpEq, Value: "Catan"}},
+			filters:  []listopt.Filter{{Column: "name", Operator: listopt.Eq, Value: "Catan"}},
 			wantSQL:  " AND name = $1",
 			wantArgs: []any{"Catan"},
 		},
 		{
 			name:     "eq op on string column with numeric-looking value stays string",
-			filters:  []listopt.Filter{{Column: "name", Op: listopt.OpEq, Value: "123"}},
+			filters:  []listopt.Filter{{Column: "name", Operator: listopt.Eq, Value: "123"}},
 			wantSQL:  " AND name = $1",
 			wantArgs: []any{"123"},
 		},
 		{
 			name:     "eq op on numeric column coerces to int",
-			filters:  []listopt.Filter{{Column: "player_number", Op: listopt.OpEq, Value: "5", Numeric: true}},
+			filters:  []listopt.Filter{{Column: "player_number", Operator: listopt.Eq, Value: "5", Kind: listopt.KindInt}},
 			wantSQL:  " AND player_number = $1",
 			wantArgs: []any{5},
 		},
 		{
 			name:     "lt op with numeric value",
-			filters:  []listopt.Filter{{Column: "player_number", Op: listopt.OpLt, Value: "5", Numeric: true}},
+			filters:  []listopt.Filter{{Column: "player_number", Operator: listopt.Lt, Value: "5", Kind: listopt.KindInt}},
 			wantSQL:  " AND player_number < $1",
 			wantArgs: []any{5},
 		},
 		{
 			name: "multiple filters increment placeholders",
 			filters: []listopt.Filter{
-				{Column: "min_players", Op: listopt.OpGe, Value: "3", Numeric: true},
-				{Column: "name", Op: listopt.OpLike, Value: "cat"},
+				{Column: "min_players", Operator: listopt.Ge, Value: "3", Kind: listopt.KindInt},
+				{Column: "name", Operator: listopt.Like, Value: "cat"},
 			},
 			wantSQL:  " AND min_players >= $1 AND name ILIKE $2",
 			wantArgs: []any{3, "%cat%"},
@@ -72,9 +72,9 @@ func TestFilterConditions(t *testing.T) {
 
 func TestBuildPaginatedQuery(t *testing.T) {
 	params := listopt.Apply(
-		listopt.WithFilter("name", listopt.OpLike, "cat", false),
-		listopt.WithSort("name", "asc"),
-		listopt.WithPagination(2, 20),
+		listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Like, Value: "cat"}),
+		listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"}),
+		listopt.WithPagination(listopt.Pagination{Page: 2, PageSize: 20}),
 	)
 
 	q, args := buildPaginatedQuery("SELECT * FROM boardgames WHERE deleted_at IS NULL", params)
@@ -86,21 +86,21 @@ func TestBuildPaginatedQuery(t *testing.T) {
 }
 
 func TestBuildPaginatedQuery_DefaultOrderByIDWhenNoSort(t *testing.T) {
-	params := listopt.Apply(listopt.WithPagination(1, 10))
+	params := listopt.Apply(listopt.WithPagination(listopt.Pagination{Page: 1, PageSize: 10}))
 	q, _ := buildPaginatedQuery("SELECT * FROM boardgames WHERE deleted_at IS NULL", params)
 
 	require.Contains(t, q, " ORDER BY id ASC")
 }
 
 func TestBuildPaginatedQuery_IDTiebreakWithSort(t *testing.T) {
-	params := listopt.Apply(listopt.WithSort("name", "asc"), listopt.WithPagination(1, 10))
+	params := listopt.Apply(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"}), listopt.WithPagination(listopt.Pagination{Page: 1, PageSize: 10}))
 	q, _ := buildPaginatedQuery("SELECT * FROM boardgames WHERE deleted_at IS NULL", params)
 
 	require.Contains(t, q, " ORDER BY name asc, id ASC")
 }
 
 func TestBuildPaginatedQuery_SortByIDHasNoDuplicateTiebreak(t *testing.T) {
-	params := listopt.Apply(listopt.WithSort("id", "desc"), listopt.WithPagination(1, 10))
+	params := listopt.Apply(listopt.WithSort(listopt.Sort{Column: "id", Order: "desc"}), listopt.WithPagination(listopt.Pagination{Page: 1, PageSize: 10}))
 	q, _ := buildPaginatedQuery("SELECT * FROM boardgames WHERE deleted_at IS NULL", params)
 
 	require.Contains(t, q, " ORDER BY id desc")
@@ -108,7 +108,7 @@ func TestBuildPaginatedQuery_SortByIDHasNoDuplicateTiebreak(t *testing.T) {
 }
 
 func TestBuildCountQuery(t *testing.T) {
-	params := listopt.Apply(listopt.WithFilter("name", listopt.OpEq, "Catan", false))
+	params := listopt.Apply(listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Eq, Value: "Catan"}))
 	q, args := buildCountQuery("SELECT COUNT(*) FROM boardgames WHERE deleted_at IS NULL", params)
 
 	require.Equal(t, "SELECT COUNT(*) FROM boardgames WHERE deleted_at IS NULL AND name = $1", q)

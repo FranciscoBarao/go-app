@@ -273,7 +273,7 @@ func (suite *BoardgameServiceSuite) TestGetAll() {
 		GetAllBoardgames(gomock.Any(), wantParams, true).
 		Return(expected, len(expected), nil)
 
-	all, total, err := suite.service.GetAll(context.Background(), true, listopt.WithSort("name", "asc"))
+	all, total, err := suite.service.GetAll(context.Background(), true, listopt.Apply(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, all)
 	suite.Assert().Equal(len(expected), total)

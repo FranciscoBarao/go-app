@@ -12,8 +12,25 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
+
+// Query parameter names accepted by the GET list endpoints.
+const (
+	paramPage           = "page"
+	paramPageSize       = "pageSize"
+	paramSort           = "sort"
+	paramFilter         = "filter"
+	paramIncludeDeleted = "include_deleted"
+)
+
+// QueryRequest is a list request: the JSON body accepted by the QUERY endpoints,
+// and the parsed form of the GET list query parameters.
+type QueryRequest struct {
+	Pagination     PaginationRequest `json:"pagination"`
+	Sort           *SortRequest      `json:"sort,omitempty"`
+	Filters        []FilterRequest   `json:"filters,omitempty"`
+	IncludeDeleted bool              `json:"include_deleted,omitempty"`
+}
 
 // SortRequest describes the sort clause of a list request.
 type SortRequest struct {
@@ -34,30 +51,12 @@ type PaginationRequest struct {
 	PageSize int `json:"pageSize"`
 }
 
-// QueryRequest is a list request: the JSON body accepted by the QUERY endpoints,
-// and the parsed form of the GET list query parameters.
-type QueryRequest struct {
-	Pagination     PaginationRequest `json:"pagination"`
-	Sort           *SortRequest      `json:"sort,omitempty"`
-	Filters        []FilterRequest   `json:"filters,omitempty"`
-	IncludeDeleted bool              `json:"include_deleted,omitempty"`
-}
-
-// Query parameter names accepted by the GET list endpoints.
-const (
-	paramPage           = "page"
-	paramPageSize       = "pageSize"
-	paramSort           = "sort"
-	paramFilter         = "filter"
-	paramIncludeDeleted = "include_deleted"
-)
-
 // newQueryRequestFromURL builds a list request from GET query parameters, so the
 // GET and QUERY entry points share the validation in toOptions.
 //
 //	page=2&pageSize=20      pagination window (out-of-range values are clamped)
 //	sort=name.asc           field.order
-//	filter=minplayers.ge.3  field.op.value, repeatable, AND-combined
+//	filter=min_players.ge.3  field.op.value, repeatable, AND-combined
 //	include_deleted=true    boardgames only
 //
 // The operator is mandatory in filter, unlike the JSON form where it may be
@@ -109,42 +108,31 @@ func parseIntParam(values url.Values, name string) (int, error) {
 	return n, nil
 }
 
-// sortParam renders the requested sort in the dotted "field.order" form taken by
-// utils.GetSort, or "" when no sort was requested.
-func (q *QueryRequest) sortParam() string {
-	if q.Sort == nil || (q.Sort.Field == "" && q.Sort.Order == "") {
-		return ""
-	}
-	return q.Sort.Field + "." + q.Sort.Order
-}
-
-// toOptions validates the list request against the given model and converts it
-// into listopt options. Field/operator validation reuses the existing sort and
-// filter validators.
-func (q *QueryRequest) toOptions(model any) ([]listopt.Option, error) {
+// toOptions validates the list request against the resource schema and converts
+// it into listopt options.
+func (q *QueryRequest) toOptions(schema listopt.Schema) ([]listopt.Option, error) {
 	var opts []listopt.Option
 
-	if sortBy := q.sortParam(); sortBy != "" {
-		col, order, err := utils.GetSort(model, sortBy)
+	if q.Sort != nil {
+		sort, err := schema.Sort(q.Sort.Field, q.Sort.Order)
 		if err != nil {
 			return nil, err
 		}
-		if col != "" {
-			opts = append(opts, listopt.WithSort(col, order))
+		if sort.Column != "" {
+			opts = append(opts, listopt.WithSort(sort))
 		}
 	}
 
-	for _, f := range q.Filters {
-		col, op, val, numeric, err := utils.GetFilterFields(model, f.Field, f.Op, f.Value)
+	for _, filter := range q.Filters {
+		filter, err := schema.Filter(filter.Field, filter.Op, filter.Value)
 		if err != nil {
 			return nil, err
 		}
-		if col != "" {
-			opts = append(opts, listopt.WithFilter(col, op, val, numeric))
-		}
+		opts = append(opts, listopt.WithFilter(filter))
 	}
 
-	opts = append(opts, listopt.WithPagination(q.Pagination.Page, q.Pagination.PageSize))
+	pagination := listopt.NewPagination(q.Pagination.Page, q.Pagination.PageSize)
+	opts = append(opts, listopt.WithPagination(pagination))
 	return opts, nil
 }
 

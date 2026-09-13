@@ -65,9 +65,9 @@ func (suite *CategoryControllerSuite) TestQuery() {
 	var gotParams listopt.Params
 	// ctx + 3 opts (sort, filter, pagination).
 	suite.mockSvc.EXPECT().
-		GetAll(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, opts ...listopt.Option) ([]category.Category, int, error) {
-			gotParams = listopt.Apply(opts...)
+		GetAll(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, params listopt.Params) ([]category.Category, int, error) {
+			gotParams = params
 			return []category.Category{{Slug: "strategy"}}, 1, nil
 		})
 
@@ -82,7 +82,7 @@ func (suite *CategoryControllerSuite) TestQuery() {
 	suite.Equal("name", gotParams.Sort.Column)
 	suite.Equal("asc", gotParams.Sort.Order)
 	suite.Require().Len(gotParams.Filters, 1)
-	suite.Equal(listopt.OpLike, gotParams.Filters[0].Op)
+	suite.Equal(listopt.Like, gotParams.Filters[0].Operator)
 	suite.Equal(2, gotParams.Pagination.Page)
 	suite.Equal(20, gotParams.Pagination.PageSize)
 

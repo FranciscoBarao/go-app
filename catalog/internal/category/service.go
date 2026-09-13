@@ -70,8 +70,8 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 
 // GetAll retrieves categories with optional sort, filter, and pagination,
 // returning the page of results and the total count of matching rows.
-func (svc *Service) GetAll(ctx context.Context, opts ...listopt.Option) ([]Category, int, error) {
-	return svc.db.GetAllCategories(ctx, listopt.Apply(opts...))
+func (svc *Service) GetAll(ctx context.Context, params listopt.Params) ([]Category, int, error) {
+	return svc.db.GetAllCategories(ctx, params)
 }
 
 // Get retrieves a Category by slug.

@@ -125,7 +125,7 @@ func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
 			"page":            "2",
 			"pageSize":        "5",
 			"sort":            "name.asc",
-			"filter":          "minplayers.ge.3",
+			"filter":          "min_players.ge.3",
 			"include_deleted": "true",
 		}).
 		Expect(suite.T()).
@@ -137,7 +137,7 @@ func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
 	suite.Assert().Equal("asc", gotParams.Sort.Order)
 	suite.Require().Len(gotParams.Filters, 1)
 	suite.Assert().Equal("min_players", gotParams.Filters[0].Column)
-	suite.Assert().Equal(listopt.OpGe, gotParams.Filters[0].Op)
+	suite.Assert().Equal(listopt.Ge, gotParams.Filters[0].Operator)
 	suite.Assert().Equal(5, gotParams.Pagination.Limit())
 	suite.Assert().Equal(5, gotParams.Pagination.Offset())
 }
@@ -146,7 +146,7 @@ func (suite *BoardGameSuite) TestGetBoardgamesMalformedQueryParam() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Get("/api/boardgame").
-		QueryParams(map[string]string{"filter": "minplayers.bogus.3"}).
+		QueryParams(map[string]string{"filter": "min_players.bogus.3"}).
 		Expect(suite.T()).
 		Status(http.StatusUnprocessableEntity).
 		End()
@@ -181,7 +181,7 @@ func (suite *BoardGameSuite) TestQueryBoardgames() {
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Method("QUERY").
 		URL("/api/boardgame").
-		Body(`{"pagination":{"page":1,"pageSize":10},"filters":[{"field":"minplayers","op":"ge","value":"3"}]}`).
+		Body(`{"pagination":{"page":1,"pageSize":10},"filters":[{"field":"min_players","op":"ge","value":"3"}]}`).
 		ContentType("application/json").
 		Expect(suite.T()).
 		Status(http.StatusOK).

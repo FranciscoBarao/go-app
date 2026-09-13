@@ -94,7 +94,7 @@ func (suite *MechanismServiceSuite) TestGetAll() {
 	}
 	suite.mockDB.EXPECT().GetAllMechanisms(gomock.Any(), wantParams).Return(expected, len(expected), nil)
 
-	list, total, err := suite.service.GetAll(context.Background())
+	list, total, err := suite.service.GetAll(context.Background(), listopt.Apply())
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, list)
 	suite.Assert().Equal(len(expected), total)

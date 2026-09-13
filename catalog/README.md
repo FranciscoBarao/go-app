@@ -220,7 +220,7 @@ GET query parameters (all optional):
 | `page`            | integer           | `page=2`                |
 | `pageSize`        | integer           | `pageSize=20`           |
 | `sort`            | `field.order`     | `sort=name.asc`         |
-| `filter`          | `field.op.value`  | `filter=minplayers.ge.3` (repeatable) |
+| `filter`          | `field.op.value`  | `filter=min_players.ge.3` (repeatable) |
 | `include_deleted` | boolean           | `include_deleted=true` (boardgames only) |
 
 QUERY request body (send `{}` for defaults):
@@ -230,45 +230,37 @@ QUERY request body (send `{}` for defaults):
   "pagination": { "page": 1, "pageSize": 20 },
   "sort": { "field": "name", "order": "asc" },
   "filters": [
-    { "field": "minplayers", "op": "ge", "value": "3" },
+    { "field": "min_players", "op": "ge", "value": "3" },
     { "field": "name", "op": "like", "value": "cat" }
   ],
   "include_deleted": false
 }
 ```
 
+List query mechanics (pagination, sort, filter operators) are documented in
+[`internal/listopt/README.md`](internal/listopt/README.md). Sortable and
+filterable fields are an explicit per-resource allowlist; see
+[`internal/listopt/fields.md`](internal/listopt/fields.md).
+
 - **Pagination.** `page` defaults to `1`, `pageSize` defaults to `10` and is
   clamped to a max of `100`. Out-of-range values are clamped rather than
   rejected; non-numeric ones return `422`.
-- **Sorting.** `field` is a struct field name (case-insensitive) mapped to its DB
-  column via the model's `db` tag; `order` is `asc` or `desc`. Fields tagged
-  `db:"-"` (`categories`, `mechanisms`, `contributions`, `ratings`,
-  `expansions`) are not sortable.
-- **Filtering.** Each filter has `field`, `op`, and `value`. Supported `op`
-  values:
-
-  | `op`                 | Mode                 | SQL                          |
-  | -------------------- | -------------------- | ---------------------------- |
-  | `like` (or omitted)  | Partial string match | `WHERE name ILIKE '%value%'` |
-  | `eq`                 | Exact equality       | `WHERE name = 'value'`       |
-  | `lt` `le` `gt` `ge`  | Numeric comparison   | `WHERE min_players >= value` |
-
-  Multiple filters are combined with `AND`. In the `filter` query parameter the
-  operator is mandatory (`filter=name.like.cat`, not `filter=name.cat`), which is
-  what lets a value contain dots: `filter=name.like.foo.bar` filters on
-  `foo.bar`.
+- **Sorting / filtering.** `field` is the JSON name (e.g. `min_players`).
+  `order` is `asc` or `desc`. Multiple filters are combined with `AND`. In the
+  `filter` query parameter the operator is mandatory (`filter=name.like.cat`),
+  which is what lets a value contain dots.
 
 ```bash
 # Defaults (first page)
 curl localhost:8081/api/boardgame
 
 # Page 2, 20 per page, sorted by name, filtered
-curl "localhost:8081/api/boardgame?page=2&pageSize=20&sort=name.asc&filter=minplayers.ge.3"
+curl "localhost:8081/api/boardgame?page=2&pageSize=20&sort=name.asc&filter=min_players.ge.3"
 
 # The same request as QUERY
 curl -X QUERY localhost:8081/api/boardgame \
   -H 'Content-Type: application/json' \
-  -d '{"pagination":{"page":2,"pageSize":20},"sort":{"field":"name","order":"asc"},"filters":[{"field":"minplayers","op":"ge","value":"3"}]}'
+  -d '{"pagination":{"page":2,"pageSize":20},"sort":{"field":"name","order":"asc"},"filters":[{"field":"min_players","op":"ge","value":"3"}]}'
 ```
 
 A `QUERY` request must send `Content-Type: application/json` and a body (use
