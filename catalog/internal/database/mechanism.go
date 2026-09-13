@@ -40,9 +40,9 @@ func (p *Postgres) GetMechanismIDBySlug(ctx context.Context, slug string) (uint,
 
 // GetAllMechanisms retrieves active mechanisms with optional filtering, sorting,
 // and pagination, returning the page and the total count of matching rows.
-func (p *Postgres) GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]mechanism.Mechanism, int, error) {
-	countQuery, countArgs := buildCountQuery(dbsql.CountMechanisms, filter)
-	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllMechanisms, filter)
+func (p *Postgres) GetAllMechanisms(ctx context.Context, query listopt.Query) ([]mechanism.Mechanism, int, error) {
+	countQuery, countArgs := buildCountQuery(dbsql.CountMechanisms, query)
+	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllMechanisms, query)
 
 	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllMechanisms")
 

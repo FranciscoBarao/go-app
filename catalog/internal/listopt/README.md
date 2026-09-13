@@ -1,8 +1,8 @@
 # listopt
 
-Shared list-query options for catalog list endpoints (boardgame, category, mechanism, contributor).
+Shared validated list-query vocabulary for catalog list endpoints (boardgame, category, mechanism, contributor).
 
-HTTP `GET` query parameters and `QUERY` JSON bodies parse into a `QueryRequest`, then `toOptions(schema)` produces `[]Option`. Transport `Apply`s once and passes `Params` into `GetAll`. Pagination defaults to page `1` / size `10`; `WithPagination` overrides and clamps.
+HTTP `GET` query parameters and `QUERY` JSON bodies parse into a transport `QueryRequest`. `toQuery(allowlist)` validates public field names with `Allowlist.ParseSort` / `ParseFilter`, collects functional `Option`s, and calls `NewQuery`. The resulting `Query` passes unchanged through `GetAll` to the database. Pagination defaults to page `1` / size `10`; `WithPagination` overrides and normalizes it.
 
 ## Pagination
 
@@ -15,7 +15,7 @@ HTTP `GET` query parameters and `QUERY` JSON bodies parse into a `QueryRequest`,
 
 - GET: `sort=field.order` (`asc` or `desc`).
 - QUERY: `"sort": { "field": "name", "order": "asc" }`.
-- `field` is the JSON name. It is mapped to a DB column only if the resource schema marks it sortable.
+- `field` is the public JSON name. `Allowlist.ParseSort` maps it to a DB column only when its `FieldSpec` is sortable.
 - Unknown, non-sortable, or malformed sort returns `422`.
 - No sort: database default (usually `id`).
 
@@ -25,6 +25,7 @@ Which fields are sortable: [fields.md](fields.md).
 
 - GET: `filter=field.op.value`, repeatable, AND-combined. Operator is required so values may contain dots (`filter=name.like.foo.bar`).
 - QUERY: `"filters": [{ "field", "op", "value" }]`. Empty `op` means `like`.
+- `Allowlist.ParseFilter` validates and maps each field into a SQL-ready `Filter`.
 - Operators:
   - `like` — partial string match (`ILIKE`), string fields only
   - `eq` — exact equality (string or int). On int columns the value must parse as a number

@@ -265,15 +265,15 @@ func (suite *BoardgameServiceSuite) TestCreate_EmptySlug() {
 
 func (suite *BoardgameServiceSuite) TestGetAll() {
 	expected := []Boardgame{{Slug: "catan", Name: "Catan"}}
-	wantParams := listopt.Params{
+	wantQuery := listopt.Query{
 		Sort:       listopt.Sort{Column: "name", Order: "asc"},
 		Pagination: listopt.Pagination{Page: listopt.DefaultPage, PageSize: listopt.DefaultPageSize},
 	}
 	suite.mockDB.EXPECT().
-		GetAllBoardgames(gomock.Any(), wantParams, true).
+		GetAllBoardgames(gomock.Any(), wantQuery, true).
 		Return(expected, len(expected), nil)
 
-	all, total, err := suite.service.GetAll(context.Background(), true, listopt.Apply(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})))
+	all, total, err := suite.service.GetAll(context.Background(), true, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})))
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, all)
 	suite.Assert().Equal(len(expected), total)

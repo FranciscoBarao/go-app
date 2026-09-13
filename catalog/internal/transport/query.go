@@ -52,7 +52,7 @@ type PaginationRequest struct {
 }
 
 // newQueryRequestFromURL builds a list request from GET query parameters, so the
-// GET and QUERY entry points share the validation in toOptions.
+// GET and QUERY entry points share the validation in toQuery.
 //
 //	page=2&pageSize=20      pagination window (out-of-range values are clamped)
 //	sort=name.asc           field.order
@@ -108,32 +108,31 @@ func parseIntParam(values url.Values, name string) (int, error) {
 	return n, nil
 }
 
-// toOptions validates the list request against the resource schema and converts
-// it into listopt options.
-func (q *QueryRequest) toOptions(schema listopt.Schema) ([]listopt.Option, error) {
+// toQuery validates the list request against the resource allowlist and builds
+// the query passed through the service and database layers.
+func (q *QueryRequest) toQuery(allowlist listopt.Allowlist) (listopt.Query, error) {
 	var opts []listopt.Option
 
 	if q.Sort != nil {
-		sort, err := schema.Sort(q.Sort.Field, q.Sort.Order)
+		sort, err := allowlist.ParseSort(q.Sort.Field, q.Sort.Order)
 		if err != nil {
-			return nil, err
+			return listopt.Query{}, err
 		}
 		if sort.Column != "" {
 			opts = append(opts, listopt.WithSort(sort))
 		}
 	}
 
-	for _, filter := range q.Filters {
-		filter, err := schema.Filter(filter.Field, filter.Op, filter.Value)
+	for _, requestedFilter := range q.Filters {
+		filter, err := allowlist.ParseFilter(requestedFilter.Field, requestedFilter.Op, requestedFilter.Value)
 		if err != nil {
-			return nil, err
+			return listopt.Query{}, err
 		}
 		opts = append(opts, listopt.WithFilter(filter))
 	}
 
-	pagination := listopt.NewPagination(q.Pagination.Page, q.Pagination.PageSize)
-	opts = append(opts, listopt.WithPagination(pagination))
-	return opts, nil
+	opts = append(opts, listopt.WithPagination(listopt.NewPagination(q.Pagination.Page, q.Pagination.PageSize)))
+	return listopt.NewQuery(opts...), nil
 }
 
 // PageMeta describes the page window and result counts of a list response.

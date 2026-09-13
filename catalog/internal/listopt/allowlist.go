@@ -25,20 +25,20 @@ const (
 	NotFilterable = false
 )
 
-// Field describes one public list/query field.
-type Field struct {
+// FieldSpec describes one public list/query field.
+type FieldSpec struct {
 	Column     string
 	Kind       FieldKind
 	Sortable   bool
 	Filterable bool
 }
 
-// Schema maps a public JSON field name to its query metadata.
-type Schema map[string]Field
+// Allowlist maps a public JSON field name to its query metadata.
+type Allowlist map[string]FieldSpec
 
 // StringField is a sortable and/or filterable string column.
-func StringField(column string, sortable, filterable bool) Field {
-	return Field{
+func StringField(column string, sortable, filterable bool) FieldSpec {
+	return FieldSpec{
 		Column:     column,
 		Kind:       KindString,
 		Sortable:   sortable,
@@ -47,8 +47,8 @@ func StringField(column string, sortable, filterable bool) Field {
 }
 
 // IntField is a sortable and/or filterable integer column.
-func IntField(column string, sortable, filterable bool) Field {
-	return Field{
+func IntField(column string, sortable, filterable bool) FieldSpec {
+	return FieldSpec{
 		Column:     column,
 		Kind:       KindInt,
 		Sortable:   sortable,
@@ -56,17 +56,17 @@ func IntField(column string, sortable, filterable bool) Field {
 	}
 }
 
-// SortColumn is a column that may be used for ORDER BY only.
-func SortColumn(column string) Field {
-	return Field{
+// SortOnly creates a sort-only field spec.
+func SortOnly(column string) FieldSpec {
+	return FieldSpec{
 		Column:     column,
 		Sortable:   Sortable,
 		Filterable: NotFilterable,
 	}
 }
 
-// Sort validates a sort request. Empty field and order is a no-op (zero Sort).
-func (s Schema) Sort(field, order string) (Sort, error) {
+// ParseSort validates a sort request. Empty field and order is a no-op (zero Sort).
+func (s Allowlist) ParseSort(field, order string) (Sort, error) {
 	switch {
 	case field == "" && order == "":
 		return Sort{}, nil
@@ -86,8 +86,8 @@ func (s Schema) Sort(field, order string) (Sort, error) {
 	return Sort{Column: f.Column, Order: order}, nil
 }
 
-// Filter validates a filter request and returns a clause ready for WithFilter.
-func (s Schema) Filter(field, op, value string) (Filter, error) {
+// ParseFilter validates a filter request and returns a clause ready for WithFilter.
+func (s Allowlist) ParseFilter(field, op, value string) (Filter, error) {
 	if field == "" || value == "" {
 		return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, "Malformed filter, field and value can't be empty")
 	}
@@ -112,13 +112,13 @@ func (s Schema) Filter(field, op, value string) (Filter, error) {
 			return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, "Filter value must be numeric for this operator")
 		}
 	}
-	return Filter{Column: f.Column, Operator: parsed, Value: value, Kind: f.Kind}, nil
+	return Filter{Column: f.Column, Operator: parsed, Value: value, ValueKind: f.Kind}, nil
 }
 
-func (s Schema) lookup(field string) (Field, error) {
+func (s Allowlist) lookup(field string) (FieldSpec, error) {
 	f, ok := s[field]
 	if !ok {
-		return Field{}, middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
+		return FieldSpec{}, middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
 	}
 	return f, nil
 }
@@ -135,14 +135,14 @@ func parseOperator(op string) (Operator, error) {
 	}
 }
 
-func (f Field) allowedOperators() []Operator {
+func (f FieldSpec) allowedOperators() []Operator {
 	if f.Kind == KindString {
 		return []Operator{Like, Eq}
 	}
 	return []Operator{Eq, Lt, Le, Gt, Ge}
 }
 
-func allowsOperator(f Field, operator Operator) bool {
+func allowsOperator(f FieldSpec, operator Operator) bool {
 	return slices.Contains(f.allowedOperators(), operator)
 }
 

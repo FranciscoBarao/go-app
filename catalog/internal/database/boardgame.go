@@ -84,7 +84,7 @@ func (p *Postgres) getBoardgame(ctx context.Context, query string, arg any) (boa
 // GetAllBoardgames retrieves active boardgames with optional filtering, sorting,
 // and pagination. It returns the page of results and the total count of matching
 // rows (before pagination).
-func (p *Postgres) GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]boardgame.Boardgame, int, error) {
+func (p *Postgres) GetAllBoardgames(ctx context.Context, query listopt.Query, includeDeleted bool) ([]boardgame.Boardgame, int, error) {
 	selectBase := dbsql.SelectAllBoardgames
 	countBase := dbsql.CountBoardgames
 	if includeDeleted {
@@ -92,8 +92,8 @@ func (p *Postgres) GetAllBoardgames(ctx context.Context, filter listopt.Params, 
 		countBase = dbsql.CountBoardgamesIncludingDeleted
 	}
 
-	countQuery, countArgs := buildCountQuery(countBase, filter)
-	selectQuery, selectArgs := buildPaginatedQuery(selectBase, filter)
+	countQuery, countArgs := buildCountQuery(countBase, query)
+	selectQuery, selectArgs := buildPaginatedQuery(selectBase, query)
 
 	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllBoardgames")
 

@@ -7,19 +7,19 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 )
 
-func TestQuerySchema(t *testing.T) {
-	want := listopt.Schema{
+func TestQueryAllowlist(t *testing.T) {
+	want := listopt.Allowlist{
 		"id":         listopt.IntField("id", listopt.Sortable, listopt.Filterable),
 		"slug":       listopt.StringField("slug", listopt.Sortable, listopt.Filterable),
 		"name":       listopt.StringField("name", listopt.Sortable, listopt.Filterable),
-		"created_at": listopt.SortColumn("created_at"),
-		"updated_at": listopt.SortColumn("updated_at"),
+		"created_at": listopt.SortOnly("created_at"),
+		"updated_at": listopt.SortOnly("updated_at"),
 	}
-	if !maps.Equal(QuerySchema, want) {
-		t.Fatalf("QuerySchema = %#v\nwant %#v", QuerySchema, want)
+	if !maps.Equal(QueryAllowlist, want) {
+		t.Fatalf("QueryAllowlist = %#v\nwant %#v", QueryAllowlist, want)
 	}
 	for _, k := range []string{"deleted_at", "bgg_id", "description", "bio", "boardgame_id"} {
-		if _, ok := QuerySchema[k]; ok {
+		if _, ok := QueryAllowlist[k]; ok {
 			t.Errorf("omitted field %q is in schema", k)
 		}
 	}

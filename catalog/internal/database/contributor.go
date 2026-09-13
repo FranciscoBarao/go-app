@@ -47,9 +47,9 @@ func (p *Postgres) GetContributorIDBySlug(ctx context.Context, slug string) (uin
 
 // GetAllContributors retrieves active contributors with optional filtering,
 // sorting, and pagination, returning the page and the total count of matching rows.
-func (p *Postgres) GetAllContributors(ctx context.Context, filter listopt.Params) ([]contributor.Contributor, int, error) {
-	countQuery, countArgs := buildCountQuery(dbsql.CountContributors, filter)
-	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllContributors, filter)
+func (p *Postgres) GetAllContributors(ctx context.Context, query listopt.Query) ([]contributor.Contributor, int, error) {
+	countQuery, countArgs := buildCountQuery(dbsql.CountContributors, query)
+	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllContributors, query)
 
 	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllContributors")
 

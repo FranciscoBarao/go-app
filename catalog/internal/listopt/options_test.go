@@ -3,26 +3,26 @@ package listopt
 import "testing"
 
 func TestWithSort(t *testing.T) {
-	p := Apply(WithSort(Sort{Column: "name", Order: "asc"}))
+	p := NewQuery(WithSort(Sort{Column: "name", Order: "asc"}))
 	if p.Sort.Column != "name" || p.Sort.Order != "asc" {
 		t.Fatalf("expected name/asc, got %s/%s", p.Sort.Column, p.Sort.Order)
 	}
 }
 
 func TestWithFilter(t *testing.T) {
-	p := Apply(WithFilter(Filter{Column: "player_number", Operator: Lt, Value: "5", Kind: KindInt}))
+	p := NewQuery(WithFilter(Filter{Column: "player_number", Operator: Lt, Value: "5", ValueKind: KindInt}))
 	if len(p.Filters) != 1 {
 		t.Fatalf("expected 1 filter, got %d", len(p.Filters))
 	}
 	f := p.Filters[0]
-	if f.Column != "player_number" || f.Operator != Lt || f.Value != "5" || f.Kind != KindInt {
-		t.Fatalf("expected player_number/lt/5/int, got %s/%s/%s/%v", f.Column, f.Operator, f.Value, f.Kind)
+	if f.Column != "player_number" || f.Operator != Lt || f.Value != "5" || f.ValueKind != KindInt {
+		t.Fatalf("expected player_number/lt/5/int, got %s/%s/%s/%v", f.Column, f.Operator, f.Value, f.ValueKind)
 	}
 }
 
 func TestWithMultipleFilters(t *testing.T) {
-	p := Apply(
-		WithFilter(Filter{Column: "min_players", Operator: Ge, Value: "3", Kind: KindInt}),
+	p := NewQuery(
+		WithFilter(Filter{Column: "min_players", Operator: Ge, Value: "3", ValueKind: KindInt}),
 		WithFilter(Filter{Column: "name", Operator: Like, Value: "cat"}),
 	)
 	if len(p.Filters) != 2 {
@@ -33,8 +33,8 @@ func TestWithMultipleFilters(t *testing.T) {
 	}
 }
 
-func TestApplySortAndFilter(t *testing.T) {
-	p := Apply(WithSort(Sort{Column: "name", Order: "asc"}), WithFilter(Filter{Column: "player_number", Operator: Gt, Value: "2", Kind: KindInt}))
+func TestNewQuerySortAndFilter(t *testing.T) {
+	p := NewQuery(WithSort(Sort{Column: "name", Order: "asc"}), WithFilter(Filter{Column: "player_number", Operator: Gt, Value: "2", ValueKind: KindInt}))
 	if p.Sort.Column != "name" || p.Sort.Order != "asc" {
 		t.Fatalf("sort: expected name/asc, got %s/%s", p.Sort.Column, p.Sort.Order)
 	}
@@ -43,8 +43,8 @@ func TestApplySortAndFilter(t *testing.T) {
 	}
 }
 
-func TestApplyNoOptions(t *testing.T) {
-	p := Apply()
+func TestNewQueryNoOptions(t *testing.T) {
+	p := NewQuery()
 	if p.Sort.Column != "" || p.Sort.Order != "" || len(p.Filters) != 0 {
 		t.Fatal("expected zero-value sort/filters")
 	}
@@ -55,7 +55,7 @@ func TestApplyNoOptions(t *testing.T) {
 }
 
 func TestWithPagination(t *testing.T) {
-	p := Apply(WithPagination(Pagination{Page: 3, PageSize: 25}))
+	p := NewQuery(WithPagination(Pagination{Page: 3, PageSize: 25}))
 	if p.Pagination.Page != 3 || p.Pagination.PageSize != 25 {
 		t.Fatalf("expected 3/25, got %d/%d", p.Pagination.Page, p.Pagination.PageSize)
 	}
@@ -79,7 +79,7 @@ func TestPaginationNormalization(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			p := Apply(WithPagination(Pagination{Page: c.page, PageSize: c.size}))
+			p := NewQuery(WithPagination(Pagination{Page: c.page, PageSize: c.size}))
 			if p.Pagination.Page != c.wantPage || p.Pagination.PageSize != c.wantSz {
 				t.Fatalf("got %d/%d, want %d/%d",
 					p.Pagination.Page, p.Pagination.PageSize, c.wantPage, c.wantSz)

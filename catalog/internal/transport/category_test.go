@@ -62,12 +62,12 @@ func (suite *CategoryControllerSuite) TestGet() {
 }
 
 func (suite *CategoryControllerSuite) TestQuery() {
-	var gotParams listopt.Params
+	var gotQuery listopt.Query
 	// ctx + 3 opts (sort, filter, pagination).
 	suite.mockSvc.EXPECT().
 		GetAll(gomock.Any(), gomock.Any()).
-		DoAndReturn(func(_ context.Context, params listopt.Params) ([]category.Category, int, error) {
-			gotParams = params
+		DoAndReturn(func(_ context.Context, query listopt.Query) ([]category.Category, int, error) {
+			gotQuery = query
 			return []category.Category{{Slug: "strategy"}}, 1, nil
 		})
 
@@ -79,12 +79,12 @@ func (suite *CategoryControllerSuite) TestQuery() {
 	suite.controller.Query(rec, req)
 	suite.Equal(http.StatusOK, rec.Code)
 
-	suite.Equal("name", gotParams.Sort.Column)
-	suite.Equal("asc", gotParams.Sort.Order)
-	suite.Require().Len(gotParams.Filters, 1)
-	suite.Equal(listopt.Like, gotParams.Filters[0].Operator)
-	suite.Equal(2, gotParams.Pagination.Page)
-	suite.Equal(20, gotParams.Pagination.PageSize)
+	suite.Equal("name", gotQuery.Sort.Column)
+	suite.Equal("asc", gotQuery.Sort.Order)
+	suite.Require().Len(gotQuery.Filters, 1)
+	suite.Equal(listopt.Like, gotQuery.Filters[0].Operator)
+	suite.Equal(2, gotQuery.Pagination.Page)
+	suite.Equal(20, gotQuery.Pagination.PageSize)
 
 	var resp PaginatedResponse[category.Category]
 	suite.Require().NoError(json.Unmarshal(rec.Body.Bytes(), &resp))

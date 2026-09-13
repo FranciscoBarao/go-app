@@ -40,9 +40,9 @@ func (p *Postgres) GetCategoryIDBySlug(ctx context.Context, slug string) (uint, 
 
 // GetAllCategories retrieves active categories with optional filtering, sorting,
 // and pagination, returning the page and the total count of matching rows.
-func (p *Postgres) GetAllCategories(ctx context.Context, filter listopt.Params) ([]category.Category, int, error) {
-	countQuery, countArgs := buildCountQuery(dbsql.CountCategories, filter)
-	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllCategories, filter)
+func (p *Postgres) GetAllCategories(ctx context.Context, query listopt.Query) ([]category.Category, int, error) {
+	countQuery, countArgs := buildCountQuery(dbsql.CountCategories, query)
+	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllCategories, query)
 
 	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllCategories")
 

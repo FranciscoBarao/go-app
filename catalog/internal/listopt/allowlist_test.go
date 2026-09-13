@@ -2,20 +2,20 @@ package listopt
 
 import "testing"
 
-func testSchema() Schema {
-	return Schema{
+func testAllowlist() Allowlist {
+	return Allowlist{
 		"name":        StringField("name", Sortable, Filterable),
 		"count":       IntField("count", Sortable, Filterable),
 		"notes":       StringField("notes", NotSortable, Filterable),
-		"created_at":  SortColumn("created_at"),
+		"created_at":  SortOnly("created_at"),
 		"internal_id": {Column: "internal_id", Kind: KindInt, Sortable: NotSortable, Filterable: NotFilterable},
 	}
 }
 
-func TestSchemaSort(t *testing.T) {
-	s := testSchema()
+func TestAllowlistParseSort(t *testing.T) {
+	s := testAllowlist()
 	tests := []struct {
-		name      string
+		name          string
 		field     string
 		order     string
 		col       string
@@ -35,7 +35,7 @@ func TestSchemaSort(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.Sort(tt.field, tt.order)
+			got, err := s.ParseSort(tt.field, tt.order)
 			if (err != nil) != tt.err {
 				t.Fatalf("err = %v, wantErr = %v", err, tt.err)
 			}
@@ -46,8 +46,8 @@ func TestSchemaSort(t *testing.T) {
 	}
 }
 
-func TestSchemaFilter(t *testing.T) {
-	s := testSchema()
+func TestAllowlistParseFilter(t *testing.T) {
+	s := testAllowlist()
 	tests := []struct {
 		name         string
 		field        string
@@ -77,14 +77,14 @@ func TestSchemaFilter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := s.Filter(tt.field, tt.op, tt.value)
+			got, err := s.ParseFilter(tt.field, tt.op, tt.value)
 			if (err != nil) != tt.err {
 				t.Fatalf("err = %v, wantErr = %v", err, tt.err)
 			}
 			if !tt.err {
-				if got.Column != tt.col || got.Operator != tt.wantOperator || got.Value != tt.value || got.Kind != tt.wantKind {
+				if got.Column != tt.col || got.Operator != tt.wantOperator || got.Value != tt.value || got.ValueKind != tt.wantKind {
 					t.Errorf("got (%q, %q, %q, %v), want (%q, %q, %q, %v)",
-						got.Column, got.Operator, got.Value, got.Kind, tt.col, tt.wantOperator, tt.value, tt.wantKind)
+						got.Column, got.Operator, got.Value, got.ValueKind, tt.col, tt.wantOperator, tt.value, tt.wantKind)
 				}
 			}
 		})

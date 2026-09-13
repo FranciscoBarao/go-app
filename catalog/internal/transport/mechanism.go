@@ -17,7 +17,7 @@ import (
 // MechanismService defines the interface for mechanism business logic.
 type MechanismService interface {
 	Create(ctx context.Context, req *mechanism.CreateMechanismRequest) (mechanism.Mechanism, error)
-	GetAll(ctx context.Context, params listopt.Params) ([]mechanism.Mechanism, int, error)
+	GetAll(ctx context.Context, query listopt.Query) ([]mechanism.Mechanism, int, error)
 	Get(ctx context.Context, slug string) (mechanism.Mechanism, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -96,19 +96,18 @@ func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Requ
 // list resolves a validated list request and writes the paginated envelope,
 // shared by the GET and QUERY entry points.
 func (controller *MechanismController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
-	opts, err := q.toOptions(mechanism.QuerySchema)
+	query, err := q.toQuery(mechanism.QueryAllowlist)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	p := listopt.Apply(opts...)
-	mechanisms, total, err := controller.service.GetAll(r.Context(), p)
+	mechanisms, total, err := controller.service.GetAll(r.Context(), query)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(mechanisms, total, p.Pagination)); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(mechanisms, total, query.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

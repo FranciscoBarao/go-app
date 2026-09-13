@@ -27,26 +27,26 @@ type Database interface {
 	CreateCategory(ctx context.Context, c *category.Category) error
 	GetCategoryBySlug(ctx context.Context, slug string) (category.Category, error)
 	GetCategoryIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllCategories(ctx context.Context, filter listopt.Params) ([]category.Category, int, error)
+	GetAllCategories(ctx context.Context, query listopt.Query) ([]category.Category, int, error)
 	DeleteCategory(ctx context.Context, slug string, hard bool) error
 
 	CreateMechanism(ctx context.Context, m *mechanism.Mechanism) error
 	GetMechanismBySlug(ctx context.Context, slug string) (mechanism.Mechanism, error)
 	GetMechanismIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllMechanisms(ctx context.Context, filter listopt.Params) ([]mechanism.Mechanism, int, error)
+	GetAllMechanisms(ctx context.Context, query listopt.Query) ([]mechanism.Mechanism, int, error)
 	DeleteMechanism(ctx context.Context, slug string, hard bool) error
 
 	CreateContributor(ctx context.Context, c *contributor.Contributor) error
 	UpdateContributor(ctx context.Context, c *contributor.Contributor) error
 	GetContributorBySlug(ctx context.Context, slug string) (contributor.Contributor, error)
 	GetContributorIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllContributors(ctx context.Context, filter listopt.Params) ([]contributor.Contributor, int, error)
+	GetAllContributors(ctx context.Context, query listopt.Query) ([]contributor.Contributor, int, error)
 	DeleteContributor(ctx context.Context, slug string, hard bool) error
 
 	CreateBoardgame(ctx context.Context, input boardgame.CreateBoardgameDTO) (boardgame.Boardgame, error)
 	GetBoardgameByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	GetBoardgameBySlug(ctx context.Context, slug string) (boardgame.Boardgame, error)
-	GetAllBoardgames(ctx context.Context, filter listopt.Params, includeDeleted bool) ([]boardgame.Boardgame, int, error)
+	GetAllBoardgames(ctx context.Context, query listopt.Query, includeDeleted bool) ([]boardgame.Boardgame, int, error)
 	UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame) error
 	UpdateBoardgameWithAssociations(ctx context.Context, bg *boardgame.Boardgame, assoc boardgame.UpdateAssociations) error
 	DeleteBoardgame(ctx context.Context, id uint, hard bool) error

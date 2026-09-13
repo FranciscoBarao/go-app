@@ -27,7 +27,7 @@ func filterConditions(filters []listopt.Filter, startIdx int) (string, []any) {
 			args = append(args, "%"+f.Value+"%")
 		} else {
 			fmt.Fprintf(&query, " AND %s %s $%d", f.Column, operatorToSQL(f.Operator), idx)
-			args = append(args, parseFilterValue(f.Value, f.Kind))
+			args = append(args, parseFilterValue(f.Value, f.ValueKind))
 		}
 		idx++
 	}
@@ -36,33 +36,33 @@ func filterConditions(filters []listopt.Filter, startIdx int) (string, []any) {
 }
 
 // buildCountQuery composes a COUNT query from a base count statement and the
-// filter clauses in params.
-func buildCountQuery(baseCount string, params listopt.Params) (string, []any) {
-	conds, args := filterConditions(params.Filters, 1)
+// filter clauses in query.
+func buildCountQuery(baseCount string, q listopt.Query) (string, []any) {
+	conds, args := filterConditions(q.Filters, 1)
 	return baseCount + conds, args
 }
 
 // buildPaginatedQuery composes a paginated SELECT from a base select statement,
 // applying filters, optional sort, and a LIMIT/OFFSET window.
-func buildPaginatedQuery(baseSelect string, params listopt.Params) (string, []any) {
-	conds, args := filterConditions(params.Filters, 1)
+func buildPaginatedQuery(baseSelect string, q listopt.Query) (string, []any) {
+	conds, args := filterConditions(q.Filters, 1)
 	query := baseSelect + conds
 
 	// Always sort so LIMIT/OFFSET pagination is deterministic. Fall back to id
 	// when no sort is requested, and append id as a tiebreaker otherwise so
 	// pages stay stable for non-unique sort columns.
-	switch params.Sort.Column {
+	switch q.Sort.Column {
 	case "":
 		query += dbsql.OrderByIDFallback
 	case "id":
-		query += fmt.Sprintf(dbsql.OrderBy, params.Sort.Column, params.Sort.Order)
+		query += fmt.Sprintf(dbsql.OrderBy, q.Sort.Column, q.Sort.Order)
 	default:
-		query += fmt.Sprintf(dbsql.OrderBy, params.Sort.Column, params.Sort.Order)
+		query += fmt.Sprintf(dbsql.OrderBy, q.Sort.Column, q.Sort.Order)
 		query += dbsql.OrderByIDTiebreak
 	}
 
 	query += fmt.Sprintf(dbsql.LimitOffset, len(args)+1, len(args)+2)
-	args = append(args, params.Pagination.Limit(), params.Pagination.Offset())
+	args = append(args, q.Pagination.Limit(), q.Pagination.Offset())
 
 	return query, args
 }

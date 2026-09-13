@@ -17,7 +17,7 @@ type Database interface {
 	CreateCategory(ctx context.Context, c *Category) error
 	GetCategoryBySlug(ctx context.Context, slug string) (Category, error)
 	GetCategoryIDBySlug(ctx context.Context, slug string) (uint, error)
-	GetAllCategories(ctx context.Context, filter listopt.Params) ([]Category, int, error)
+	GetAllCategories(ctx context.Context, query listopt.Query) ([]Category, int, error)
 	DeleteCategory(ctx context.Context, slug string, hard bool) error
 }
 
@@ -70,8 +70,8 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 
 // GetAll retrieves categories with optional sort, filter, and pagination,
 // returning the page of results and the total count of matching rows.
-func (svc *Service) GetAll(ctx context.Context, params listopt.Params) ([]Category, int, error) {
-	return svc.db.GetAllCategories(ctx, params)
+func (svc *Service) GetAll(ctx context.Context, query listopt.Query) ([]Category, int, error) {
+	return svc.db.GetAllCategories(ctx, query)
 }
 
 // Get retrieves a Category by slug.

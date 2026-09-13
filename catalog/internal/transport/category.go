@@ -17,7 +17,7 @@ import (
 // CategoryService defines the interface for category business logic.
 type CategoryService interface {
 	Create(ctx context.Context, req *category.CreateCategoryRequest) (category.Category, error)
-	GetAll(ctx context.Context, params listopt.Params) ([]category.Category, int, error)
+	GetAll(ctx context.Context, query listopt.Query) ([]category.Category, int, error)
 	Get(ctx context.Context, slug string) (category.Category, error)
 	Delete(ctx context.Context, slug string, hard bool) error
 }
@@ -96,19 +96,18 @@ func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Reque
 // list resolves a validated list request and writes the paginated envelope,
 // shared by the GET and QUERY entry points.
 func (controller *CategoryController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
-	opts, err := q.toOptions(category.QuerySchema)
+	query, err := q.toQuery(category.QueryAllowlist)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	p := listopt.Apply(opts...)
-	categories, total, err := controller.service.GetAll(r.Context(), p)
+	categories, total, err := controller.service.GetAll(r.Context(), query)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(categories, total, p.Pagination)); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(categories, total, query.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

@@ -64,10 +64,10 @@ func (suite *BoardgameControllerSuite) TestGet() {
 
 func (suite *BoardgameControllerSuite) TestGetAll() {
 	expected := []boardgame.Boardgame{{Slug: "catan"}}
-	var gotParams listopt.Params
+	var gotQuery listopt.Query
 	suite.mockSvc.EXPECT().GetAll(gomock.Any(), true, gomock.Any()).DoAndReturn(
-		func(_ context.Context, _ bool, params listopt.Params) ([]boardgame.Boardgame, int, error) {
-			gotParams = params
+		func(_ context.Context, _ bool, query listopt.Query) ([]boardgame.Boardgame, int, error) {
+			gotQuery = query
 			return expected, 42, nil
 		},
 	)
@@ -78,12 +78,12 @@ func (suite *BoardgameControllerSuite) TestGetAll() {
 	suite.controller.GetAll(rec, httpReq)
 	suite.Require().Equal(http.StatusOK, rec.Code)
 
-	suite.Assert().Equal(2, gotParams.Pagination.Page)
-	suite.Assert().Equal(20, gotParams.Pagination.PageSize)
-	suite.Assert().Equal("name", gotParams.Sort.Column)
-	suite.Assert().Equal("desc", gotParams.Sort.Order)
-	suite.Require().Len(gotParams.Filters, 1)
-	suite.Assert().Equal("min_players", gotParams.Filters[0].Column)
+	suite.Assert().Equal(2, gotQuery.Pagination.Page)
+	suite.Assert().Equal(20, gotQuery.Pagination.PageSize)
+	suite.Assert().Equal("name", gotQuery.Sort.Column)
+	suite.Assert().Equal("desc", gotQuery.Sort.Order)
+	suite.Require().Len(gotQuery.Filters, 1)
+	suite.Assert().Equal("min_players", gotQuery.Filters[0].Column)
 
 	var resp PaginatedResponse[boardgame.Boardgame]
 	suite.Require().NoError(json.Unmarshal(rec.Body.Bytes(), &resp))

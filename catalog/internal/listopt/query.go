@@ -22,8 +22,8 @@ const (
 	MaxPageSize = 100
 )
 
-// Params is the query contract passed from the service layer to the database layer.
-type Params struct {
+// Query is the query contract passed from the service layer to the database layer.
+type Query struct {
 	Sort       Sort
 	Filters    []Filter
 	Pagination Pagination
@@ -37,10 +37,10 @@ type Sort struct {
 
 // Filter holds a single filtering clause.
 type Filter struct {
-	Column   string
-	Operator Operator
-	Value    string
-	Kind     FieldKind
+	Column    string
+	Operator  Operator
+	Value     string
+	ValueKind FieldKind
 }
 
 // Pagination holds validated pagination parameters.

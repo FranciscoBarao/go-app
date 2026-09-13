@@ -110,11 +110,11 @@ func (suite *BoardGameSuite) TestDeleteBoardgameSuccess() {
 
 func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
 	expected := []boardgame.Boardgame{{Slug: "catan", Name: "Catan", MinPlayers: 3, MaxPlayers: 4}}
-	var gotParams listopt.Params
+	var gotQuery listopt.Query
 	suite.base.dbMock.EXPECT().
 		GetAllBoardgames(gomock.Any(), gomock.Any(), true).
-		DoAndReturn(func(_ context.Context, params listopt.Params, _ bool) ([]boardgame.Boardgame, int, error) {
-			gotParams = params
+		DoAndReturn(func(_ context.Context, query listopt.Query, _ bool) ([]boardgame.Boardgame, int, error) {
+			gotQuery = query
 			return expected, 12, nil
 		})
 
@@ -133,13 +133,13 @@ func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
 		Assert(assertEnvelope(suite.T(), 1, 2, 5, 12, 3)).
 		End()
 
-	suite.Assert().Equal("name", gotParams.Sort.Column)
-	suite.Assert().Equal("asc", gotParams.Sort.Order)
-	suite.Require().Len(gotParams.Filters, 1)
-	suite.Assert().Equal("min_players", gotParams.Filters[0].Column)
-	suite.Assert().Equal(listopt.Ge, gotParams.Filters[0].Operator)
-	suite.Assert().Equal(5, gotParams.Pagination.Limit())
-	suite.Assert().Equal(5, gotParams.Pagination.Offset())
+	suite.Assert().Equal("name", gotQuery.Sort.Column)
+	suite.Assert().Equal("asc", gotQuery.Sort.Order)
+	suite.Require().Len(gotQuery.Filters, 1)
+	suite.Assert().Equal("min_players", gotQuery.Filters[0].Column)
+	suite.Assert().Equal(listopt.Ge, gotQuery.Filters[0].Operator)
+	suite.Assert().Equal(5, gotQuery.Pagination.Limit())
+	suite.Assert().Equal(5, gotQuery.Pagination.Offset())
 }
 
 func (suite *BoardGameSuite) TestGetBoardgamesMalformedQueryParam() {

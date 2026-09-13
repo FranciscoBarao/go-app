@@ -42,7 +42,7 @@ func TestNewPaginatedResponse_NilDataBecomesEmptySlice(t *testing.T) {
 	require.Len(t, resp.Data, 0)
 }
 
-func TestQueryRequest_ToOptions(t *testing.T) {
+func TestQueryRequest_ToQuery(t *testing.T) {
 	q := QueryRequest{
 		Pagination: PaginationRequest{Page: 2, PageSize: 20},
 		Sort:       &SortRequest{Field: "name", Order: "asc"},
@@ -52,10 +52,8 @@ func TestQueryRequest_ToOptions(t *testing.T) {
 		},
 	}
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, "name", p.Sort.Column)
 	require.Equal(t, "asc", p.Sort.Order)
 	require.Len(t, p.Filters, 2)
@@ -66,7 +64,7 @@ func TestQueryRequest_ToOptions(t *testing.T) {
 	require.Equal(t, 20, p.Pagination.PageSize)
 }
 
-func TestQueryRequest_ToOptions_FilterValuesWithDots(t *testing.T) {
+func TestQueryRequest_ToQuery_FilterValuesWithDots(t *testing.T) {
 	q := QueryRequest{
 		Filters: []FilterRequest{
 			{Field: "name", Op: "like", Value: "foo.bar"},
@@ -75,10 +73,8 @@ func TestQueryRequest_ToOptions_FilterValuesWithDots(t *testing.T) {
 		},
 	}
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Len(t, p.Filters, 3)
 	require.Equal(t, listopt.Like, p.Filters[0].Operator)
 	require.Equal(t, "foo.bar", p.Filters[0].Value)
@@ -88,57 +84,54 @@ func TestQueryRequest_ToOptions_FilterValuesWithDots(t *testing.T) {
 	require.Equal(t, "3.5", p.Filters[2].Value)
 }
 
-func TestQueryRequest_ToOptions_MinAgeNumeric(t *testing.T) {
+func TestQueryRequest_ToQuery_MinAgeNumeric(t *testing.T) {
 	q := QueryRequest{Filters: []FilterRequest{{Field: "min_age", Op: "ge", Value: "8"}}}
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-	p := listopt.Apply(opts...)
 	require.Len(t, p.Filters, 1)
 	require.Equal(t, "min_age", p.Filters[0].Column)
-	require.Equal(t, listopt.KindInt, p.Filters[0].Kind)
+	require.Equal(t, listopt.KindInt, p.Filters[0].ValueKind)
 }
 
-func TestQueryRequest_ToOptions_OmittedFields(t *testing.T) {
+func TestQueryRequest_ToQuery_OmittedFields(t *testing.T) {
 	cases := []struct {
-		name   string
-		schema listopt.Schema
-		q      QueryRequest
+		name      string
+		allowlist listopt.Allowlist
+		q         QueryRequest
 	}{
-		{"description sort", boardgame.QuerySchema, QueryRequest{Sort: &SortRequest{Field: "description", Order: "asc"}}},
-		{"description filter", boardgame.QuerySchema, QueryRequest{Filters: []FilterRequest{{Field: "description", Op: "like", Value: "x"}}}},
-		{"bgg_id sort", boardgame.QuerySchema, QueryRequest{Sort: &SortRequest{Field: "bgg_id", Order: "asc"}}},
-		{"bgg_id filter", boardgame.QuerySchema, QueryRequest{Filters: []FilterRequest{{Field: "bgg_id", Op: "eq", Value: "1"}}}},
-		{"deleted_at sort", boardgame.QuerySchema, QueryRequest{Sort: &SortRequest{Field: "deleted_at", Order: "asc"}}},
-		{"categories sort", boardgame.QuerySchema, QueryRequest{Sort: &SortRequest{Field: "categories", Order: "asc"}}},
-		{"bio filter", contributor.QuerySchema, QueryRequest{Filters: []FilterRequest{{Field: "bio", Op: "like", Value: "x"}}}},
-		{"created_at filter", boardgame.QuerySchema, QueryRequest{Filters: []FilterRequest{{Field: "created_at", Op: "eq", Value: "x"}}}},
+		{"description sort", boardgame.QueryAllowlist, QueryRequest{Sort: &SortRequest{Field: "description", Order: "asc"}}},
+		{"description filter", boardgame.QueryAllowlist, QueryRequest{Filters: []FilterRequest{{Field: "description", Op: "like", Value: "x"}}}},
+		{"bgg_id sort", boardgame.QueryAllowlist, QueryRequest{Sort: &SortRequest{Field: "bgg_id", Order: "asc"}}},
+		{"bgg_id filter", boardgame.QueryAllowlist, QueryRequest{Filters: []FilterRequest{{Field: "bgg_id", Op: "eq", Value: "1"}}}},
+		{"deleted_at sort", boardgame.QueryAllowlist, QueryRequest{Sort: &SortRequest{Field: "deleted_at", Order: "asc"}}},
+		{"categories sort", boardgame.QueryAllowlist, QueryRequest{Sort: &SortRequest{Field: "categories", Order: "asc"}}},
+		{"bio filter", contributor.QueryAllowlist, QueryRequest{Filters: []FilterRequest{{Field: "bio", Op: "like", Value: "x"}}}},
+		{"created_at filter", boardgame.QueryAllowlist, QueryRequest{Filters: []FilterRequest{{Field: "created_at", Op: "eq", Value: "x"}}}},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			_, err := c.q.toOptions(c.schema)
+			_, err := c.q.toQuery(c.allowlist)
 			require.Error(t, err)
 		})
 	}
 }
 
-func TestQueryRequest_ToOptions_InvalidSortField(t *testing.T) {
+func TestQueryRequest_ToQuery_InvalidSortField(t *testing.T) {
 	q := QueryRequest{Sort: &SortRequest{Field: "categories", Order: "asc"}}
-	_, err := q.toOptions(boardgame.QuerySchema)
+	_, err := q.toQuery(boardgame.QueryAllowlist)
 	require.Error(t, err)
 }
 
-func TestQueryRequest_ToOptions_InvalidFilterOp(t *testing.T) {
+func TestQueryRequest_ToQuery_InvalidFilterOp(t *testing.T) {
 	q := QueryRequest{Filters: []FilterRequest{{Field: "name", Op: "bogus", Value: "x"}}}
-	_, err := q.toOptions(boardgame.QuerySchema)
+	_, err := q.toQuery(boardgame.QueryAllowlist)
 	require.Error(t, err)
 }
 
-func TestQueryRequest_ToOptions_DefaultsPagination(t *testing.T) {
+func TestQueryRequest_ToQuery_DefaultsPagination(t *testing.T) {
 	q := QueryRequest{} // no pagination
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, listopt.DefaultPage, p.Pagination.Page)
 	require.Equal(t, listopt.DefaultPageSize, p.Pagination.PageSize)
 }
@@ -181,10 +174,8 @@ func TestNewQueryRequestFromURL(t *testing.T) {
 	require.NoError(t, err)
 	require.True(t, q.IncludeDeleted)
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, 2, p.Pagination.Page)
 	require.Equal(t, 20, p.Pagination.PageSize)
 	require.Equal(t, "name", p.Sort.Column)
@@ -205,10 +196,8 @@ func TestNewQueryRequestFromURL_NoParamsUsesDefaults(t *testing.T) {
 	require.Nil(t, q.Sort)
 	require.Empty(t, q.Filters)
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, listopt.DefaultPage, p.Pagination.Page)
 	require.Equal(t, listopt.DefaultPageSize, p.Pagination.PageSize)
 	require.Empty(t, p.Sort.Column)
@@ -221,10 +210,8 @@ func TestNewQueryRequestFromURL_FilterValueKeepsDots(t *testing.T) {
 	require.Equal(t, "foo.bar", q.Filters[0].Value)
 	require.Equal(t, "3.5", q.Filters[1].Value)
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, "foo.bar", p.Filters[0].Value)
 	require.Equal(t, "3.5", p.Filters[1].Value)
 }
@@ -233,10 +220,8 @@ func TestNewQueryRequestFromURL_OutOfRangePaginationIsClamped(t *testing.T) {
 	q, err := parseURL(t, "page=0&pageSize=500")
 	require.NoError(t, err)
 
-	opts, err := q.toOptions(boardgame.QuerySchema)
+	p, err := q.toQuery(boardgame.QueryAllowlist)
 	require.NoError(t, err)
-
-	p := listopt.Apply(opts...)
 	require.Equal(t, listopt.DefaultPage, p.Pagination.Page)
 	require.Equal(t, listopt.MaxPageSize, p.Pagination.PageSize)
 }
@@ -262,14 +247,14 @@ func TestNewQueryRequestFromURL_MalformedParams(t *testing.T) {
 	}
 }
 
-// Sort validation happens in toOptions, so a malformed sort parameter must
+// Sort validation happens in toQuery, so a malformed sort parameter must
 // survive parsing as-is rather than being silently dropped.
-func TestNewQueryRequestFromURL_MalformedSortRejectedByToOptions(t *testing.T) {
+func TestNewQueryRequestFromURL_MalformedSortRejectedByToQuery(t *testing.T) {
 	for _, rawQuery := range []string{"sort=name", "sort=.asc", "sort=name.", "sort=name.asc.desc", "sort=name.sideways", "sort=categories.asc"} {
 		t.Run(rawQuery, func(t *testing.T) {
 			q, err := parseURL(t, rawQuery)
 			require.NoError(t, err)
-			_, err = q.toOptions(boardgame.QuerySchema)
+			_, err = q.toQuery(boardgame.QueryAllowlist)
 			require.Error(t, err)
 		})
 	}

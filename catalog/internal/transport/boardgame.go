@@ -18,7 +18,7 @@ import (
 // BoardgameService defines the interface for boardgame business logic.
 type BoardgameService interface {
 	Create(ctx context.Context, req *boardgame.CreateBoardgameRequest, parentSlug string) (boardgame.Boardgame, error)
-	GetAll(ctx context.Context, includeDeleted bool, params listopt.Params) ([]boardgame.Boardgame, int, error)
+	GetAll(ctx context.Context, includeDeleted bool, query listopt.Query) ([]boardgame.Boardgame, int, error)
 	GetBySlug(ctx context.Context, slug string) (boardgame.Boardgame, error)
 	GetByID(ctx context.Context, id uint) (boardgame.Boardgame, error)
 	Update(ctx context.Context, req *boardgame.UpdateBoardgameRequest, slug string) error
@@ -109,19 +109,18 @@ func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Requ
 // list resolves a validated list request and writes the paginated envelope,
 // shared by the GET and QUERY entry points.
 func (controller *BoardgameController) list(w http.ResponseWriter, r *http.Request, req QueryRequest) {
-	opts, err := req.toOptions(boardgame.QuerySchema)
+	query, err := req.toQuery(boardgame.QueryAllowlist)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
 
-	p := listopt.Apply(opts...)
-	boardgames, total, err := controller.service.GetAll(r.Context(), req.IncludeDeleted, p)
+	boardgames, total, err := controller.service.GetAll(r.Context(), req.IncludeDeleted, query)
 	if err != nil {
 		middleware.ErrorHandler(w, err)
 		return
 	}
-	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(boardgames, total, p.Pagination)); err != nil {
+	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(boardgames, total, query.Pagination)); err != nil {
 		middleware.ErrorHandler(w, err)
 	}
 }

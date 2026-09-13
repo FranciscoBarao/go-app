@@ -2,9 +2,9 @@ package boardgame
 
 import "github.com/FranciscoBarao/catalog/internal/listopt"
 
-// QuerySchema is the sort/filter allowlist for boardgame list endpoints.
+// QueryAllowlist is the sort/filter allowlist for boardgame list endpoints.
 // Public names are JSON field names.
-var QuerySchema = listopt.Schema{
+var QueryAllowlist = listopt.Allowlist{
 	"id":             listopt.IntField("id", listopt.Sortable, listopt.Filterable),
 	"slug":           listopt.StringField("slug", listopt.Sortable, listopt.Filterable),
 	"name":           listopt.StringField("name", listopt.Sortable, listopt.Filterable),
@@ -14,6 +14,6 @@ var QuerySchema = listopt.Schema{
 	"min_play_time":  listopt.IntField("min_play_time", listopt.Sortable, listopt.Filterable),
 	"max_play_time":  listopt.IntField("max_play_time", listopt.Sortable, listopt.Filterable),
 	"min_age":        listopt.IntField("min_age", listopt.Sortable, listopt.Filterable),
-	"created_at":     listopt.SortColumn("created_at"),
-	"updated_at":     listopt.SortColumn("updated_at"),
+	"created_at":     listopt.SortOnly("created_at"),
+	"updated_at":     listopt.SortOnly("updated_at"),
 }
