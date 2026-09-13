@@ -1,30 +1,30 @@
 ## ---------- Variables ----------
-EXPORT_RESULT?=true 
 BUILD_DIR := build
+GOLANGCI_LINT_VERSION ?= v2.11.4
 
 
 ## ---------- Linting ----------
-lint: ## Uses golintci-lint
-	$(eval OUTPUT_OPTIONS = $(shell [ "${EXPORT_RESULT}" = "true" ] && echo "--out-format checkstyle ./... | tee /dev/tty > checkstyle-report.xml" || echo "" ))
-	docker run --rm -v "$(shell pwd):/app" -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
-
+lint: ## Runs golangci-lint
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin $(GOLANGCI_LINT_VERSION)
+	$$(go env GOPATH)/bin/golangci-lint run --concurrency 5 -v ./...
 
 ## ---------- Build ----------
-build-exe: ## Builds exe
+build:
 	go build -o=$(BUILD_DIR)/catalog main.go
 
-build-docker: ## Builds Docker services
+build-docker:
 	docker compose build catalog catalog-db
 
-clean-build: ## Deletes exe build
+clean-build:
 	rm -rf $(BUILD_DIR)/
 
-
 ## ---------- Mock ----------
-mock: ## Generates mocks
-	go get github.com/golang/mock/mockgen@latest
-	go install github.com/golang/mock/mockgen
+build-mock:
+	go install go.uber.org/mock/mockgen@latest
 	go generate -x ./...
+
+clean-mock:
+	find . -type f -name '*_mock.go' -exec rm {} +
 
 
 ## ---------- Test ----------
@@ -35,7 +35,6 @@ test/cover: ## Runs tests with coverage
 	go test -v -race -buildvcs -coverprofile=$(BUILD_DIR)/coverage.out ./...
 
 
-
 ## ---------- Others ----------
 tidy: ## Runs fmt & mod tidy
 	go fmt ./...
@@ -43,7 +42,11 @@ tidy: ## Runs fmt & mod tidy
 
 
 ## ---------- Shortcuts ----------
-check: mock clean-build tidy test lint ## Verifies everything
+
+clean: clean-mock clean-build
+
+
+check: clean build-mock tidy test lint
 
 run: build-docker ## Up/Down with build
 	docker compose down catalog catalog-db

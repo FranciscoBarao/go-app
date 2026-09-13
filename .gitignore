@@ -1,3 +1,4 @@
+### Golang ###
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -21,18 +22,8 @@
 build
 
 
-### NextJS ###
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
 # testing
 /coverage
-
-# next.js
-.next/
-/out/
 
 # production
 /build
@@ -53,16 +44,7 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 
-### react ###
-.DS_*
-*.log
-logs
-**/*.backup.*
-**/*.back.*
 
 node_modules
 bower_components
@@ -74,7 +56,15 @@ thumb
 sketch
 
 
+## Doc
 TODO.md
 docs/
 /.kanbn
 
+
+# Mock files
+*_mock.go
+
+# AI files
+.kiro
+.cursor
