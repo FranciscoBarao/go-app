@@ -58,7 +58,7 @@ sketch
 
 ## Doc
 TODO.md
-docs/
+build/
 /.kanbn
 
 
@@ -66,5 +66,4 @@ docs/
 *_mock.go
 
 # AI files
-.kiro
 .cursor

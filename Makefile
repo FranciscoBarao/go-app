@@ -28,7 +28,7 @@ ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 		echo "Container image for swagger does not exist. Building.."; \
 		docker build . -t swagger-go -f doc/docker/dockerfile; \
 	fi
-	docker run --rm -v "$(shell pwd)/$(svc):/$(svc):ro" -v "$(shell pwd)/$(svc)/docs:/$(svc)/docs:rw" -w /$(svc) swagger-go swag init --parseInternal --parseDependency
+	docker run --rm -v "$(shell pwd)/$(svc):/$(svc):ro" -v "$(shell pwd)/$(svc)/build/docs:/$(svc)/build/docs:rw" -w /$(svc) swagger-go swag init --parseInternal --parseDependency
 else
 	@echo "No service directory such as: $(svc)"
 endif

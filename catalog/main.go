@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	_ "github.com/FranciscoBarao/catalog/build/docs"
 	"github.com/FranciscoBarao/catalog/config"
-	_ "github.com/FranciscoBarao/catalog/docs"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"

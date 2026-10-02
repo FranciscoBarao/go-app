@@ -166,17 +166,17 @@ Goal: introduce user accounts and personal/group game lists. Build on the existi
 
 Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to MoSCoW (H = Must/Should, M = Should/Could, L = Could, VL = Won't-for-now). SWOT is intentionally not used — it is a strategic-analysis tool, not a backlog prioritizer.
 
-| Item | Type | Priority | MoSCoW | Notes |
-|------|------|----------|--------|-------|
-| Caching | Eng | High | Must/Should | Response/query cache (e.g. Redis) + invalidation strategy |
-| Test coverage | Eng | High | Must/Should | Evaluate how coverage is measured, then improve + add gates |
-| Logging improvement / docs | Eng | High | Must/Should | Consistent structured logs, log levels, documentation |
-| Development pipelines / CI | Eng | High | Must/Should | Per-service build, test, lint on PRs |
-| Kubernetes test env for CD | Eng | Medium | Should/Could | Hosted test environment for continuous deployment |
-| Performance / load tests | Eng | Medium | Should/Could | Throughput and latency under load |
-| UI testing | Eng | Medium | Should/Could | Frontend component + e2e tests |
-| Automatic releases / versioning | Eng | Low | Could | Semver, changelogs, tags |
-| PR automation | Eng | Low | Could | Auto squash-merge + validate PR title & branch nomenclature |
-| Game editions/versions as first-class entities | Product | Low | Could | Distinct from name aliases |
-| Community (reviews, forums, ratings) | Product | Very Low | Won't (now) | Deferred |
-| Shopping / marketplace | Product | Very Low | Won't (now) | Deferred |
+| Item                                           | Type    | Priority | MoSCoW       | Notes                                                       |
+| ---------------------------------------------- | ------- | -------- | ------------ | ----------------------------------------------------------- |
+| Caching                                        | Eng     | High     | Must/Should  | Response/query cache (e.g. Redis) + invalidation strategy   |
+| Test coverage                                  | Eng     | High     | Must/Should  | Evaluate how coverage is measured, then improve + add gates |
+| Logging improvement / docs                     | Eng     | High     | Must/Should  | Consistent structured logs, log levels, documentation       |
+| Development pipelines / CI                     | Eng     | High     | Must/Should  | Per-service build, test, lint on PRs                        |
+| Kubernetes test env for CD                     | Eng     | Medium   | Should/Could | Hosted test environment for continuous deployment           |
+| Performance / load tests                       | Eng     | Medium   | Should/Could | Throughput and latency under load                           |
+| UI testing                                     | Eng     | Medium   | Should/Could | Frontend component + e2e tests                              |
+| Automatic releases / versioning                | Eng     | Low      | Could        | Semver, changelogs, tags                                    |
+| PR automation                                  | Eng     | Low      | Could        | Auto squash-merge + validate PR title & branch nomenclature |
+| Game editions/versions as first-class entities | Product | Low      | Could        | Distinct from name aliases                                  |
+| Community (reviews, forums, ratings)           | Product | Very Low | Won't (now)  | Deferred                                                    |
+| Shopping / marketplace                         | Product | Very Low | Won't (now)  | Deferred                                                    |
