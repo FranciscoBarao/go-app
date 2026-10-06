@@ -1,4 +1,4 @@
-package utils
+package transport
 
 import (
 	"encoding/json"
@@ -10,29 +10,31 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/logging"
+	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
-// DecodeJSONBody decodes a JSON request body into the given destination struct.
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
-	log := logging.FromCtx(r.Context())
+// maxJSONBodyBytes is the maximum size of a JSON body in bytes (1MB).
+const maxJSONBodyBytes int64 = 1 << 20
 
-	// Only allow requests with application/json as header
+// decodeJSONBody decodes one JSON object from the request into dst.
+// The body must be application/json and at most 1MB.
+func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if mediaType != "application/json" {
-		return fmt.Errorf("content-type header is not application/json: %w", ErrBadRequest)
+		return fmt.Errorf("content-type header is not application/json: %w", utils.ErrBadRequest)
 	}
 
-	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // Dont allow bodies that are over 1MB
+	r.Body = http.MaxBytesReader(w, r.Body, maxJSONBodyBytes)
 
 	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields() // Dont allow any extra unexpected fields in the JSON
+	decoder.DisallowUnknownFields()
 
 	err := decoder.Decode(dst)
 	if err == nil {
-		if err = decoder.Decode(&struct{}{}); err != io.EOF { // Don't allow several JSON objects
-			return fmt.Errorf("request body must only contain a single JSON object: %w", ErrBadRequest)
+		if err = decoder.Decode(&struct{}{}); err != io.EOF {
+			return fmt.Errorf("request body must only contain a single JSON object: %w", utils.ErrBadRequest)
 		}
-		return nil // Success exit
+		return nil
 	}
 
 	var syntaxError *json.SyntaxError
@@ -42,26 +44,20 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	switch {
 	case errors.As(err, &syntaxError):
 		msg = fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
-
 	case errors.Is(err, io.ErrUnexpectedEOF):
 		msg = "Request body contains badly-formed JSON"
-
 	case errors.As(err, &unmarshalTypeError):
 		msg = fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
-
 	case strings.HasPrefix(err.Error(), "json: unknown field"):
 		fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 		msg = fmt.Sprintf("Request body contains unknown field %s", fieldName)
-
 	case errors.Is(err, io.EOF):
 		msg = "Request body must not be empty"
-
 	case err.Error() == "http: request body too large":
-		return fmt.Errorf("request body must not be larger than 1MB: %w", ErrRequestTooLarge)
-
+		return fmt.Errorf("request body must not be larger than 1MB: %w", utils.ErrRequestTooLarge)
 	default:
-		log.Error().Err(err).Msg("decode json body")
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("decode json body")
 		return errors.New("internal error")
 	}
-	return fmt.Errorf("%s: %w", msg, ErrBadRequest)
+	return fmt.Errorf("%s: %w", msg, utils.ErrBadRequest)
 }

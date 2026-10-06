@@ -42,7 +42,7 @@ func NewMechanismController(mechanismSvc MechanismService) *MechanismController 
 // @Router 		/mechanism [post]
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 	var req mechanism.CreateMechanismRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -104,7 +104,7 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 // the same envelope.
 func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
-	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
+	if err := decodeJSONBody(w, r, &q); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)

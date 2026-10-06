@@ -43,7 +43,7 @@ func NewContributorController(svc ContributorService) *ContributorController {
 // @Router 		/contributors [post]
 func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 	var req contributor.CreateContributorRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -105,7 +105,7 @@ func (c *ContributorController) GetAll(w http.ResponseWriter, r *http.Request) {
 // the same envelope.
 func (c *ContributorController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
-	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
+	if err := decodeJSONBody(w, r, &q); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -178,7 +178,7 @@ func (c *ContributorController) Get(w http.ResponseWriter, r *http.Request) {
 func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	var req contributor.UpdateContributorRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)

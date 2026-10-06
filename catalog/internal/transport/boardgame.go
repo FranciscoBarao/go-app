@@ -49,7 +49,7 @@ func NewBoardgameController(boardGameSvc BoardgameService) *BoardgameController 
 // @Router 		/boardgame/{slug}/expansion [post]
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 	var req boardgame.CreateBoardgameRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -124,7 +124,7 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 // method; see GetAll for the same envelope.
 func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Request) {
 	var req QueryRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -228,7 +228,7 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 // @Router 		/boardgame/{slug} [patch]
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
 	var req boardgame.UpdateBoardgameRequest
-	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -304,7 +304,7 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 // @Router 		/boardgame/{slug}/rate [post]
 func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Request) {
 	var rating = &boardgame.Rating{}
-	if err := utils.DecodeJSONBody(w, r, rating); err != nil {
+	if err := decodeJSONBody(w, r, rating); err != nil {
 		switch {
 		case errors.Is(err, utils.ErrBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
