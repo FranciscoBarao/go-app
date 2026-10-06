@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 type MechanismSuite struct {
@@ -24,7 +24,7 @@ func (suite *MechanismSuite) SetupSuite() {
 func (suite *MechanismSuite) TestPostMechanism() {
 	suite.base.dbMock.EXPECT().
 		GetMechanismBySlug(gomock.Any(), "test").
-		Return(mechanism.Mechanism{}, middleware.NewError(http.StatusNotFound, "record not found"))
+		Return(mechanism.Mechanism{}, dberr.ErrNotFound)
 	suite.base.dbMock.EXPECT().
 		CreateMechanism(gomock.Any(), gomock.Any()).
 		Return(nil)
@@ -69,7 +69,7 @@ func (suite *MechanismSuite) TestDeleteMechanism() {
 func (suite *MechanismSuite) TestGetMechanismFailure() {
 	suite.base.dbMock.EXPECT().
 		GetMechanismBySlug(gomock.Any(), "test").
-		Return(mechanism.Mechanism{}, middleware.NewError(http.StatusNotFound, "Record not found"))
+		Return(mechanism.Mechanism{}, dberr.ErrNotFound)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).

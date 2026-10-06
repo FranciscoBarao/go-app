@@ -1,12 +1,14 @@
 package listopt
 
 import (
-	"net/http"
+	"errors"
+	"fmt"
 	"slices"
 	"strconv"
-
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
+
+// ErrValidation is a list query that fails allowlist validation.
+var ErrValidation = errors.New("validation failed")
 
 // FieldKind is the query-time type of a list field (not the Go struct type).
 type FieldKind int
@@ -18,6 +20,7 @@ const (
 	KindInt
 )
 
+// Sort and filter availability for a list field.
 const (
 	Sortable      = true
 	NotSortable   = false
@@ -71,9 +74,9 @@ func (s Allowlist) ParseSort(field, order string) (Sort, error) {
 	case field == "" && order == "":
 		return Sort{}, nil
 	case field == "" || order == "":
-		return Sort{}, middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, can't be empty")
+		return Sort{}, fmt.Errorf("malformed sortBy query parameter, can't be empty: %w", ErrValidation)
 	case order != "asc" && order != "desc":
-		return Sort{}, middleware.NewError(http.StatusUnprocessableEntity, "Malformed sortBy query parameter, order should be asc or desc")
+		return Sort{}, fmt.Errorf("malformed sortBy query parameter, order %q should be asc or desc: %w", order, ErrValidation)
 	}
 
 	f, err := s.lookup(field)
@@ -81,7 +84,7 @@ func (s Allowlist) ParseSort(field, order string) (Sort, error) {
 		return Sort{}, err
 	}
 	if !f.Sortable {
-		return Sort{}, middleware.NewError(http.StatusUnprocessableEntity, "Field not available for this operation")
+		return Sort{}, fmt.Errorf("field %q is not sortable: %w", field, ErrValidation)
 	}
 	return Sort{Column: f.Column, Order: order}, nil
 }
@@ -89,7 +92,7 @@ func (s Allowlist) ParseSort(field, order string) (Sort, error) {
 // ParseFilter validates a filter request and returns a clause ready for WithFilter.
 func (s Allowlist) ParseFilter(field, op, value string) (Filter, error) {
 	if field == "" || value == "" {
-		return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, "Malformed filter, field and value can't be empty")
+		return Filter{}, fmt.Errorf("malformed filter, field and value can't be empty: %w", ErrValidation)
 	}
 
 	parsed, err := parseOperator(op)
@@ -102,14 +105,14 @@ func (s Allowlist) ParseFilter(field, op, value string) (Filter, error) {
 		return Filter{}, err
 	}
 	if !f.Filterable {
-		return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, "Field not available for this operation")
+		return Filter{}, fmt.Errorf("field %q is not filterable: %w", field, ErrValidation)
 	}
 	if !allowsOperator(f, parsed) {
-		return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, operatorRejectedMessage(f.Kind, parsed))
+		return Filter{}, fmt.Errorf("field %q: %s: %w", field, operatorRejectedMessage(f.Kind, parsed), ErrValidation)
 	}
 	if f.Kind == KindInt {
 		if _, err := strconv.ParseFloat(value, 64); err != nil {
-			return Filter{}, middleware.NewError(http.StatusUnprocessableEntity, "Filter value must be numeric for this operator")
+			return Filter{}, fmt.Errorf("field %q: filter value must be numeric: %w", field, ErrValidation)
 		}
 	}
 	return Filter{Column: f.Column, Operator: parsed, Value: value, ValueKind: f.Kind}, nil
@@ -118,7 +121,7 @@ func (s Allowlist) ParseFilter(field, op, value string) (Filter, error) {
 func (s Allowlist) lookup(field string) (FieldSpec, error) {
 	f, ok := s[field]
 	if !ok {
-		return FieldSpec{}, middleware.NewError(http.StatusUnprocessableEntity, "No field with this name")
+		return FieldSpec{}, fmt.Errorf("unknown field %q: %w", field, ErrValidation)
 	}
 	return f, nil
 }
@@ -131,7 +134,7 @@ func parseOperator(op string) (Operator, error) {
 	case Eq, Lt, Le, Gt, Ge:
 		return Operator(op), nil
 	default:
-		return "", middleware.NewError(http.StatusUnprocessableEntity, "Operator not allowed")
+		return "", fmt.Errorf("operator %q not allowed: %w", op, ErrValidation)
 	}
 }
 

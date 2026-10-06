@@ -1,22 +1,26 @@
 package utils
 
 import (
-	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/asaskevich/govalidator"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/oauth"
+)
 
-	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+// Request-shape errors returned while decoding and validating HTTP input.
+var (
+	ErrBadRequest      = errors.New("bad request")
+	ErrUnauthorized    = errors.New("unauthorized")
+	ErrRequestTooLarge = errors.New("request body must not be larger than 1MB")
 )
 
 // ValidateStruct executes govalidator to check if sturct fields have the correct, previously defined values
 func ValidateStruct(value any) error {
 	if _, err := govalidator.ValidateStruct(value); err != nil {
-		logging.FromCtx(context.Background()).Error().Err(err).Msg("model validation failed")
-		return middleware.NewError(http.StatusBadRequest, "Error - Model validation failed")
+		return fmt.Errorf("model validation failed: %s: %w", err.Error(), ErrBadRequest)
 	}
 	return nil
 }
@@ -30,12 +34,12 @@ func GetFieldFromURL(r *http.Request, field string) string {
 func GetUsernameFromToken(r *http.Request) (string, error) {
 	claims, ok := r.Context().Value(oauth.ClaimsContext).(map[string]string)
 	if !ok {
-		return "", middleware.NewError(http.StatusUnauthorized, "Error - Missing or invalid auth claims")
+		return "", fmt.Errorf("missing or invalid auth claims: %w", ErrUnauthorized)
 	}
 
 	username, ok := claims["username"]
 	if !ok {
-		return "", middleware.NewError(http.StatusInternalServerError, "Error - Username not present")
+		return "", errors.New("username not present")
 	}
 	return username, nil
 }

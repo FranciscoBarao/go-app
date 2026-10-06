@@ -9,7 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 )
 
 type ContributorSuite struct {
@@ -38,7 +38,7 @@ func (suite *ContributorSuite) TestGetContributor() {
 func (suite *ContributorSuite) TestGetContributorFailure() {
 	suite.base.dbMock.EXPECT().
 		GetContributorBySlug(gomock.Any(), "missing").
-		Return(contributor.Contributor{}, middleware.NewError(http.StatusNotFound, "Record not found"))
+		Return(contributor.Contributor{}, dberr.ErrNotFound)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).

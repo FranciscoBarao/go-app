@@ -2,19 +2,19 @@ package database
 
 import (
 	"context"
-	"net/http"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // CreateBoardgame inserts a new boardgame and its associations within a transaction.
@@ -132,7 +132,7 @@ func (p *Postgres) UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame)
 		return mapPgError(err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return middleware.NewError(http.StatusNotFound, "record not found")
+		return dberr.ErrNotFound
 	}
 	return nil
 }
@@ -154,7 +154,7 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 		return mapPgError(err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return middleware.NewError(http.StatusNotFound, "record not found")
+		return dberr.ErrNotFound
 	}
 
 	if assoc.Categories != nil {
@@ -184,7 +184,7 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 		}
 	}
 
-	return tx.Commit(ctx)
+	return mapPgError(tx.Commit(ctx))
 }
 
 // DeleteBoardgame soft-deletes or hard-deletes a boardgame.
@@ -217,7 +217,7 @@ func (p *Postgres) DeleteBoardgame(ctx context.Context, id uint, hard bool) erro
 			return mapPgError(err)
 		}
 		if cmd.RowsAffected() == 0 {
-			return middleware.NewError(http.StatusNotFound, "record not found")
+			return dberr.ErrNotFound
 		}
 		return tx.Commit(ctx)
 	}
@@ -236,7 +236,7 @@ func (p *Postgres) DeleteBoardgame(ctx context.Context, id uint, hard bool) erro
 		return mapPgError(err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return middleware.NewError(http.StatusNotFound, "record not found")
+		return dberr.ErrNotFound
 	}
 	return mapPgError(tx.Commit(ctx))
 }

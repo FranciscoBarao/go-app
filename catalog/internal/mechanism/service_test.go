@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -28,7 +28,7 @@ func (suite *MechanismServiceSuite) TearDownTest() {
 }
 
 func (suite *MechanismServiceSuite) TestCreate() {
-	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{}, middleware.NewError(404, "record not found"))
+	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{}, dberr.ErrNotFound)
 	suite.mockDB.EXPECT().CreateMechanism(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, m *Mechanism) error {
 			suite.Equal("worker-placement", m.Slug)
@@ -46,20 +46,14 @@ func (suite *MechanismServiceSuite) TestCreate_DuplicateSlug() {
 	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{Slug: "worker-placement", Name: "Worker Placement"}, nil)
 
 	_, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "Worker Placement"})
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(409, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrAlreadyExists)
+	suite.Assert().ErrorContains(err, "slug \"worker-placement\" already in use")
 }
 
 func (suite *MechanismServiceSuite) TestCreate_EmptySlug() {
 	_, err := suite.service.Create(context.Background(), &CreateMechanismRequest{Name: "!!!"})
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(400, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrValidation)
+	suite.Assert().ErrorContains(err, "name must contain slug-able characters")
 }
 
 func (suite *MechanismServiceSuite) TestGet() {
@@ -79,12 +73,11 @@ func (suite *MechanismServiceSuite) TestDelete() {
 }
 
 func (suite *MechanismServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(
-		middleware.NewError(404, "Record not found"),
-	)
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(dberr.ErrNotFound)
 
 	err := suite.service.Delete(context.Background(), "missing", false)
-	suite.Assert().Error(err)
+	suite.Assert().ErrorIs(err, ErrNotFound)
+	suite.Assert().ErrorContains(err, "mechanism \"missing\"")
 }
 
 func (suite *MechanismServiceSuite) TestGetAll() {

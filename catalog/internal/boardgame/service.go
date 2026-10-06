@@ -2,16 +2,28 @@ package boardgame
 
 import (
 	"context"
-	"net/http"
+	"errors"
+	"fmt"
 
+	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 )
 
 //go:generate mockgen -package boardgame -destination service_mock.go . Database,CategoryService,MechanismService,ContributorService
+
+// Errors returned by the boardgame service. Transport maps them to HTTP status codes.
+var (
+	ErrNotFound          = errors.New("record not found")
+	ErrAlreadyExists     = errors.New("entry already exists")
+	ErrMissingReference  = errors.New("referenced record does not exist")
+	ErrValidation        = errors.New("validation failed")
+	ErrParentIsExpansion = errors.New("an expansion cannot be a parent")
+)
 
 // Database defines boardgame persistence operations.
 type Database interface {
@@ -92,22 +104,31 @@ func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, par
 	}
 
 	dto := newCreateBoardgameDTO(req, slugStr, parentID, categoryIDs, mechanismIDs, contributions)
-	return svc.db.CreateBoardgame(ctx, dto)
+	bg, err := svc.db.CreateBoardgame(ctx, dto)
+	switch {
+	case err == nil:
+		return bg, nil
+	case errors.Is(err, dberr.ErrAlreadyExists):
+		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrAlreadyExists)
+	case errors.Is(err, dberr.ErrForeignKey):
+		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrMissingReference)
+	default:
+		return Boardgame{}, fmt.Errorf("create boardgame %q: internal error", slugStr)
+	}
 }
 
 // ensureUniqueSlug derives a slug from name, rejects empty slugs, and fails on collision with an active boardgame.
 func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, error) {
 	slugStr := slug.FromName(name)
 	if slugStr == "" {
-		return "", middleware.NewError(http.StatusBadRequest, "name must contain slug-able characters")
+		return "", fmt.Errorf("name must contain slug-able characters: %w", ErrValidation)
 	}
 
 	_, err := svc.GetBySlug(ctx, slugStr)
 	switch {
 	case err == nil:
-		logging.FromCtx(ctx).Error().Str("slug", slugStr).Msg("slug already in use")
-		return "", middleware.NewError(http.StatusConflict, "slug '"+slugStr+"' already in use; disambiguate the name, e.g. add a year or edition")
-	case middleware.IsNotFound(err):
+		return "", fmt.Errorf("slug %q already in use; disambiguate the name, e.g. add a year or edition: %w", slugStr, ErrAlreadyExists)
+	case errors.Is(err, ErrNotFound):
 		return slugStr, nil
 	default:
 		return "", err
@@ -117,17 +138,37 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 // GetAll retrieves boardgames with optional sort, filter, pagination, and deleted
 // inclusion, returning the page of results and the total count of matching rows.
 func (svc *Service) GetAll(ctx context.Context, includeDeleted bool, query listopt.Query) ([]Boardgame, int, error) {
-	return svc.db.GetAllBoardgames(ctx, query, includeDeleted)
+	boardgames, total, err := svc.db.GetAllBoardgames(ctx, query, includeDeleted)
+	if err != nil {
+		return nil, 0, errors.New("list boardgames: internal error")
+	}
+	return boardgames, total, nil
 }
 
 // GetBySlug retrieves a boardgame by slug.
 func (svc *Service) GetBySlug(ctx context.Context, slugStr string) (Boardgame, error) {
-	return svc.db.GetBoardgameBySlug(ctx, slugStr)
+	bg, err := svc.db.GetBoardgameBySlug(ctx, slugStr)
+	switch {
+	case err == nil:
+		return bg, nil
+	case errors.Is(err, dberr.ErrNotFound):
+		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
+	default:
+		return Boardgame{}, fmt.Errorf("get boardgame %q: internal error", slugStr)
+	}
 }
 
 // GetByID retrieves a boardgame by numeric id (for internal/service use).
 func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
-	return svc.db.GetBoardgameByID(ctx, id)
+	bg, err := svc.db.GetBoardgameByID(ctx, id)
+	switch {
+	case err == nil:
+		return bg, nil
+	case errors.Is(err, dberr.ErrNotFound):
+		return Boardgame{}, fmt.Errorf("boardgame %d: %w", id, ErrNotFound)
+	default:
+		return Boardgame{}, fmt.Errorf("get boardgame %d: internal error", id)
+	}
 }
 
 // Update applies partial changes and persists.
@@ -171,7 +212,19 @@ func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, slu
 		assoc.Contributions = &contributions
 	}
 
-	return svc.db.UpdateBoardgameWithAssociations(ctx, &bg, assoc)
+	err = svc.db.UpdateBoardgameWithAssociations(ctx, &bg, assoc)
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, dberr.ErrNotFound):
+		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
+	case errors.Is(err, dberr.ErrAlreadyExists):
+		return fmt.Errorf("boardgame %q: %w", slugStr, ErrAlreadyExists)
+	case errors.Is(err, dberr.ErrForeignKey):
+		return fmt.Errorf("boardgame %q: %w", slugStr, ErrMissingReference)
+	default:
+		return fmt.Errorf("update boardgame %q: internal error", slugStr)
+	}
 }
 
 // DeleteBySlug soft-deletes or hard-deletes a boardgame.
@@ -181,7 +234,15 @@ func (svc *Service) DeleteBySlug(ctx context.Context, slugStr string, hard bool)
 		return err
 	}
 	logging.FromCtx(ctx).Debug().Str("slug", slugStr).Bool("hard", hard).Msg("deleting boardgame")
-	return svc.db.DeleteBoardgame(ctx, bg.ID, hard)
+	err = svc.db.DeleteBoardgame(ctx, bg.ID, hard)
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, dberr.ErrNotFound):
+		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
+	default:
+		return fmt.Errorf("delete boardgame %q: internal error", slugStr)
+	}
 }
 
 // Rate validates the boardgame exists and sets the username on the rating.
@@ -206,8 +267,7 @@ func (svc *Service) resolveParentID(ctx context.Context, parentSlug string) (*ui
 	}
 
 	if parent.IsExpansion() {
-		logging.FromCtx(ctx).Error().Msg("an expansion cannot have other expansions")
-		return nil, middleware.NewError(http.StatusConflict, "Expansion can't have expansions")
+		return nil, fmt.Errorf("expansion %q: %w", parentSlug, ErrParentIsExpansion)
 	}
 
 	return &parent.ID, nil
@@ -221,8 +281,10 @@ func (svc *Service) resolveCategoryRefs(ctx context.Context, refs []CategoryRef)
 	for _, ref := range refs {
 		id, err := svc.categorySvc.GetIDBySlug(ctx, ref.Slug)
 		if err != nil {
-			logging.FromCtx(ctx).Error().Str("category", ref.Slug).Msg("category not found")
-			return nil, err
+			if errors.Is(err, category.ErrNotFound) {
+				return nil, fmt.Errorf("category %q: %w", ref.Slug, ErrNotFound)
+			}
+			return nil, fmt.Errorf("resolve category %q: internal error", ref.Slug)
 		}
 		ids = append(ids, id)
 	}
@@ -237,8 +299,10 @@ func (svc *Service) resolveMechanismRefs(ctx context.Context, refs []MechanismRe
 	for _, ref := range refs {
 		id, err := svc.mechanismSvc.GetIDBySlug(ctx, ref.Slug)
 		if err != nil {
-			logging.FromCtx(ctx).Error().Str("mechanism", ref.Slug).Msg("mechanism not found")
-			return nil, err
+			if errors.Is(err, mechanism.ErrNotFound) {
+				return nil, fmt.Errorf("mechanism %q: %w", ref.Slug, ErrNotFound)
+			}
+			return nil, fmt.Errorf("resolve mechanism %q: internal error", ref.Slug)
 		}
 		ids = append(ids, id)
 	}
@@ -252,13 +316,14 @@ func (svc *Service) resolveContributionInputs(ctx context.Context, inputs []cont
 	contributions := make([]ContributionDTO, 0, len(inputs))
 	for _, in := range inputs {
 		if !in.Role.Valid() {
-			logging.FromCtx(ctx).Error().Str("role", string(in.Role)).Msg("invalid contribution role")
-			return nil, middleware.NewError(http.StatusBadRequest, "invalid contribution role")
+			return nil, fmt.Errorf("contribution role %q: %w", in.Role, ErrValidation)
 		}
 		id, err := svc.contributorSvc.GetIDBySlug(ctx, in.Slug)
 		if err != nil {
-			logging.FromCtx(ctx).Error().Str("contributor", in.Slug).Msg("contributor not found")
-			return nil, err
+			if errors.Is(err, contributor.ErrNotFound) {
+				return nil, fmt.Errorf("contributor %q: %w", in.Slug, ErrNotFound)
+			}
+			return nil, fmt.Errorf("resolve contributor %q: internal error", in.Slug)
 		}
 		contributions = append(contributions, ContributionDTO{
 			ContributorID: id,

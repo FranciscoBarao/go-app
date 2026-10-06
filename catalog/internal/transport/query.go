@@ -1,7 +1,8 @@
 package transport
 
 import (
-	"net/http"
+	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -11,8 +12,10 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
+
+// ErrUnprocessable is a list query parameter that is not field.op.value or an integer.
+var ErrUnprocessable = errors.New("unprocessable")
 
 // Query parameter names accepted by the GET list endpoints.
 const (
@@ -85,7 +88,7 @@ func newQueryRequestFromURL(values url.Values) (QueryRequest, error) {
 	for _, raw := range values[paramFilter] {
 		parts := strings.SplitN(raw, ".", 3)
 		if len(parts) != 3 {
-			return QueryRequest{}, middleware.NewError(http.StatusUnprocessableEntity, "Malformed filter query parameter, should be field.op.value")
+			return QueryRequest{}, fmt.Errorf("malformed filter query parameter, should be field.op.value: %w", ErrUnprocessable)
 		}
 		q.Filters = append(q.Filters, FilterRequest{Field: parts[0], Op: parts[1], Value: parts[2]})
 	}
@@ -103,7 +106,7 @@ func parseIntParam(values url.Values, name string) (int, error) {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil {
-		return 0, middleware.NewError(http.StatusUnprocessableEntity, "Malformed "+name+" query parameter, must be an integer")
+		return 0, fmt.Errorf("malformed %s query parameter, must be an integer: %w", name, ErrUnprocessable)
 	}
 	return n, nil
 }
@@ -149,30 +152,32 @@ type PaginatedResponse[T any] struct {
 	PageMeta
 }
 
-// Per-resource mirrors of PaginatedResponse, used only in the Swagger
-// annotations of the GET list endpoints: swag v1.8.x renders a generic type as an
-// untyped object, which would hide the item schema. They are structurally
-// verified against the real envelope by TestPageDocsMatchEnvelope.
-// TODO: replace with PaginatedResponse[T] in the annotations once swag is
-// upgraded to a version that supports generics.
-type (
-	BoardgamePage struct {
-		Data []boardgame.Boardgame `json:"data"`
-		PageMeta
-	}
-	CategoryPage struct {
-		Data []category.Category `json:"data"`
-		PageMeta
-	}
-	MechanismPage struct {
-		Data []mechanism.Mechanism `json:"data"`
-		PageMeta
-	}
-	ContributorPage struct {
-		Data []contributor.Contributor `json:"data"`
-		PageMeta
-	}
-)
+// BoardgamePage is the Swagger schema for a page of boardgames.
+// swag v1.8.x renders PaginatedResponse[T] as an untyped object, so each resource has its own page type.
+// TestPageDocsMatchEnvelope checks it against PaginatedResponse.
+// TODO: replace with PaginatedResponse[Boardgame] once swag supports generics.
+type BoardgamePage struct {
+	Data []boardgame.Boardgame `json:"data"`
+	PageMeta
+}
+
+// CategoryPage is the Swagger schema for a page of categories.
+type CategoryPage struct {
+	Data []category.Category `json:"data"`
+	PageMeta
+}
+
+// MechanismPage is the Swagger schema for a page of mechanisms.
+type MechanismPage struct {
+	Data []mechanism.Mechanism `json:"data"`
+	PageMeta
+}
+
+// ContributorPage is the Swagger schema for a page of contributors.
+type ContributorPage struct {
+	Data []contributor.Contributor `json:"data"`
+	PageMeta
+}
 
 // newPaginatedResponse builds an envelope from results and the total item count,
 // computing totalPages from the (already normalized) pagination window.

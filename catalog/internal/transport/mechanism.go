@@ -2,13 +2,14 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -42,20 +43,37 @@ func NewMechanismController(mechanismSvc MechanismService) *MechanismController 
 func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Request) {
 	var req mechanism.CreateMechanismRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create mechanism")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	m, err := controller.service.Create(r.Context(), &req)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, mechanism.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, mechanism.ErrAlreadyExists):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("create mechanism")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode mechanism")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -72,7 +90,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Request) {
 	q, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	controller.list(w, r, q)
@@ -87,7 +105,15 @@ func (controller *MechanismController) GetAll(w http.ResponseWriter, r *http.Req
 func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
 	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode mechanism query")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	controller.list(w, r, q)
@@ -98,17 +124,19 @@ func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Requ
 func (controller *MechanismController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
 	query, err := q.toQuery(mechanism.QueryAllowlist)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
 	mechanisms, total, err := controller.service.GetAll(r.Context(), query)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("list mechanisms")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(mechanisms, total, query.Pagination)); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode mechanisms")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -123,11 +151,18 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	m, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, mechanism.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("get mechanism")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode mechanism")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -144,7 +179,15 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, mechanism.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, mechanism.ErrStillReferenced):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete mechanism")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

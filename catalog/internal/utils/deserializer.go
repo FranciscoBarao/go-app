@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 // DecodeJSONBody decodes a JSON request body into the given destination struct.
@@ -20,8 +19,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	// Only allow requests with application/json as header
 	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if mediaType != "application/json" {
-		log.Error().Str("content-type", mediaType).Msg("content-type header of request must be application/json")
-		return middleware.NewError(http.StatusBadRequest, "Content-Type header is not application/json")
+		return fmt.Errorf("content-type header is not application/json: %w", ErrBadRequest)
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, 1048576) // Dont allow bodies that are over 1MB
@@ -32,8 +30,7 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	err := decoder.Decode(dst)
 	if err == nil {
 		if err = decoder.Decode(&struct{}{}); err != io.EOF { // Don't allow several JSON objects
-			log.Error().Err(err).Msg("request body must only contain a single json object")
-			return middleware.NewError(http.StatusBadRequest, "Request body must only contain a single JSON object")
+			return fmt.Errorf("request body must only contain a single JSON object: %w", ErrBadRequest)
 		}
 		return nil // Success exit
 	}
@@ -44,33 +41,27 @@ func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 
 	switch {
 	case errors.As(err, &syntaxError):
-		log.Error().Int64("position", syntaxError.Offset).Msg("request body contains badly-formed json")
 		msg = fmt.Sprintf("Request body contains badly-formed JSON (at position %d)", syntaxError.Offset)
 
 	case errors.Is(err, io.ErrUnexpectedEOF):
-		log.Error().Msg("request body contains badly-formed json")
 		msg = "Request body contains badly-formed JSON"
 
 	case errors.As(err, &unmarshalTypeError):
-		log.Error().Str("field", unmarshalTypeError.Field).Int64("position", unmarshalTypeError.Offset).Msg("request body contains invalid value in field")
 		msg = fmt.Sprintf("Request body contains an invalid value for the %q field (at position %d)", unmarshalTypeError.Field, unmarshalTypeError.Offset)
 
 	case strings.HasPrefix(err.Error(), "json: unknown field"):
 		fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
-		log.Error().Str("field_name", fieldName).Msg("request body contains unknown field")
 		msg = fmt.Sprintf("Request body contains unknown field %s", fieldName)
 
 	case errors.Is(err, io.EOF):
-		log.Error().Msg("request body is empty")
 		msg = "Request body must not be empty"
 
 	case err.Error() == "http: request body too large":
-		log.Error().Msg("request body must not be larger than 1MB")
-		return middleware.NewError(http.StatusRequestEntityTooLarge, "Request body must not be larger than 1MB")
+		return fmt.Errorf("request body must not be larger than 1MB: %w", ErrRequestTooLarge)
 
 	default:
-		log.Error().Err(err)
-		return err
+		log.Error().Err(err).Msg("decode json body")
+		return errors.New("internal error")
 	}
-	return middleware.NewError(http.StatusBadRequest, msg)
+	return fmt.Errorf("%s: %w", msg, ErrBadRequest)
 }

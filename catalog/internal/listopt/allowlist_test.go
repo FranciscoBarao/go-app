@@ -15,7 +15,7 @@ func testAllowlist() Allowlist {
 func TestAllowlistParseSort(t *testing.T) {
 	s := testAllowlist()
 	tests := []struct {
-		name          string
+		name      string
 		field     string
 		order     string
 		col       string

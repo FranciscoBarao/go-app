@@ -2,7 +2,6 @@ package transport
 
 import (
 	"encoding/json"
-	"net/http"
 	"net/url"
 	"testing"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/stretchr/testify/require"
 )
 
@@ -240,9 +238,7 @@ func TestNewQueryRequestFromURL_MalformedParams(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			_, err := parseURL(t, c.rawQuery)
 
-			var mr *middleware.MalformedRequest
-			require.ErrorAs(t, err, &mr)
-			require.Equal(t, http.StatusUnprocessableEntity, mr.GetStatus())
+			require.ErrorIs(t, err, ErrUnprocessable)
 		})
 	}
 }

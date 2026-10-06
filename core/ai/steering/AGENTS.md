@@ -59,7 +59,7 @@ Apply the following sections when changing Go code.
   - Define narrow interfaces for the service methods required by each transport server. Accept implementations of those interfaces through the server constructor.
   - Construct transport servers in the composition root.
   - Name client-facing servers Public<Service>Server and internal servers Private<Service>Server.
-  - Translate service-layer errors into an appropriate HTTP response via middleware.ErrorHandler. 
+  - Translate that resource's errors into an HTTP response in its handler. Do not use one handler that lists every domain's errors. See `core/docs/standards/error-handling.md`. 
   - Group HTTP implementations for the same domain object in <domain_object>.go.
 
 #### Service Layer Responsibilities and Conventions
@@ -70,7 +70,7 @@ Apply the following sections when changing Go code.
   - Define domain models in the same package as the Service methods that use them. Use model.go for a small model set or <domain_model>.go for separate models.
   - Define narrow interfaces for required storage operations and outbound services. Accept implementations through the Service constructor.
   - Construct service objects in the composition root and pass them to transport server constructors.
-  - Convert storage errors into service errors that do not expose backend details. Preserve unexpected errors with %w. Storage errors must not cross the service boundary.
+  - Convert storage errors into service errors that do not expose backend details. Replace an unexpected storage error with a new error that names the operation and entry, without wrapping it. Storage errors must not cross the service boundary. See `core/docs/standards/error-handling.md`.
   - Do not log an error and return it unchanged. Log failures only when the service handles, suppresses, retries, or reports them.
 
 #### Storage Layer Responsibilities and Conventions
@@ -80,8 +80,8 @@ Apply the following sections when changing Go code.
   - Implement new storage adapters under internal/storage/<backend>. Follow the repository’s established package convention when modifying existing code.
   - Satisfy the narrow storage interfaces defined by the consuming service package.
   - Accept and return domain models, declared result types, identifiers, or counts. Do not expose driver types, database rows, commands, or backend error codes.
-  - Translate expected backend conditions into stable errors such as ErrNotFound, ErrAlreadyExists, and ErrConflict. Treat these errors as part of the storage contract and support inspection with errors.Is.
-  - Wrap unexpected errors with operation and entity context using %w. Do not include credentials, tokens, connection strings, or stored payloads.
+  - Translate expected backend conditions into stable errors such as ErrNotFound, ErrAlreadyExists, and ErrForeignKey. Treat these errors as part of the storage contract and support inspection with errors.Is.
+  - Log an unexpected backend error, then return a safe error that does not wrap the driver error. Do not include credentials, tokens, connection strings, or stored payloads. See `core/docs/standards/error-handling.md`.
   - Enforce storage constraints such as uniqueness, serialization validity, and optimistic concurrency. Leave business validation to the service layer.
   - When writes to one backend require atomicity, expose one storage method that performs them in one transaction. Let the service coordinate operations across backends.
   - Accept context.Context for every I/O operation and pass it to the storage client.
@@ -106,16 +106,8 @@ Apply the following sections when changing Go code.
 - go.mod should contain 2 `require` blocks: one for direct dependencies and a second for indirect dependencies. Direct dependencies should be listed first. 
 
 ### Errors, Context, and Logging
-<!---
-TODO - define once errors are improved
 
-- Use `errors.New` instead of `fmt.Errorf` when the message contains no interpolation.
-- Use formatted or wrapped errors when including values or an underlying error using `fmt` wrapping.
-- Preserve context propagation, cleanup, and explicit error handling.
-- Do not swallow errors or log and continue on paths that should fail.
-- Prefer explicit scalar logging fields. Avoid `Interface` unless necessary.
-- Prefer not combining function calls and error checking into a single if statement.
--->
+Error handling across transport, service, and storage is defined in `core/docs/standards/error-handling.md`.
 
 ### Retries and Backoff
 

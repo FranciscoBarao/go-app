@@ -2,13 +2,14 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -42,20 +43,37 @@ func NewCategoryController(categorySvc CategoryService) *CategoryController {
 func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Request) {
 	var req category.CreateCategoryRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create category")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	c, err := controller.service.Create(r.Context(), &req)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, category.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, category.ErrAlreadyExists):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("create category")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode category")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -72,7 +90,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Request) {
 	q, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	controller.list(w, r, q)
@@ -87,7 +105,15 @@ func (controller *CategoryController) GetAll(w http.ResponseWriter, r *http.Requ
 func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
 	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode category query")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	controller.list(w, r, q)
@@ -98,17 +124,19 @@ func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Reque
 func (controller *CategoryController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
 	query, err := q.toQuery(category.QueryAllowlist)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
 	categories, total, err := controller.service.GetAll(r.Context(), query)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("list categories")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(categories, total, query.Pagination)); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode categories")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -123,11 +151,18 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	c, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, category.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("get category")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode category")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -144,7 +179,15 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, category.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, category.ErrStillReferenced):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete category")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

@@ -9,7 +9,7 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/FranciscoBarao/catalog/internal/category"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 )
 
 type CategorySuite struct {
@@ -24,7 +24,7 @@ func (suite *CategorySuite) SetupSuite() {
 func (suite *CategorySuite) TestPostCategory() {
 	suite.base.dbMock.EXPECT().
 		GetCategoryBySlug(gomock.Any(), "test").
-		Return(category.Category{}, middleware.NewError(http.StatusNotFound, "record not found"))
+		Return(category.Category{}, dberr.ErrNotFound)
 	suite.base.dbMock.EXPECT().
 		CreateCategory(gomock.Any(), gomock.Any()).
 		Return(nil)
@@ -69,7 +69,7 @@ func (suite *CategorySuite) TestDeleteCategory() {
 func (suite *CategorySuite) TestGetCategoryFailure() {
 	suite.base.dbMock.EXPECT().
 		GetCategoryBySlug(gomock.Any(), "test").
-		Return(category.Category{}, middleware.NewError(http.StatusNotFound, "Record not found"))
+		Return(category.Category{}, dberr.ErrNotFound)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).

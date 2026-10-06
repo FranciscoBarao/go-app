@@ -3,6 +3,7 @@ package listopt
 // Operator is a validated filter comparison (like, eq, lt, le, gt, ge).
 type Operator string
 
+// Filter operators a list query may use.
 const (
 	Like Operator = "like"
 	Eq   Operator = "eq"

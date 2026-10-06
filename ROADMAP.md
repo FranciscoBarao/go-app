@@ -171,7 +171,8 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy   |
 | Test coverage                                  | Eng     | High     | Must   | Evaluate how coverage is measured, then improve + add gates |
 | Logging improvement / docs                     | Eng     | High     | Must   | Consistent structured logs, log levels, documentation       |
-| Improve Error Handling                         | Eng     | High     | Must   | Evaluate error handling. Separate errors in layers.         |
+| Persistance layer improvement + documentation  | Eng     | High     | Must   | Consistent and documented persistence layer                 |
+| Move deserializer to transport + tests         | Eng     | High     | Must   | Move Deserializer to correct layer and add tests            |
 | Development pipelines / CI                     | Eng     | High     | Should | Per-service build, test, lint on PRs                        |
 | Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment           |
 | Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                           |
@@ -181,3 +182,11 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Game editions/versions as first-class entities | Product | Low      | Could  | Distinct from name aliases                                  |
 | Community (reviews, forums, ratings)           | Product | Very Low | Won't  | Deferred                                                    |
 | Shopping / marketplace                         | Product | Very Low | Won't  | Deferred                                                    |
+
+
+
+## Work Done
+
+| Item                   | Date       | Notes                                              |
+| ---------------------- | ---------- | -------------------------------------------------- |
+| Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md. |

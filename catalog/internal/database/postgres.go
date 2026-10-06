@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -15,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/FranciscoBarao/catalog/config"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 const (
@@ -93,23 +92,26 @@ func runMigrations(ctx context.Context, pool *pgxpool.Pool, dir string) error {
 	return nil
 }
 
-// mapPgError converts pgx errors to domain errors.
+// mapPgError converts pgx errors to dberr errors.
+// Unexpected driver errors are logged and replaced so they do not leave the adapter.
 func mapPgError(err error) error {
 	if err == nil {
 		return nil
 	}
 	if errors.Is(err, pgx.ErrNoRows) {
-		return middleware.NewError(http.StatusNotFound, "record not found")
+		return dberr.ErrNotFound
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-		logging.FromCtx(context.Background()).Error().Str("code", pgErr.Code).Str("message", pgErr.Message).Msg("postgres error")
 		switch pgErr.Code {
 		case uniqueViolationCode:
-			return middleware.NewError(http.StatusConflict, "entry already registered")
+			return dberr.ErrAlreadyExists
 		case foreignKeyViolationCode:
-			return middleware.NewError(http.StatusConflict, "referenced record not found")
+			return dberr.ErrForeignKey
 		}
+		logging.FromCtx(context.Background()).Error().Str("code", pgErr.Code).Str("message", pgErr.Message).Msg("postgres error")
+		return errors.New("database operation failed")
 	}
-	return err
+	logging.FromCtx(context.Background()).Error().Err(err).Msg("database operation failed")
+	return errors.New("database operation failed")
 }

@@ -1,14 +1,10 @@
 package boardgame
 
-import (
-	"net/http"
-
-	"github.com/FranciscoBarao/catalog/internal/middleware"
-)
+import "fmt"
 
 func validatePlayersOrder(min, max int) error {
 	if min > max {
-		return middleware.NewError(http.StatusBadRequest, "min_players cannot exceed max_players")
+		return fmt.Errorf("min_players cannot exceed max_players: %w", ErrValidation)
 	}
 	return nil
 }
@@ -18,7 +14,7 @@ func validatePlayTimeOrder(min, max int) error {
 		return nil
 	}
 	if min > max {
-		return middleware.NewError(http.StatusBadRequest, "min_play_time cannot exceed max_play_time")
+		return fmt.Errorf("min_play_time cannot exceed max_play_time: %w", ErrValidation)
 	}
 	return nil
 }

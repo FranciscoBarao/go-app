@@ -2,6 +2,8 @@ package transport
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -9,7 +11,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -48,11 +50,19 @@ func NewBoardgameController(boardGameSvc BoardgameService) *BoardgameController 
 func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Request) {
 	var req boardgame.CreateBoardgameRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -63,11 +73,26 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 
 	bg, err := controller.service.Create(r.Context(), &req, parentSlug)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, boardgame.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, boardgame.ErrAlreadyExists):
+			http.Error(w, err.Error(), http.StatusConflict)
+		case errors.Is(err, boardgame.ErrMissingReference):
+			http.Error(w, err.Error(), http.StatusConflict)
+		case errors.Is(err, boardgame.ErrParentIsExpansion):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("create boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -85,7 +110,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Request) {
 	req, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	controller.list(w, r, req)
@@ -100,7 +125,15 @@ func (controller *BoardgameController) GetAll(w http.ResponseWriter, r *http.Req
 func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Request) {
 	var req QueryRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode boardgame query")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	controller.list(w, r, req)
@@ -111,17 +144,19 @@ func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Requ
 func (controller *BoardgameController) list(w http.ResponseWriter, r *http.Request, req QueryRequest) {
 	query, err := req.toQuery(boardgame.QueryAllowlist)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
 	boardgames, total, err := controller.service.GetAll(r.Context(), req.IncludeDeleted, query)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("list boardgames")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(boardgames, total, query.Pagination)); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgames")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -136,17 +171,24 @@ func (controller *BoardgameController) GetByID(w http.ResponseWriter, r *http.Re
 	idStr := utils.GetFieldFromURL(r, "id")
 	parsedID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
-		middleware.ErrorHandler(w, middleware.NewError(http.StatusBadRequest, "Invalid boardgame ID: "+idStr))
+		http.Error(w, fmt.Sprintf("invalid boardgame id %s", idStr), http.StatusBadRequest)
 		return
 	}
 
 	bg, err := controller.service.GetByID(r.Context(), uint(parsedID))
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("get boardgame by id")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -161,11 +203,18 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	bg, err := controller.service.GetBySlug(r.Context(), slugStr)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("get boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -180,21 +229,43 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Request) {
 	var req boardgame.UpdateBoardgameRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode update boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	slugStr := utils.GetFieldFromURL(r, "slug")
-	if err := controller.service.Update(r.Context(), &req, slugStr); err != nil {
-		middleware.ErrorHandler(w, err)
+	err := controller.service.Update(r.Context(), &req, slugStr)
+	if err != nil {
+		switch {
+		case errors.Is(err, boardgame.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, boardgame.ErrAlreadyExists):
+			http.Error(w, err.Error(), http.StatusConflict)
+		case errors.Is(err, boardgame.ErrMissingReference):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("update boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, req); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -210,8 +281,15 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	hard := r.URL.Query().Get("hard") == "true"
 
-	if err := controller.service.DeleteBySlug(r.Context(), slugStr, hard); err != nil {
-		middleware.ErrorHandler(w, err)
+	err := controller.service.DeleteBySlug(r.Context(), slugStr, hard)
+	if err != nil {
+		switch {
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -227,26 +305,47 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Request) {
 	var rating = &boardgame.Rating{}
 	if err := utils.DecodeJSONBody(w, r, rating); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode boardgame rating")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(rating); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	user, err := utils.GetUsernameFromToken(r)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrUnauthorized):
+			http.Error(w, err.Error(), http.StatusUnauthorized)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("boardgame rating user")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
 	if err := controller.service.Rate(r.Context(), rating, slugStr, user); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, boardgame.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("rate boardgame")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, rating); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame rating")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

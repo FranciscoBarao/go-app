@@ -2,16 +2,15 @@ package database
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 )
 
 // CreateContributor inserts a new contributor.
@@ -81,7 +80,7 @@ func (p *Postgres) DeleteContributor(ctx context.Context, slug string, hard bool
 		return mapPgError(err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return middleware.NewError(http.StatusNotFound, "record not found")
+		return dberr.ErrNotFound
 	}
 	return nil
 }

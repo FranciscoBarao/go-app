@@ -2,17 +2,15 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
 	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 	"github.com/stretchr/testify/suite"
 )
@@ -146,11 +144,7 @@ func (suite *BoardgameSuite) TestUpdate() {
 func (suite *BoardgameSuite) TestUpdate_NotFound() {
 	ctx := context.Background()
 	err := suite.postgres.UpdateBoardgame(ctx, &boardgame.Boardgame{Name: "not found", Slug: "not-found", MinPlayers: 1, MaxPlayers: 2})
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().True(errors.As(err, &mr))
-	suite.Assert().Equal(http.StatusNotFound, mr.GetStatus())
+	suite.Assert().ErrorIs(err, dberr.ErrNotFound)
 }
 
 func (suite *BoardgameSuite) TestSoftDelete() {

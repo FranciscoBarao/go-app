@@ -2,13 +2,14 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/unrolled/render"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
@@ -43,20 +44,37 @@ func NewContributorController(svc ContributorService) *ContributorController {
 func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 	var req contributor.CreateContributorRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	contrib, err := c.service.Create(r.Context(), &req)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, contributor.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, contributor.ErrAlreadyExists):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("create contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -73,7 +91,7 @@ func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 func (c *ContributorController) GetAll(w http.ResponseWriter, r *http.Request) {
 	q, err := newQueryRequestFromURL(r.URL.Query())
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 	c.list(w, r, q)
@@ -88,7 +106,15 @@ func (c *ContributorController) GetAll(w http.ResponseWriter, r *http.Request) {
 func (c *ContributorController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
 	if err := utils.DecodeJSONBody(w, r, &q); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode contributor query")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	c.list(w, r, q)
@@ -99,17 +125,19 @@ func (c *ContributorController) Query(w http.ResponseWriter, r *http.Request) {
 func (c *ContributorController) list(w http.ResponseWriter, r *http.Request, q QueryRequest) {
 	query, err := q.toQuery(contributor.QueryAllowlist)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		return
 	}
 
 	list, total, err := c.service.GetAll(r.Context(), query)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("list contributors")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, newPaginatedResponse(list, total, query.Pagination)); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributors")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -124,11 +152,18 @@ func (c *ContributorController) Get(w http.ResponseWriter, r *http.Request) {
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	contrib, err := c.service.Get(r.Context(), slugStr)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, contributor.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("get contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -144,20 +179,37 @@ func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
 	slugStr := utils.GetFieldFromURL(r, "slug")
 	var req contributor.UpdateContributorRequest
 	if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, utils.ErrBadRequest):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, utils.ErrRequestTooLarge):
+			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode update contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := utils.ValidateStruct(&req); err != nil {
-		middleware.ErrorHandler(w, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	contrib, err := c.service.Update(r.Context(), &req, slugStr)
 	if err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, contributor.ErrValidation):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.Is(err, contributor.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("update contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		middleware.ErrorHandler(w, err)
+		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -174,7 +226,15 @@ func (c *ContributorController) Delete(w http.ResponseWriter, r *http.Request) {
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := c.service.Delete(r.Context(), slugStr, hard); err != nil {
-		middleware.ErrorHandler(w, err)
+		switch {
+		case errors.Is(err, contributor.ErrNotFound):
+			http.Error(w, err.Error(), http.StatusNotFound)
+		case errors.Is(err, contributor.ErrStillReferenced):
+			http.Error(w, err.Error(), http.StatusConflict)
+		default:
+			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete contributor")
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

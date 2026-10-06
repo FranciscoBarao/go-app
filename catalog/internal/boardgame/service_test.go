@@ -2,12 +2,11 @@ package boardgame
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
+	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/middleware"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -35,7 +34,7 @@ func testCreateReq(name string) *CreateBoardgameRequest {
 }
 
 func notFound() error {
-	return middleware.NewError(http.StatusNotFound, "record not found")
+	return dberr.ErrNotFound
 }
 
 func (suite *BoardgameServiceSuite) TestCreate() {
@@ -86,11 +85,8 @@ func (suite *BoardgameServiceSuite) TestCreate_ExpansionOfExpansionFails() {
 	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "seafarers").Return(parent, nil)
 
 	_, err := suite.service.Create(context.Background(), req, "seafarers")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusConflict, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrParentIsExpansion)
+	suite.Assert().ErrorContains(err, "expansion \"seafarers\": an expansion cannot be a parent")
 }
 
 func (suite *BoardgameServiceSuite) TestCreateWithCategories() {
@@ -158,22 +154,16 @@ func (suite *BoardgameServiceSuite) TestCreate_InvalidPlayersOrder() {
 	req := &CreateBoardgameRequest{Name: "Bad", MinPlayers: 5, MaxPlayers: 2}
 
 	_, err := suite.service.Create(context.Background(), req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrValidation)
+	suite.Assert().ErrorContains(err, "min_players cannot exceed max_players")
 }
 
 func (suite *BoardgameServiceSuite) TestCreate_InvalidPlayTimeOrder() {
 	req := &CreateBoardgameRequest{Name: "Bad Time", MinPlayers: 2, MaxPlayers: 4, MinPlayTime: 90, MaxPlayTime: 30}
 
 	_, err := suite.service.Create(context.Background(), req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrValidation)
+	suite.Assert().ErrorContains(err, "min_play_time cannot exceed max_play_time")
 }
 
 func (suite *BoardgameServiceSuite) TestCreate_PropagatesScalarFields() {
@@ -217,11 +207,8 @@ func (suite *BoardgameServiceSuite) TestCreate_InvalidContributionRole() {
 	suite.mockDB.EXPECT().GetBoardgameBySlug(ctx, "catan").Return(Boardgame{}, notFound())
 
 	_, err := suite.service.Create(ctx, req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrValidation)
+	suite.Assert().ErrorContains(err, "contribution role \"invalid\"")
 }
 
 func (suite *BoardgameServiceSuite) TestCreate_DuplicateSlug() {
@@ -231,11 +218,8 @@ func (suite *BoardgameServiceSuite) TestCreate_DuplicateSlug() {
 	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(existing, nil)
 
 	_, err := suite.service.Create(context.Background(), req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusConflict, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrAlreadyExists)
+	suite.Assert().ErrorContains(err, "slug \"catan\" already in use")
 }
 
 func (suite *BoardgameServiceSuite) TestCreate_NormalizationCollision() {
@@ -245,22 +229,16 @@ func (suite *BoardgameServiceSuite) TestCreate_NormalizationCollision() {
 	suite.mockDB.EXPECT().GetBoardgameBySlug(gomock.Any(), "catan").Return(existing, nil)
 
 	_, err := suite.service.Create(context.Background(), req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusConflict, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrAlreadyExists)
+	suite.Assert().ErrorContains(err, "slug \"catan\" already in use")
 }
 
 func (suite *BoardgameServiceSuite) TestCreate_EmptySlug() {
 	req := testCreateReq("!!!")
 
 	_, err := suite.service.Create(context.Background(), req, "")
-	suite.Assert().Error(err)
-
-	var mr *middleware.MalformedRequest
-	suite.Assert().ErrorAs(err, &mr)
-	suite.Assert().Equal(http.StatusBadRequest, mr.GetStatus())
+	suite.Assert().ErrorIs(err, ErrValidation)
+	suite.Assert().ErrorContains(err, "name must contain slug-able characters")
 }
 
 func (suite *BoardgameServiceSuite) TestGetAll() {
