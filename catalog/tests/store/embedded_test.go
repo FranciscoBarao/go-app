@@ -9,22 +9,10 @@ import (
 	embedded "github.com/fergusstrange/embedded-postgres"
 )
 
-type testPostgres struct {
-	database *embedded.EmbeddedPostgres
-	port     int
-}
-
-func (p *testPostgres) Shutdown() {
-	if p == nil || p.database == nil {
-		return
-	}
-	_ = p.database.Stop()
-}
-
-func newTestPostgres(uniqueID string) (*testPostgres, error) {
+func startTestPostgres(uniqueID string) (int, func(), error) {
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
-		return nil, fmt.Errorf("failed to find a port: %w", err)
+		return 0, nil, fmt.Errorf("failed to find a port: %w", err)
 	}
 
 	port := listener.Addr().(*net.TCPAddr).Port
@@ -32,7 +20,7 @@ func newTestPostgres(uniqueID string) (*testPostgres, error) {
 
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		return nil, err
+		return 0, nil, err
 	}
 	runtimeDirectory := filepath.Join(userHome, ".embedded-postgres-go", uniqueID)
 
@@ -40,13 +28,10 @@ func newTestPostgres(uniqueID string) (*testPostgres, error) {
 		DefaultConfig().
 		Port(uint32(port)).
 		RuntimePath(runtimeDirectory)
-	db := embedded.NewDatabase(postgresConfig)
-	if err := db.Start(); err != nil {
-		return nil, fmt.Errorf("failed to initialise postgres: %w", err)
+	database := embedded.NewDatabase(postgresConfig)
+	if err := database.Start(); err != nil {
+		return 0, nil, fmt.Errorf("failed to initialise postgres: %w", err)
 	}
 
-	return &testPostgres{
-		database: db,
-		port:     port,
-	}, nil
+	return port, func() { _ = database.Stop() }, nil
 }

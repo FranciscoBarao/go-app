@@ -13,6 +13,7 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type BoardGameSuite struct {
@@ -186,6 +187,167 @@ func (suite *BoardGameSuite) TestQueryBoardgames() {
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Assert(assertEnvelope).
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/missing").
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		Body("boardgame \"missing\": record not found\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgameByID_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameByID(gomock.Any(), uint(9)).
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/by-id/9").
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		Body("boardgame 9: record not found\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgameByID_Invalid() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/by-id/nope").
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		Body("invalid boardgame id nope\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostBoardgame_InvalidPlayersOrder() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame").
+		JSON(`{"name":"Catan","min_players":5,"max_players":2}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		Body("min_players cannot exceed max_players: validation failed\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostBoardgame_DuplicateSlug() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "catan").
+		Return(boardgame.Boardgame{ID: 1, Slug: "catan", Name: "Catan"}, nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame").
+		JSON(`{"name":"Catan","min_players":2,"max_players":4}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`slug "catan" already in use; disambiguate the name, e.g. add a year or edition: entry already exists` + "\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostExpansion_ParentNotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "scenario").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame/missing/expansion").
+		JSON(`{"name":"Scenario","min_players":2,"max_players":4}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *BoardGameSuite) TestPatchBoardgame() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "catan").
+		Return(boardgame.Boardgame{ID: 1, Slug: "catan", Name: "Catan", MinPlayers: 2, MaxPlayers: 4}, nil)
+	suite.base.dbMock.EXPECT().
+		UpdateBoardgameWithAssociations(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Patch("/api/boardgame/catan").
+		JSON(`{"description":"A trading game"}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		End()
+}
+
+func (suite *BoardGameSuite) TestPatchBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Patch("/api/boardgame/missing").
+		JSON(`{"description":"A trading game"}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *BoardGameSuite) TestDeleteBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/boardgame/missing").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgames_StoreError() {
+	suite.base.dbMock.EXPECT().
+		GetAllBoardgames(gomock.Any(), gomock.Any(), false).
+		Return(nil, 0, assert.AnError)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame").
+		Expect(suite.T()).
+		Status(http.StatusInternalServerError).
+		Body("list boardgames: internal error\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestRateBoardgame_Unauthorized() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame/catan/rate").
+		JSON(`{"username":"ada","value":8}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusUnauthorized).
 		End()
 }
 

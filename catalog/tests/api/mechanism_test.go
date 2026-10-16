@@ -10,6 +10,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type MechanismSuite struct {
@@ -110,6 +111,84 @@ func (suite *MechanismSuite) TestQueryMechanisms() {
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		Assert(assertEnvelope(suite.T(), 1, 1, 10, 1, 1)).
+		End()
+}
+
+func (suite *MechanismSuite) TestPostMechanism_DuplicateSlug() {
+	suite.base.dbMock.EXPECT().
+		GetMechanismBySlug(gomock.Any(), "trading").
+		Return(mechanism.Mechanism{Slug: "trading", Name: "Trading"}, nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/mechanism").
+		JSON(`{"name":"Trading"}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`slug "trading" already in use; disambiguate the name: entry already exists` + "\n").
+		End()
+}
+
+func (suite *MechanismSuite) TestPostMechanism_EmptyName() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/mechanism").
+		JSON(`{"name":""}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		End()
+}
+
+func (suite *MechanismSuite) TestDeleteMechanism_NotFound() {
+	suite.base.dbMock.EXPECT().
+		DeleteMechanism(gomock.Any(), "missing", false).
+		Return(store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/mechanism/missing").
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *MechanismSuite) TestDeleteMechanism_StillReferenced() {
+	suite.base.dbMock.EXPECT().
+		DeleteMechanism(gomock.Any(), "trading", false).
+		Return(store.ErrForeignKey)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/mechanism/trading").
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`mechanism "trading": still referenced` + "\n").
+		End()
+}
+
+func (suite *MechanismSuite) TestGetMechanisms_MalformedPage() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/mechanism").
+		QueryParams(map[string]string{"page": "nope"}).
+		Expect(suite.T()).
+		Status(http.StatusUnprocessableEntity).
+		End()
+}
+
+func (suite *MechanismSuite) TestGetMechanisms_StoreError() {
+	suite.base.dbMock.EXPECT().
+		GetAllMechanisms(gomock.Any(), gomock.Any()).
+		Return(nil, 0, assert.AnError)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/mechanism").
+		Expect(suite.T()).
+		Status(http.StatusInternalServerError).
+		Body("list mechanisms: internal error\n").
 		End()
 }
 

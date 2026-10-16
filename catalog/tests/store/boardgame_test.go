@@ -9,6 +9,7 @@ import (
 
 	"github.com/FranciscoBarao/catalog/config"
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 	"github.com/FranciscoBarao/catalog/internal/store"
@@ -19,16 +20,15 @@ import (
 
 type BoardgameSuite struct {
 	suite.Suite
-	db       *testPostgres
-	postgres *postgres.Postgres
-	admin    *pgxpool.Pool
-	cfg      *config.PostgresConfig
+	db    *postgres.Postgres
+	admin *pgxpool.Pool
+	cfg   *config.PostgresConfig
 }
 
 func (suite *BoardgameSuite) SetupSuite() {
-	var err error
-	suite.db, err = newTestPostgres("catalog-store")
+	port, stop, err := startTestPostgres("catalog-store")
 	suite.Require().NoError(err)
+	suite.T().Cleanup(stop)
 
 	_, filename, _, _ := runtime.Caller(0)
 	migrationDir := filepath.Join(filepath.Dir(filename), "..", "..", "internal", "store", "postgres", "migrations")
@@ -38,12 +38,12 @@ func (suite *BoardgameSuite) SetupSuite() {
 		Host:          "localhost",
 		Username:      "postgres",
 		Password:      "postgres",
-		Port:          fmt.Sprintf("%d", suite.db.port),
+		Port:          fmt.Sprintf("%d", port),
 		Database:      "postgres",
 		MigrationPath: migrationDir,
 	}
 
-	suite.postgres, err = postgres.Connect(ctx, suite.cfg)
+	suite.db, err = postgres.Connect(ctx, suite.cfg)
 	suite.Require().NoError(err)
 
 	suite.admin, err = pgxpool.New(ctx, fmt.Sprintf(
@@ -54,23 +54,41 @@ func (suite *BoardgameSuite) SetupSuite() {
 }
 
 func (suite *BoardgameSuite) TearDownSuite() {
-	if suite.postgres != nil {
-		suite.postgres.Shutdown()
+	if suite.db != nil {
+		suite.db.Shutdown()
 	}
 	if suite.admin != nil {
 		suite.admin.Close()
 	}
-	suite.db.Shutdown()
 }
 
 func (suite *BoardgameSuite) TearDownTest() {
-	_, err := suite.admin.Exec(context.Background(), `TRUNCATE TABLE boardgames CASCADE`)
+	_, err := suite.admin.Exec(context.Background(), `
+		TRUNCATE TABLE
+			boardgame_contributions,
+			boardgame_mechanisms,
+			boardgame_categories,
+			boardgames,
+			categories
+		RESTART IDENTITY CASCADE`)
 	suite.Require().NoError(err)
+}
+
+func (suite *BoardgameSuite) TestCreate_PlayersCheckConstraint() {
+	_, err := suite.db.CreateBoardgame(context.Background(), boardgame.CreateBoardgameDTO{
+		Name:       "Bad Players",
+		Slug:       "bad-players",
+		MinPlayers: 0,
+		MaxPlayers: 4,
+	})
+	suite.Assert().ErrorContains(err, "database operation failed")
+	suite.Assert().NotErrorIs(err, store.ErrAlreadyExists)
+	suite.Assert().NotErrorIs(err, store.ErrNotFound)
 }
 
 func (suite *BoardgameSuite) TestCreate_DuplicatedSlug() {
 	ctx := context.Background()
-	_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "duplicated",
 		Slug:       slug.FromName("duplicated"),
 		MinPlayers: 1,
@@ -78,7 +96,7 @@ func (suite *BoardgameSuite) TestCreate_DuplicatedSlug() {
 	})
 	suite.Require().NoError(err)
 
-	_, err = suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err = suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "duplicated",
 		Slug:       slug.FromName("duplicated"),
 		MinPlayers: 1,
@@ -89,7 +107,7 @@ func (suite *BoardgameSuite) TestCreate_DuplicatedSlug() {
 
 func (suite *BoardgameSuite) TestGet() {
 	ctx := context.Background()
-	created, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	created, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "name01",
 		Slug:       slug.FromName("name01"),
 		MinPlayers: 1,
@@ -97,7 +115,7 @@ func (suite *BoardgameSuite) TestGet() {
 	})
 	suite.Require().NoError(err)
 
-	bg, err := suite.postgres.GetBoardgameByID(ctx, created.ID)
+	bg, err := suite.db.GetBoardgameByID(ctx, created.ID)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(created.Name, bg.Name)
 	suite.Assert().Equal(created.Slug, bg.Slug)
@@ -116,7 +134,7 @@ func (suite *BoardgameSuite) TestCreate_ScalarFieldsRoundTrip() {
 		MaxPlayTime:   90,
 	}
 
-	created, err := suite.postgres.CreateBoardgame(ctx, input)
+	created, err := suite.db.CreateBoardgame(ctx, input)
 	suite.Require().NoError(err)
 	suite.Assert().Equal("A trading game", created.Description)
 	suite.Assert().Equal(1995, created.YearPublished)
@@ -126,7 +144,7 @@ func (suite *BoardgameSuite) TestCreate_ScalarFieldsRoundTrip() {
 
 func (suite *BoardgameSuite) TestCreate_ScalarDefaultsWhenUnset() {
 	ctx := context.Background()
-	created, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	created, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Unset Scalars",
 		Slug:       slug.FromName("Unset Scalars"),
 		MinPlayers: 1,
@@ -141,14 +159,14 @@ func (suite *BoardgameSuite) TestCreate_ScalarDefaultsWhenUnset() {
 
 func (suite *BoardgameSuite) TestGetAll() {
 	ctx := context.Background()
-	_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "name01",
 		Slug:       slug.FromName("name01"),
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	})
 	suite.Require().NoError(err)
-	_, err = suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err = suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "name02",
 		Slug:       slug.FromName("name02"),
 		MinPlayers: 1,
@@ -156,7 +174,7 @@ func (suite *BoardgameSuite) TestGetAll() {
 	})
 	suite.Require().NoError(err)
 
-	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "id", Order: "asc"})), false)
+	all, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "id", Order: "asc"})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 2)
 	suite.Assert().Equal(2, total)
@@ -164,7 +182,7 @@ func (suite *BoardgameSuite) TestGetAll() {
 
 func (suite *BoardgameSuite) TestUpdate() {
 	ctx := context.Background()
-	created, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	created, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "updateName",
 		Slug:       slug.FromName("updateName"),
 		MinPlayers: 1,
@@ -172,26 +190,69 @@ func (suite *BoardgameSuite) TestUpdate() {
 	})
 	suite.Require().NoError(err)
 
-	readBg, err := suite.postgres.GetBoardgameByID(ctx, created.ID)
+	readBg, err := suite.db.GetBoardgameByID(ctx, created.ID)
 	suite.Assert().NoError(err)
 
 	readBg.MaxPlayers = 6
-	suite.Assert().NoError(suite.postgres.UpdateBoardgame(ctx, &readBg))
+	suite.Assert().NoError(suite.db.UpdateBoardgame(ctx, &readBg))
 
-	updated, err := suite.postgres.GetBoardgameByID(ctx, created.ID)
+	updated, err := suite.db.GetBoardgameByID(ctx, created.ID)
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(6, updated.MaxPlayers)
 }
 
+func (suite *BoardgameSuite) TestUpdateWithAssociations_ReplacesCategories() {
+	ctx := context.Background()
+	strategy := &category.Category{Slug: "strategy", Name: "Strategy"}
+	economic := &category.Category{Slug: "economic", Name: "Economic"}
+	suite.Require().NoError(suite.db.CreateCategory(ctx, strategy))
+	suite.Require().NoError(suite.db.CreateCategory(ctx, economic))
+
+	created, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+		Name:       "Catan",
+		Slug:       "catan",
+		MinPlayers: 2,
+		MaxPlayers: 4,
+		Categories: []uint{strategy.ID},
+	})
+	suite.Require().NoError(err)
+	suite.Require().Len(created.Categories, 1)
+	suite.Require().Equal("strategy", created.Categories[0].Slug)
+
+	created.Description = "trading"
+	next := []uint{economic.ID}
+	suite.Require().NoError(suite.db.UpdateBoardgameWithAssociations(ctx, &created, boardgame.UpdateAssociations{
+		Categories: &next,
+	}))
+
+	got, err := suite.db.GetBoardgameBySlug(ctx, "catan")
+	suite.Assert().NoError(err)
+	suite.Assert().Equal("trading", got.Description)
+	suite.Require().Len(got.Categories, 1)
+	suite.Assert().Equal("economic", got.Categories[0].Slug)
+}
+
+func (suite *BoardgameSuite) TestUpdateWithAssociations_NotFound() {
+	next := []uint{}
+	err := suite.db.UpdateBoardgameWithAssociations(context.Background(), &boardgame.Boardgame{
+		ID:         999,
+		Name:       "missing",
+		Slug:       "missing",
+		MinPlayers: 1,
+		MaxPlayers: 2,
+	}, boardgame.UpdateAssociations{Categories: &next})
+	suite.Assert().ErrorIs(err, store.ErrNotFound)
+}
+
 func (suite *BoardgameSuite) TestUpdate_NotFound() {
 	ctx := context.Background()
-	err := suite.postgres.UpdateBoardgame(ctx, &boardgame.Boardgame{Name: "not found", Slug: "not-found", MinPlayers: 1, MaxPlayers: 2})
+	err := suite.db.UpdateBoardgame(ctx, &boardgame.Boardgame{Name: "not found", Slug: "not-found", MinPlayers: 1, MaxPlayers: 2})
 	suite.Assert().ErrorIs(err, store.ErrNotFound)
 }
 
 func (suite *BoardgameSuite) TestSoftDelete() {
 	ctx := context.Background()
-	created, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	created, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "deleteName",
 		Slug:       slug.FromName("deleteName"),
 		MinPlayers: 1,
@@ -199,28 +260,28 @@ func (suite *BoardgameSuite) TestSoftDelete() {
 	})
 	suite.Require().NoError(err)
 
-	suite.Assert().NoError(suite.postgres.DeleteBoardgame(ctx, created.ID, false))
+	suite.Assert().NoError(suite.db.DeleteBoardgame(ctx, created.ID, false))
 
-	_, err = suite.postgres.GetBoardgameByID(ctx, created.ID)
+	_, err = suite.db.GetBoardgameByID(ctx, created.ID)
 	suite.Assert().Error(err)
 }
 
 func (suite *BoardgameSuite) TestDelete_NotFound() {
 	ctx := context.Background()
-	err := suite.postgres.DeleteBoardgame(ctx, 99999, false)
+	err := suite.db.DeleteBoardgame(ctx, 99999, false)
 	suite.Assert().ErrorIs(err, store.ErrNotFound)
 }
 
 func (suite *BoardgameSuite) TestGetAll_FilterLike() {
 	ctx := context.Background()
-	_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Catan",
 		Slug:       slug.FromName("Catan"),
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	})
 	suite.Require().NoError(err)
-	_, err = suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err = suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Vagrantsong",
 		Slug:       slug.FromName("Vagrantsong"),
 		MinPlayers: 1,
@@ -228,7 +289,7 @@ func (suite *BoardgameSuite) TestGetAll_FilterLike() {
 	})
 	suite.Require().NoError(err)
 
-	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Like, Value: "cat"})), false)
+	all, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Like, Value: "cat"})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
 	suite.Assert().Equal(1, total)
@@ -243,7 +304,7 @@ func (suite *BoardgameSuite) TestGetAll_FilterNumeric() {
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	}
-	_, err := suite.postgres.CreateBoardgame(ctx, input1)
+	_, err := suite.db.CreateBoardgame(ctx, input1)
 	suite.Require().NoError(err)
 
 	input2 := boardgame.CreateBoardgameDTO{
@@ -252,10 +313,10 @@ func (suite *BoardgameSuite) TestGetAll_FilterNumeric() {
 		MinPlayers: 1,
 		MaxPlayers: 2,
 	}
-	_, err = suite.postgres.CreateBoardgame(ctx, input2)
+	_, err = suite.db.CreateBoardgame(ctx, input2)
 	suite.Require().NoError(err)
 
-	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "max_players", Operator: listopt.Lt, Value: "3", ValueKind: listopt.KindInt})), false)
+	all, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "max_players", Operator: listopt.Lt, Value: "3", ValueKind: listopt.KindInt})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
 	suite.Assert().Equal(1, total)
@@ -266,7 +327,7 @@ func (suite *BoardgameSuite) TestGetAll_Pagination() {
 	ctx := context.Background()
 	for i := 0; i < 25; i++ {
 		name := fmt.Sprintf("game-%02d", i)
-		_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+		_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 			Name:       name,
 			Slug:       slug.FromName(name),
 			MinPlayers: 1,
@@ -276,7 +337,7 @@ func (suite *BoardgameSuite) TestGetAll_Pagination() {
 	}
 
 	// Page 2 with pageSize 10 -> 10 items, total 25.
-	page2, total, err := suite.postgres.GetAllBoardgames(ctx,
+	page2, total, err := suite.db.GetAllBoardgames(ctx,
 		listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"}), listopt.WithPagination(listopt.Pagination{Page: 2, PageSize: 10})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(page2, 10)
@@ -284,7 +345,7 @@ func (suite *BoardgameSuite) TestGetAll_Pagination() {
 	suite.Assert().Equal("game-10", page2[0].Name)
 
 	// Last page is partial (5 items).
-	page3, total, err := suite.postgres.GetAllBoardgames(ctx,
+	page3, total, err := suite.db.GetAllBoardgames(ctx,
 		listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"}), listopt.WithPagination(listopt.Pagination{Page: 3, PageSize: 10})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(page3, 5)
@@ -293,29 +354,29 @@ func (suite *BoardgameSuite) TestGetAll_Pagination() {
 
 func (suite *BoardgameSuite) TestGetAll_IncludeDeleted() {
 	ctx := context.Background()
-	_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Active",
 		Slug:       slug.FromName("Active"),
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	})
 	suite.Require().NoError(err)
-	deleted, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	deleted, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Deleted",
 		Slug:       slug.FromName("Deleted"),
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	})
 	suite.Require().NoError(err)
-	suite.Require().NoError(suite.postgres.DeleteBoardgame(ctx, deleted.ID, false))
+	suite.Require().NoError(suite.db.DeleteBoardgame(ctx, deleted.ID, false))
 
-	active, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})), false)
+	active, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(active, 1)
 	suite.Assert().Equal(1, total)
 	suite.Assert().Equal("Active", active[0].Name)
 
-	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})), true)
+	all, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"})), true)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 2)
 	suite.Assert().Equal(2, total)
@@ -329,7 +390,7 @@ func (suite *BoardgameSuite) TestGetAll_MultipleFiltersAnd() {
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	}
-	_, err := suite.postgres.CreateBoardgame(ctx, catan)
+	_, err := suite.db.CreateBoardgame(ctx, catan)
 	suite.Require().NoError(err)
 
 	carcassonne := boardgame.CreateBoardgameDTO{
@@ -338,7 +399,7 @@ func (suite *BoardgameSuite) TestGetAll_MultipleFiltersAnd() {
 		MinPlayers: 1,
 		MaxPlayers: 2,
 	}
-	_, err = suite.postgres.CreateBoardgame(ctx, carcassonne)
+	_, err = suite.db.CreateBoardgame(ctx, carcassonne)
 	suite.Require().NoError(err)
 
 	vagrant := boardgame.CreateBoardgameDTO{
@@ -347,11 +408,11 @@ func (suite *BoardgameSuite) TestGetAll_MultipleFiltersAnd() {
 		MinPlayers: 1,
 		MaxPlayers: 5,
 	}
-	_, err = suite.postgres.CreateBoardgame(ctx, vagrant)
+	_, err = suite.db.CreateBoardgame(ctx, vagrant)
 	suite.Require().NoError(err)
 
 	// name ILIKE '%ca%' AND max_players >= 3 -> only Catan.
-	all, total, err := suite.postgres.GetAllBoardgames(ctx, listopt.NewQuery(
+	all, total, err := suite.db.GetAllBoardgames(ctx, listopt.NewQuery(
 		listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Like, Value: "ca"}),
 		listopt.WithFilter(listopt.Filter{Column: "max_players", Operator: listopt.Ge, Value: "3", ValueKind: listopt.KindInt}),
 	), false)
@@ -369,7 +430,7 @@ func (suite *BoardgameSuite) TestGetAll_EqNumericColumn() {
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	}
-	_, err := suite.postgres.CreateBoardgame(ctx, four)
+	_, err := suite.db.CreateBoardgame(ctx, four)
 	suite.Require().NoError(err)
 
 	two := boardgame.CreateBoardgameDTO{
@@ -378,10 +439,10 @@ func (suite *BoardgameSuite) TestGetAll_EqNumericColumn() {
 		MinPlayers: 1,
 		MaxPlayers: 2,
 	}
-	_, err = suite.postgres.CreateBoardgame(ctx, two)
+	_, err = suite.db.CreateBoardgame(ctx, two)
 	suite.Require().NoError(err)
 
-	all, total, err := suite.postgres.GetAllBoardgames(ctx,
+	all, total, err := suite.db.GetAllBoardgames(ctx,
 		listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "max_players", Operator: listopt.Eq, Value: "4", ValueKind: listopt.KindInt})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
@@ -391,14 +452,14 @@ func (suite *BoardgameSuite) TestGetAll_EqNumericColumn() {
 
 func (suite *BoardgameSuite) TestGetAll_EqStringColumnNumericValue() {
 	ctx := context.Background()
-	_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "123",
 		Slug:       slug.FromName("123"),
 		MinPlayers: 1,
 		MaxPlayers: 4,
 	})
 	suite.Require().NoError(err)
-	_, err = suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+	_, err = suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 		Name:       "Catan",
 		Slug:       slug.FromName("Catan"),
 		MinPlayers: 1,
@@ -408,7 +469,7 @@ func (suite *BoardgameSuite) TestGetAll_EqStringColumnNumericValue() {
 
 	// eq on the string "name" column with a numeric-looking value must be matched
 	// as text, not coerced to an integer.
-	all, total, err := suite.postgres.GetAllBoardgames(ctx,
+	all, total, err := suite.db.GetAllBoardgames(ctx,
 		listopt.NewQuery(listopt.WithFilter(listopt.Filter{Column: "name", Operator: listopt.Eq, Value: "123"})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(all, 1)
@@ -420,7 +481,7 @@ func (suite *BoardgameSuite) TestGetAll_PageOutOfRange() {
 	ctx := context.Background()
 	for i := 0; i < 25; i++ {
 		name := fmt.Sprintf("game-%02d", i)
-		_, err := suite.postgres.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
+		_, err := suite.db.CreateBoardgame(ctx, boardgame.CreateBoardgameDTO{
 			Name:       name,
 			Slug:       slug.FromName(name),
 			MinPlayers: 1,
@@ -429,7 +490,7 @@ func (suite *BoardgameSuite) TestGetAll_PageOutOfRange() {
 		suite.Require().NoError(err)
 	}
 
-	page, total, err := suite.postgres.GetAllBoardgames(ctx,
+	page, total, err := suite.db.GetAllBoardgames(ctx,
 		listopt.NewQuery(listopt.WithSort(listopt.Sort{Column: "name", Order: "asc"}), listopt.WithPagination(listopt.Pagination{Page: 100, PageSize: 10})), false)
 	suite.Assert().NoError(err)
 	suite.Assert().Len(page, 0)

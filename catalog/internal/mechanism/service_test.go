@@ -65,19 +65,31 @@ func (suite *MechanismServiceSuite) TestGet() {
 	suite.Assert().Equal(expected, m)
 }
 
-func (suite *MechanismServiceSuite) TestDelete() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "worker-placement", false).Return(nil)
+func (suite *MechanismServiceSuite) TestGet_NotFound() {
+	ctx := context.Background()
+	suite.mockDB.EXPECT().GetMechanismBySlug(ctx, "missing").Return(Mechanism{}, store.ErrNotFound)
 
-	err := suite.service.Delete(context.Background(), "worker-placement", false)
-	suite.Assert().NoError(err)
-}
-
-func (suite *MechanismServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(store.ErrNotFound)
-
-	err := suite.service.Delete(context.Background(), "missing", false)
+	_, err := suite.service.Get(ctx, "missing")
 	suite.Assert().ErrorIs(err, ErrNotFound)
 	suite.Assert().ErrorContains(err, "mechanism \"missing\"")
+}
+
+func (suite *MechanismServiceSuite) TestGetIDBySlug() {
+	ctx := context.Background()
+	suite.mockDB.EXPECT().GetMechanismIDBySlug(ctx, "worker-placement").Return(uint(4), nil)
+
+	id, err := suite.service.GetIDBySlug(ctx, "worker-placement")
+	suite.Assert().NoError(err)
+	suite.Assert().Equal(uint(4), id)
+}
+
+func (suite *MechanismServiceSuite) TestGetIDBySlug_NotFound() {
+	ctx := context.Background()
+	suite.mockDB.EXPECT().GetMechanismIDBySlug(ctx, "missing").Return(uint(0), store.ErrNotFound)
+
+	id, err := suite.service.GetIDBySlug(ctx, "missing")
+	suite.Assert().ErrorIs(err, ErrNotFound)
+	suite.Assert().Equal(uint(0), id)
 }
 
 func (suite *MechanismServiceSuite) TestGetAll() {
@@ -91,6 +103,38 @@ func (suite *MechanismServiceSuite) TestGetAll() {
 	suite.Assert().NoError(err)
 	suite.Assert().Equal(expected, list)
 	suite.Assert().Equal(len(expected), total)
+}
+
+func (suite *MechanismServiceSuite) TestDelete() {
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "worker-placement", false).Return(nil)
+
+	err := suite.service.Delete(context.Background(), "worker-placement", false)
+	suite.Assert().NoError(err)
+}
+
+func (suite *MechanismServiceSuite) TestDelete_Hard() {
+	ctx := context.Background()
+	suite.mockDB.EXPECT().DeleteMechanism(ctx, "worker-placement", true).Return(nil)
+
+	err := suite.service.Delete(ctx, "worker-placement", true)
+	suite.Assert().NoError(err)
+}
+
+func (suite *MechanismServiceSuite) TestDeleteNotFound() {
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(store.ErrNotFound)
+
+	err := suite.service.Delete(context.Background(), "missing", false)
+	suite.Assert().ErrorIs(err, ErrNotFound)
+	suite.Assert().ErrorContains(err, "mechanism \"missing\"")
+}
+
+func (suite *MechanismServiceSuite) TestDelete_StillReferenced() {
+	ctx := context.Background()
+	suite.mockDB.EXPECT().DeleteMechanism(ctx, "worker-placement", false).Return(store.ErrForeignKey)
+
+	err := suite.service.Delete(ctx, "worker-placement", false)
+	suite.Assert().ErrorIs(err, ErrStillReferenced)
+	suite.Assert().NotErrorIs(err, store.ErrForeignKey)
 }
 
 func TestMechanismServiceSuite(t *testing.T) {
