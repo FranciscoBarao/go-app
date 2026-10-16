@@ -36,12 +36,3 @@ WHERE slug = $1 AND deleted_at IS NULL`
 
 // HardDeleteContributor removes a contributor by slug.
 const HardDeleteContributor = `DELETE FROM contributors WHERE slug = $1`
-
-// SelectContributorBoardgames returns boardgames credited to a contributor, optionally filtered by role.
-const SelectContributorBoardgames = `SELECT DISTINCT b.id, b.slug, b.created_at, b.updated_at, b.deleted_at, b.name, b.description,
-    b.year_published, b.min_players, b.max_players, b.min_play_time, b.max_play_time, b.min_age, b.bgg_id, b.boardgame_id
-FROM boardgames b
-INNER JOIN boardgame_contributions bc ON bc.boardgame_id = b.id
-INNER JOIN contributors c ON c.id = bc.contributor_id
-WHERE c.slug = $1 AND b.deleted_at IS NULL AND c.deleted_at IS NULL
-AND ($2::text IS NULL OR bc.role = $2)`

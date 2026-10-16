@@ -32,7 +32,7 @@ Sentinels are declared in the file that returns them. There is no `errors.go` fi
 
 ## Storage
 
-Storage sentinels live in a storage-owned leaf package with no internal imports, such as `internal/database/dberr`. The service can import it even when the adapter imports the domain packages.
+Storage sentinels live in the `store` package, in its error file, with no internal imports. The service can import that package even when the adapter imports the domain packages.
 
 One mapper, shared by every resource, converts driver errors. It maps a missing row to `ErrNotFound`, a unique violation to `ErrAlreadyExists`, and a foreign key violation to `ErrForeignKey`. The adapter does not return a service sentinel, and it does not import the transport layer or `net/http`.
 

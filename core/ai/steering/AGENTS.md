@@ -77,7 +77,7 @@ Apply the following sections when changing Go code.
 
   - Read and write application state through storage systems such aS PostgreSQL.
   - Own queries, serialization, storage-model mapping, backend constraints, and transactions. Do not implement business workflows, authorization policy, or transport behavior.
-  - Implement new storage adapters under internal/storage/<backend>. Follow the repository’s established package convention when modifying existing code.
+  - Implement new storage adapters under internal/store/<technology>. See `core/docs/standards/persistence.md`.
   - Satisfy the narrow storage interfaces defined by the consuming service package.
   - Accept and return domain models, declared result types, identifiers, or counts. Do not expose driver types, database rows, commands, or backend error codes.
   - Translate expected backend conditions into stable errors such as ErrNotFound, ErrAlreadyExists, and ErrForeignKey. Treat these errors as part of the storage contract and support inspection with errors.Is.
@@ -107,7 +107,7 @@ Apply the following sections when changing Go code.
 
 ### Errors, Context, and Logging
 
-Error handling across transport, service, and storage is defined in `core/docs/standards/error-handling.md`.
+Error handling across transport, service, and storage is defined in `core/docs/standards/error-handling.md`. Persistence layout, migrations, queries, and store tests are defined in `core/docs/standards/persistence.md`.
 
 ### Retries and Backoff
 

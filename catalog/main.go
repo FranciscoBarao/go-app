@@ -10,10 +10,10 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"
-	"github.com/FranciscoBarao/catalog/internal/database"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/route"
+	"github.com/FranciscoBarao/catalog/internal/store/postgres"
 	"github.com/FranciscoBarao/catalog/internal/transport"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -36,13 +36,13 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to fetch database env variables")
 	}
-	cfg.MigrationPath = "internal/database/migrations"
+	cfg.MigrationPath = "internal/store/postgres/migrations"
 
-	db, err := database.Connect(ctx, cfg)
+	db, err := postgres.Connect(ctx, cfg)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
-	defer db.Close()
+	defer db.Shutdown()
 
 	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
 	port, portPresent := os.LookupEnv("PORT")

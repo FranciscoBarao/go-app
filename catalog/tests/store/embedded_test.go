@@ -1,4 +1,4 @@
-package database
+package store_test
 
 import (
 	"fmt"
@@ -9,23 +9,19 @@ import (
 	embedded "github.com/fergusstrange/embedded-postgres"
 )
 
-// TestPostgres is an embedded postgres database for testing
-type TestPostgres struct {
-	Database *embedded.EmbeddedPostgres
-	Port     int
+type testPostgres struct {
+	database *embedded.EmbeddedPostgres
+	port     int
 }
 
-// Shutdown stops the database instance and releases allocated resources
-func (p *TestPostgres) Shutdown() {
-	if p.Database == nil {
+func (p *testPostgres) Shutdown() {
+	if p == nil || p.database == nil {
 		return
 	}
-
-	_ = p.Database.Stop()
+	_ = p.database.Stop()
 }
 
-// NewTestPostgres constructs a new test database
-func NewTestPostgres(uniqueID string) (*TestPostgres, error) {
+func newTestPostgres(uniqueID string) (*testPostgres, error) {
 	listener, err := net.Listen("tcp", ":0")
 	if err != nil {
 		return nil, fmt.Errorf("failed to find a port: %w", err)
@@ -49,8 +45,8 @@ func NewTestPostgres(uniqueID string) (*TestPostgres, error) {
 		return nil, fmt.Errorf("failed to initialise postgres: %w", err)
 	}
 
-	return &TestPostgres{
-		Database: db,
-		Port:     port,
+	return &testPostgres{
+		database: db,
+		port:     port,
 	}, nil
 }

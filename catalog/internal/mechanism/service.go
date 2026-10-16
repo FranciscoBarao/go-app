@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/slug"
+	"github.com/FranciscoBarao/catalog/internal/store"
 )
 
 //go:generate mockgen -package mechanism -destination service_mock.go . Database
@@ -55,7 +55,7 @@ func (svc *Service) Create(ctx context.Context, req *CreateMechanismRequest) (Me
 	switch {
 	case err == nil:
 		return m, nil
-	case errors.Is(err, dberr.ErrAlreadyExists):
+	case errors.Is(err, store.ErrAlreadyExists):
 		return Mechanism{}, fmt.Errorf("mechanism %q: %w", slugStr, ErrAlreadyExists)
 	default:
 		return Mechanism{}, fmt.Errorf("create mechanism %q: internal error", slugStr)
@@ -73,7 +73,7 @@ func (svc *Service) ensureUniqueSlug(ctx context.Context, name string) (string, 
 	switch {
 	case err == nil:
 		return "", fmt.Errorf("slug %q already in use; disambiguate the name: %w", slugStr, ErrAlreadyExists)
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return slugStr, nil
 	default:
 		return "", fmt.Errorf("get mechanism %q: internal error", slugStr)
@@ -96,7 +96,7 @@ func (svc *Service) Get(ctx context.Context, slugStr string) (Mechanism, error) 
 	switch {
 	case err == nil:
 		return m, nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return Mechanism{}, fmt.Errorf("mechanism %q: %w", slugStr, ErrNotFound)
 	default:
 		return Mechanism{}, fmt.Errorf("get mechanism %q: internal error", slugStr)
@@ -109,7 +109,7 @@ func (svc *Service) GetIDBySlug(ctx context.Context, slugStr string) (uint, erro
 	switch {
 	case err == nil:
 		return id, nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return 0, fmt.Errorf("mechanism %q: %w", slugStr, ErrNotFound)
 	default:
 		return 0, fmt.Errorf("get mechanism %q: internal error", slugStr)
@@ -122,9 +122,9 @@ func (svc *Service) Delete(ctx context.Context, slugStr string, hard bool) error
 	switch {
 	case err == nil:
 		return nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("mechanism %q: %w", slugStr, ErrNotFound)
-	case errors.Is(err, dberr.ErrForeignKey):
+	case errors.Is(err, store.ErrForeignKey):
 		return fmt.Errorf("mechanism %q: %w", slugStr, ErrStillReferenced)
 	default:
 		return fmt.Errorf("delete mechanism %q: internal error", slugStr)

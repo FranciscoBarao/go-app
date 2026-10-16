@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -28,7 +28,7 @@ func (suite *CategoryServiceSuite) TearDownTest() {
 }
 
 func (suite *CategoryServiceSuite) TestCreate() {
-	suite.mockDB.EXPECT().GetCategoryBySlug(gomock.Any(), "strategy").Return(Category{}, dberr.ErrNotFound)
+	suite.mockDB.EXPECT().GetCategoryBySlug(gomock.Any(), "strategy").Return(Category{}, store.ErrNotFound)
 	suite.mockDB.EXPECT().CreateCategory(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, c *Category) error {
 			suite.Equal("strategy", c.Slug)
@@ -87,7 +87,7 @@ func (suite *CategoryServiceSuite) TestDelete() {
 }
 
 func (suite *CategoryServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "missing", false).Return(dberr.ErrNotFound)
+	suite.mockDB.EXPECT().DeleteCategory(gomock.Any(), "missing", false).Return(store.ErrNotFound)
 
 	err := suite.service.Delete(context.Background(), "missing", false)
 	suite.Assert().ErrorIs(err, ErrNotFound)

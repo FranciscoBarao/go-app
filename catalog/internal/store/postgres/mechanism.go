@@ -1,28 +1,28 @@
-package database
+package postgres
 
 import (
 	"context"
+	"github.com/FranciscoBarao/catalog/internal/store/postgres/sql"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
-	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
+	"github.com/FranciscoBarao/catalog/internal/store"
 )
 
 // CreateMechanism inserts a new mechanism into the database.
 func (p *Postgres) CreateMechanism(ctx context.Context, m *mechanism.Mechanism) error {
-	err := p.pool.QueryRow(ctx, dbsql.InsertMechanism, m.Slug, m.Name, m.BggID).
+	err := p.pool.QueryRow(ctx, sql.InsertMechanism, m.Slug, m.Name, m.BggID).
 		Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	return mapPgError(err)
 }
 
 // GetMechanismBySlug retrieves a single mechanism by slug.
 func (p *Postgres) GetMechanismBySlug(ctx context.Context, slug string) (mechanism.Mechanism, error) {
-	rows, err := p.pool.Query(ctx, dbsql.SelectMechanismBySlug, slug)
+	rows, err := p.pool.Query(ctx, sql.SelectMechanismBySlug, slug)
 	if err != nil {
 		return mechanism.Mechanism{}, mapPgError(err)
 	}
@@ -33,15 +33,15 @@ func (p *Postgres) GetMechanismBySlug(ctx context.Context, slug string) (mechani
 // GetMechanismIDBySlug retrieves only the id of an active mechanism by slug.
 func (p *Postgres) GetMechanismIDBySlug(ctx context.Context, slug string) (uint, error) {
 	var id uint
-	err := p.pool.QueryRow(ctx, dbsql.SelectMechanismIDBySlug, slug).Scan(&id)
+	err := p.pool.QueryRow(ctx, sql.SelectMechanismIDBySlug, slug).Scan(&id)
 	return id, mapPgError(err)
 }
 
 // GetAllMechanisms retrieves active mechanisms with optional filtering, sorting,
 // and pagination, returning the page and the total count of matching rows.
 func (p *Postgres) GetAllMechanisms(ctx context.Context, query listopt.Query) ([]mechanism.Mechanism, int, error) {
-	countQuery, countArgs := buildCountQuery(dbsql.CountMechanisms, query)
-	selectQuery, selectArgs := buildPaginatedQuery(dbsql.SelectAllMechanisms, query)
+	countQuery, countArgs := buildCountQuery(sql.CountMechanisms, query)
+	selectQuery, selectArgs := buildPaginatedQuery(sql.SelectAllMechanisms, query)
 
 	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllMechanisms")
 
@@ -65,15 +65,15 @@ func (p *Postgres) DeleteMechanism(ctx context.Context, slug string, hard bool) 
 		err error
 	)
 	if hard {
-		cmd, err = p.pool.Exec(ctx, dbsql.HardDeleteMechanism, slug)
+		cmd, err = p.pool.Exec(ctx, sql.HardDeleteMechanism, slug)
 	} else {
-		cmd, err = p.pool.Exec(ctx, dbsql.SoftDeleteMechanism, slug)
+		cmd, err = p.pool.Exec(ctx, sql.SoftDeleteMechanism, slug)
 	}
 	if err != nil {
 		return mapPgError(err)
 	}
 	if cmd.RowsAffected() == 0 {
-		return dberr.ErrNotFound
+		return store.ErrNotFound
 	}
 	return nil
 }

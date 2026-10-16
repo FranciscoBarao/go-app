@@ -1,6 +1,6 @@
-// Package dberr holds the errors the database adapter returns for expected backend conditions.
-// It has no internal imports so services can inspect these errors without importing the adapter.
-package dberr
+// Package store holds the errors a database adapter returns for expected backend conditions.
+// It has no internal imports, so a service can inspect these errors without importing the adapter.
+package store
 
 import "errors"
 

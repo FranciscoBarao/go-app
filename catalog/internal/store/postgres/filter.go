@@ -1,11 +1,11 @@
-package database
+package postgres
 
 import (
 	"fmt"
+	"github.com/FranciscoBarao/catalog/internal/store/postgres/sql"
 	"strconv"
 	"strings"
 
-	dbsql "github.com/FranciscoBarao/catalog/internal/database/sql"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 )
 
@@ -53,15 +53,15 @@ func buildPaginatedQuery(baseSelect string, q listopt.Query) (string, []any) {
 	// pages stay stable for non-unique sort columns.
 	switch q.Sort.Column {
 	case "":
-		query += dbsql.OrderByIDFallback
+		query += sql.OrderByIDFallback
 	case "id":
-		query += fmt.Sprintf(dbsql.OrderBy, q.Sort.Column, q.Sort.Order)
+		query += fmt.Sprintf(sql.OrderBy, q.Sort.Column, q.Sort.Order)
 	default:
-		query += fmt.Sprintf(dbsql.OrderBy, q.Sort.Column, q.Sort.Order)
-		query += dbsql.OrderByIDTiebreak
+		query += fmt.Sprintf(sql.OrderBy, q.Sort.Column, q.Sort.Order)
+		query += sql.OrderByIDTiebreak
 	}
 
-	query += fmt.Sprintf(dbsql.LimitOffset, len(args)+1, len(args)+2)
+	query += fmt.Sprintf(sql.LimitOffset, len(args)+1, len(args)+2)
 	args = append(args, q.Pagination.Limit(), q.Pagination.Offset())
 
 	return query, args

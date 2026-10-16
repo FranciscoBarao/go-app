@@ -171,7 +171,6 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy   |
 | Test coverage                                  | Eng     | High     | Must   | Evaluate how coverage is measured, then improve + add gates |
 | Logging improvement / docs                     | Eng     | High     | Must   | Consistent structured logs, log levels, documentation       |
-| Persistance layer improvement + documentation  | Eng     | High     | Must   | Consistent and documented persistence layer                 |
 | Development pipelines / CI                     | Eng     | High     | Should | Per-service build, test, lint on PRs                        |
 | Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment           |
 | Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                           |
@@ -190,3 +189,4 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | ---------------------- | ---------- | -------------------------------------------------- |
 | Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md. |
 | Move deserializer      | 2026-10-06 | catalog JSON decoding lives in transport as decodeJSONBody, with unit tests. |
+| Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md. |

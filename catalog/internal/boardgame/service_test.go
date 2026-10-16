@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/FranciscoBarao/catalog/internal/contributor"
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -34,7 +34,7 @@ func testCreateReq(name string) *CreateBoardgameRequest {
 }
 
 func notFound() error {
-	return dberr.ErrNotFound
+	return store.ErrNotFound
 }
 
 func (suite *BoardgameServiceSuite) TestCreate() {

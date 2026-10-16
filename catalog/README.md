@@ -14,7 +14,7 @@ Provide a single, authoritative source for "what a boardgame is" — its attribu
 ### Design notes
 
 - Data is **admin-managed**; there is no public write path. Future work may add BoardGameGeek import.
-- Persistence is **PostgreSQL** via `pgx`. The schema is defined in `internal/database/migrations` and is the source of truth for column types and constraints.
+- Persistence is **PostgreSQL** via `pgx`. The schema is defined in `internal/store/postgres/migrations` and is the source of truth for column types and constraints.
 
 ## Domain model
 

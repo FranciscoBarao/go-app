@@ -7,11 +7,11 @@ import (
 
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/slug"
+	"github.com/FranciscoBarao/catalog/internal/store"
 )
 
 //go:generate mockgen -package boardgame -destination service_mock.go . Database,CategoryService,MechanismService,ContributorService
@@ -108,9 +108,9 @@ func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, par
 	switch {
 	case err == nil:
 		return bg, nil
-	case errors.Is(err, dberr.ErrAlreadyExists):
+	case errors.Is(err, store.ErrAlreadyExists):
 		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrAlreadyExists)
-	case errors.Is(err, dberr.ErrForeignKey):
+	case errors.Is(err, store.ErrForeignKey):
 		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrMissingReference)
 	default:
 		return Boardgame{}, fmt.Errorf("create boardgame %q: internal error", slugStr)
@@ -151,7 +151,7 @@ func (svc *Service) GetBySlug(ctx context.Context, slugStr string) (Boardgame, e
 	switch {
 	case err == nil:
 		return bg, nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
 	default:
 		return Boardgame{}, fmt.Errorf("get boardgame %q: internal error", slugStr)
@@ -164,7 +164,7 @@ func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
 	switch {
 	case err == nil:
 		return bg, nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return Boardgame{}, fmt.Errorf("boardgame %d: %w", id, ErrNotFound)
 	default:
 		return Boardgame{}, fmt.Errorf("get boardgame %d: internal error", id)
@@ -216,11 +216,11 @@ func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, slu
 	switch {
 	case err == nil:
 		return nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
-	case errors.Is(err, dberr.ErrAlreadyExists):
+	case errors.Is(err, store.ErrAlreadyExists):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrAlreadyExists)
-	case errors.Is(err, dberr.ErrForeignKey):
+	case errors.Is(err, store.ErrForeignKey):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrMissingReference)
 	default:
 		return fmt.Errorf("update boardgame %q: internal error", slugStr)
@@ -238,7 +238,7 @@ func (svc *Service) DeleteBySlug(ctx context.Context, slugStr string, hard bool)
 	switch {
 	case err == nil:
 		return nil
-	case errors.Is(err, dberr.ErrNotFound):
+	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
 	default:
 		return fmt.Errorf("delete boardgame %q: internal error", slugStr)

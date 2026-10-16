@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/FranciscoBarao/catalog/internal/database/dberr"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/store"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/mock/gomock"
 )
@@ -28,7 +28,7 @@ func (suite *MechanismServiceSuite) TearDownTest() {
 }
 
 func (suite *MechanismServiceSuite) TestCreate() {
-	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{}, dberr.ErrNotFound)
+	suite.mockDB.EXPECT().GetMechanismBySlug(gomock.Any(), "worker-placement").Return(Mechanism{}, store.ErrNotFound)
 	suite.mockDB.EXPECT().CreateMechanism(gomock.Any(), gomock.Any()).DoAndReturn(
 		func(_ context.Context, m *Mechanism) error {
 			suite.Equal("worker-placement", m.Slug)
@@ -73,7 +73,7 @@ func (suite *MechanismServiceSuite) TestDelete() {
 }
 
 func (suite *MechanismServiceSuite) TestDeleteNotFound() {
-	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(dberr.ErrNotFound)
+	suite.mockDB.EXPECT().DeleteMechanism(gomock.Any(), "missing", false).Return(store.ErrNotFound)
 
 	err := suite.service.Delete(context.Background(), "missing", false)
 	suite.Assert().ErrorIs(err, ErrNotFound)
