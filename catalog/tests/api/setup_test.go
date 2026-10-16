@@ -88,11 +88,6 @@ func NewBase(t *testing.T) *Base {
 	log := logging.FromCtx(context.Background())
 	log.Debug().Msg("setup starting..")
 
-	// Mirrors main.go: QUERY is not in chi's built-in method table, so it has to
-	// be registered before the routes below are attached.
-	// TODO: drop once QUERY leaves IETF draft and chi supports it natively.
-	chi.RegisterMethod("QUERY")
-
 	ctrl := gomock.NewController(t)
 	mock := NewMockDatabase(ctrl)
 

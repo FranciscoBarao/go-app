@@ -153,7 +153,7 @@ type PaginatedResponse[T any] struct {
 }
 
 // BoardgamePage is the Swagger schema for a page of boardgames.
-// swag v1.8.x renders PaginatedResponse[T] as an untyped object, so each resource has its own page type.
+// swag renders PaginatedResponse[T] as an untyped object, so each resource has its own page type.
 // TestPageDocsMatchEnvelope checks it against PaginatedResponse.
 // TODO: replace with PaginatedResponse[Boardgame] once swag supports generics.
 type BoardgamePage struct {
