@@ -43,7 +43,7 @@ swag-all: ## Creates Swagger files for all services
 lint-go: ## Use golintci-lint on your project. Requires service. E.g: make lint-go svc=x
 ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 	$(eval OUTPUT_OPTIONS = $(shell [ "${EXPORT_RESULT}" = "true" ] && echo "--out-format checkstyle ./... | tee /dev/tty > checkstyle-report.xml" || echo "" ))
-	docker run --rm -v "$(shell pwd)/$(svc):/app" -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
+	docker run --rm -v "$(shell pwd)/$(svc):/app" -w /app golangci/golangci-lint:v2.15.0-alpine golangci-lint run --timeout=65s $(OUTPUT_OPTIONS)
 else
 	@echo "No service directory such as: $(svc)"
 endif
