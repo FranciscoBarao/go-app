@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestInit_UnknownLevelUsesDebug(t *testing.T) {
+func TestSetLevel_UnknownLevelUsesDebug(t *testing.T) {
 	orig := os.Stderr
 	reader, writer, err := os.Pipe()
 	require.NoError(t, err)
@@ -24,7 +24,11 @@ func TestInit_UnknownLevelUsesDebug(t *testing.T) {
 		os.Stderr = orig
 	})
 
-	Init("loud")
+	Init()
+	SetLevel("info")
+	assert.Equal(t, zerolog.InfoLevel, zerolog.GlobalLevel())
+
+	SetLevel("loud")
 	require.NoError(t, writer.Close())
 
 	out, err := io.ReadAll(reader)
@@ -35,7 +39,7 @@ func TestInit_UnknownLevelUsesDebug(t *testing.T) {
 }
 
 func TestRequestMiddleware_LogsRequestIDAndRoute(t *testing.T) {
-	Init("info")
+	Init()
 	var buf bytes.Buffer
 	logger := zerolog.New(&buf)
 	zerolog.DefaultContextLogger = &logger
@@ -61,7 +65,7 @@ func TestRequestMiddleware_LogsRequestIDAndRoute(t *testing.T) {
 }
 
 func TestRequestMiddleware_ReplacesUnsafeRequestID(t *testing.T) {
-	Init("error")
+	Init()
 
 	handler := RequestMiddleware()(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

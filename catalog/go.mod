@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/caarlos0/env/v11 v11.4.1
 	github.com/fergusstrange/embedded-postgres v1.34.0
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-chi/oauth v0.1.0

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	_ "github.com/FranciscoBarao/catalog/build/docs"
 	"github.com/FranciscoBarao/catalog/config"
@@ -25,18 +26,17 @@ import (
 // @contact.email s.franciscobarao@gmail.com
 // @BasePath /api/
 func main() {
-	logging.Init(config.LogLevel())
-
+	logging.Init()
 	ctx := context.Background()
 	log := logging.FromCtx(ctx)
 
-	cfg, err := config.NewPostgresConfig()
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal().Err(err).Msg("failed to fetch database env variables")
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
-	cfg.MigrationPath = "internal/store/postgres/migrations"
+	logging.SetLevel(cfg.LogLevel)
 
-	db, err := postgres.Connect(ctx, cfg)
+	db, err := postgres.Connect(ctx, &cfg.Postgres)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
@@ -44,11 +44,6 @@ func main() {
 		db.Shutdown()
 		log.Info().Msg("server stopped")
 	}()
-
-	oauthKey, port, err := config.OAuthAndPort()
-	if err != nil {
-		log.Fatal().Err(err).Msg("environment")
-	}
 
 	categorySvc := category.NewService(db)
 	mechanismSvc := mechanism.NewService(db)
@@ -63,15 +58,15 @@ func main() {
 	router := chi.NewRouter()
 	router.Use(logging.RequestMiddleware())
 
-	route.AddBoardGameRouter(router, oauthKey, bgController)
-	route.AddCategoryRouter(router, oauthKey, categoryController)
-	route.AddMechanismRouter(router, oauthKey, mechanismController)
-	route.AddContributorRouter(router, oauthKey, contributorController)
+	route.AddBoardGameRouter(router, cfg.OAuthKey, bgController)
+	route.AddCategoryRouter(router, cfg.OAuthKey, categoryController)
+	route.AddMechanismRouter(router, cfg.OAuthKey, mechanismController)
+	route.AddContributorRouter(router, cfg.OAuthKey, contributorController)
 
 	router.Get("/swagger/*", httpSwagger.Handler())
 
-	log.Info().Str("port", port).Msg("server starting")
-	if err := http.ListenAndServe(":"+port, router); err != nil {
+	log.Info().Int("port", cfg.Port).Msg("server starting")
+	if err := http.ListenAndServe(":"+strconv.Itoa(cfg.Port), router); err != nil {
 		log.Fatal().Err(err).Msg("failed to create http server")
 	}
 }

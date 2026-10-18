@@ -6,7 +6,7 @@ Output is zerolog's console writer. That writer is the project choice. JSON outp
 
 ## Level
 
-`LOG_LEVEL` sets the global level: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. An unset value is `debug`, for local development. A deployed environment sets `LOG_LEVEL=info`. An unknown value is `debug`, and startup logs a warning with the rejected value in `rejected`.
+The logger is created before configuration is read, at `debug`, so a failure to load config can be logged. `LOG_LEVEL` is applied after that read. It sets the global level: `trace`, `debug`, `info`, `warn`, `error`, or `fatal`. An unset value is `debug`, for local development. A deployed environment sets `LOG_LEVEL=info`. An unknown value is `debug`, and startup logs a warning with the rejected value in `rejected`.
 
 | Level | When |
 | --- | --- |

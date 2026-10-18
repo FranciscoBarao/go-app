@@ -2,77 +2,49 @@ package config
 
 import (
 	"fmt"
-	"os"
-	"strings"
+
+	"github.com/caarlos0/env/v11"
 )
 
-// LogLevel returns LOG_LEVEL. An unset value is debug, for local development.
-// A deployed environment sets LOG_LEVEL=info.
-func LogLevel() string {
-	if lvl, ok := os.LookupEnv("LOG_LEVEL"); ok {
-		return lvl
-	}
-	return "debug"
+// Config is the process configuration, read once from the environment at startup.
+type Config struct {
+	LogLevel string `env:"LOG_LEVEL" envDefault:"debug"`
+	Port     int    `env:"PORT,required"`
+	OAuthKey string `env:"OAUTH_KEY,required,notEmpty"`
+	Postgres PostgresConfig
 }
 
-// PostgresConfig holds the configuration for connecting to a PostgreSQL database.
+// PostgresConfig is the PostgreSQL connection configuration.
 type PostgresConfig struct {
-	Host          string
-	Username      string
-	Password      string
-	Port          string
-	Database      string
-	MigrationPath string
+	Host          string `env:"DATABASE_HOST,required,notEmpty"`
+	Username      string `env:"POSTGRES_USER,required,notEmpty"`
+	Password      string `env:"POSTGRES_PASSWORD,required,notEmpty"`
+	Port          string `env:"DATABASE_PORT,required,notEmpty"`
+	Database      string `env:"POSTGRES_DB,required,notEmpty"`
+	MigrationPath string `env:"MIGRATION_PATH" envDefault:"internal/store/postgres/migrations"`
 }
 
-// NewPostgresConfig reads PostgreSQL connection settings from environment variables.
-func NewPostgresConfig() (*PostgresConfig, error) {
-	host, hostPresent := os.LookupEnv("DATABASE_HOST")
-	user, userPresent := os.LookupEnv("POSTGRES_USER")
-	pass, passPresent := os.LookupEnv("POSTGRES_PASSWORD")
-	db, dbnamePresent := os.LookupEnv("POSTGRES_DB")
-	port, portPresent := os.LookupEnv("DATABASE_PORT")
+// Load reads the process environment into Config.
+// Every missing required variable and every value that fails to parse is named in the returned error.
+// An unset or empty LOG_LEVEL is debug. An unknown level is left as read; logging.SetLevel warns and uses debug.
+func Load() (*Config, error) {
+	return load(env.Options{})
+}
 
-	var missing []string
-	missing = appendMissing(missing, "DATABASE_HOST", hostPresent)
-	missing = appendMissing(missing, "POSTGRES_USER", userPresent)
-	missing = appendMissing(missing, "POSTGRES_PASSWORD", passPresent)
-	missing = appendMissing(missing, "POSTGRES_DB", dbnamePresent)
-	missing = appendMissing(missing, "DATABASE_PORT", portPresent)
-	if len(missing) > 0 {
-		return nil, fmt.Errorf("missing environment variables: %s", strings.Join(missing, ", "))
+func load(opts env.Options) (*Config, error) {
+	var cfg Config
+	if err := env.ParseWithOptions(&cfg, opts); err != nil {
+		return nil, err
 	}
-
-	return &PostgresConfig{
-		Host:     host,
-		Username: user,
-		Password: pass,
-		Database: db,
-		Port:     port,
-	}, nil
-}
-
-// OAuthAndPort reads OAUTH_KEY and PORT. A missing variable is named in the error.
-func OAuthAndPort() (string, string, error) {
-	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
-	port, portPresent := os.LookupEnv("PORT")
-
-	var missing []string
-	missing = appendMissing(missing, "OAUTH_KEY", oauthKeyPresent)
-	missing = appendMissing(missing, "PORT", portPresent)
-	if len(missing) > 0 {
-		return "", "", fmt.Errorf("missing environment variables: %s", strings.Join(missing, ", "))
+	if err := validatePort(cfg.Port); err != nil {
+		return nil, err
 	}
-	return oauthKey, port, nil
+	return &cfg, nil
 }
 
-func appendMissing(missing []string, name string, present bool) []string {
-	if present {
-		return missing
+func validatePort(port int) error {
+	if port < 1 || port > 65535 {
+		return fmt.Errorf("port %d is outside 1-65535", port)
 	}
-	return append(missing, name)
-}
-
-func (p *PostgresConfig) String() string {
-	return "host=" + p.Host + " user=" + p.Username + " password=" + p.Password + " dbname=" + p.Database + " port=" + p.Port
+	return nil
 }

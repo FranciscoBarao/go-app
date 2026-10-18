@@ -161,7 +161,6 @@ Goal: introduce user accounts and personal/group game lists. Build on the existi
 ### Cross-cutting
 
 - [ ] Service-to-service auth / API gateway considerations
-
 ## Work Backlog
 
 Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to MoSCoW (H = Must/Should, M = Should/Could, L = Could, VL = Won't-for-now). SWOT is intentionally not used — it is a strategic-analysis tool, not a backlog prioritizer.
@@ -183,12 +182,13 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 
 ## Work Done
 
-| Item                   | Date       | Notes                                                                                                        |
-| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------ |
-| Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md.                                                           |
-| Move deserializer      | 2026-10-06 | catalog JSON decoding lives in transport as decodeJSONBody, with unit tests.                                 |
-| Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md. |
-| Catalog test coverage  | 2026-10-16 | catalog/docs/qa-test-coverage.md; filled unit and integration gaps; no coverage gate.                        |
-| Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.       |
+| Item                   | Date       | Notes                                                                                                                                                 |
+| ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md.                                                                                                    |
+| Move deserializer      | 2026-10-06 | catalog JSON decoding lives in transport as decodeJSONBody, with unit tests.                                                                          |
+| Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md.                                          |
+| Catalog test coverage  | 2026-10-16 | catalog/docs/qa-test-coverage.md; filled unit and integration gaps; no coverage gate.                                                                 |
+| Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.                                                |
 | Logging improvement    | 2026-10-18 | standard in core/docs/standards/logging.md; catalog stays on zerolog console output, rejects an unknown level, and attaches request_id in middleware. |
+| Config loading         | 2026-10-18 | improved config-loading.md.                                                                                                                           |
 
