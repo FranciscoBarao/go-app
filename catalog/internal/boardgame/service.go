@@ -71,8 +71,6 @@ func NewService(db Database, catSvc CategoryService, mechSvc MechanismService, c
 
 // Create validates the request, resolves associations, and persists a new boardgame.
 func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, parentSlug string) (Boardgame, error) {
-	logging.FromCtx(ctx).Debug().Str("parent_slug", parentSlug).Msg("creating boardgame")
-
 	if err := validatePlayersOrder(req.MinPlayers, req.MaxPlayers); err != nil {
 		return Boardgame{}, err
 	}
@@ -107,6 +105,7 @@ func (svc *Service) Create(ctx context.Context, req *CreateBoardgameRequest, par
 	bg, err := svc.db.CreateBoardgame(ctx, dto)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", bg.Slug).Msg("boardgame created")
 		return bg, nil
 	case errors.Is(err, store.ErrAlreadyExists):
 		return Boardgame{}, fmt.Errorf("boardgame %q: %w", slugStr, ErrAlreadyExists)
@@ -173,8 +172,6 @@ func (svc *Service) GetByID(ctx context.Context, id uint) (Boardgame, error) {
 
 // Update applies partial changes and persists.
 func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, slugStr string) error {
-	logging.FromCtx(ctx).Debug().Str("slug", slugStr).Msg("updating boardgame")
-
 	bg, err := svc.GetBySlug(ctx, slugStr)
 	if err != nil {
 		return err
@@ -215,6 +212,7 @@ func (svc *Service) Update(ctx context.Context, req *UpdateBoardgameRequest, slu
 	err = svc.db.UpdateBoardgameWithAssociations(ctx, &bg, assoc)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", slugStr).Msg("boardgame updated")
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
@@ -233,10 +231,10 @@ func (svc *Service) DeleteBySlug(ctx context.Context, slugStr string, hard bool)
 	if err != nil {
 		return err
 	}
-	logging.FromCtx(ctx).Debug().Str("slug", slugStr).Bool("hard", hard).Msg("deleting boardgame")
 	err = svc.db.DeleteBoardgame(ctx, bg.ID, hard)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", slugStr).Bool("hard", hard).Msg("boardgame deleted")
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("boardgame %q: %w", slugStr, ErrNotFound)
@@ -253,6 +251,7 @@ func (svc *Service) Rate(ctx context.Context, rating *Rating, slugStr string, us
 	}
 	rating.Username = username
 	// TODO - Redirect rating to another service
+	logging.FromCtx(ctx).Info().Str("slug", slugStr).Msg("boardgame rated")
 	return nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 	"github.com/FranciscoBarao/catalog/internal/store"
 )
@@ -57,6 +58,7 @@ func (svc *Service) Create(ctx context.Context, req *CreateContributorRequest) (
 	err = svc.db.CreateContributor(ctx, &c)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", c.Slug).Msg("contributor created")
 		return c, nil
 	case errors.Is(err, store.ErrAlreadyExists):
 		return Contributor{}, fmt.Errorf("contributor %q: %w", slugStr, ErrAlreadyExists)
@@ -97,6 +99,7 @@ func (svc *Service) Update(ctx context.Context, req *UpdateContributorRequest, s
 	err = svc.db.UpdateContributor(ctx, &c)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", c.Slug).Msg("contributor updated")
 		return c, nil
 	case errors.Is(err, store.ErrNotFound):
 		return Contributor{}, fmt.Errorf("contributor %q: %w", slugStr, ErrNotFound)
@@ -146,6 +149,7 @@ func (svc *Service) Delete(ctx context.Context, slugStr string, hard bool) error
 	err := svc.db.DeleteContributor(ctx, slugStr, hard)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", slugStr).Bool("hard", hard).Msg("contributor deleted")
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("contributor %q: %w", slugStr, ErrNotFound)

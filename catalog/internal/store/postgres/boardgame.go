@@ -12,7 +12,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
-	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 	"github.com/FranciscoBarao/catalog/internal/store"
 )
@@ -21,7 +20,7 @@ import (
 func (p *Postgres) CreateBoardgame(ctx context.Context, input boardgame.CreateBoardgameDTO) (boardgame.Boardgame, error) {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
-		return boardgame.Boardgame{}, mapPgError(err)
+		return boardgame.Boardgame{}, mapPgError(ctx, err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
@@ -32,7 +31,7 @@ func (p *Postgres) CreateBoardgame(ctx context.Context, input boardgame.CreateBo
 		input.MinAge, input.BggID, input.ParentID,
 	).Scan(&id)
 	if err != nil {
-		return boardgame.Boardgame{}, mapPgError(err)
+		return boardgame.Boardgame{}, mapPgError(ctx, err)
 	}
 
 	if err := insertBoardgameCategories(ctx, tx, id, input.Categories); err != nil {
@@ -46,7 +45,7 @@ func (p *Postgres) CreateBoardgame(ctx context.Context, input boardgame.CreateBo
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return boardgame.Boardgame{}, mapPgError(err)
+		return boardgame.Boardgame{}, mapPgError(ctx, err)
 	}
 
 	return p.getBoardgame(ctx, sql.SelectBoardgameByID, id)
@@ -71,7 +70,7 @@ func (p *Postgres) getBoardgame(ctx context.Context, query string, arg any) (boa
 		&bg.MinAge, &bg.BggID, &bg.BoardgameID,
 	)
 	if err != nil {
-		return bg, mapPgError(err)
+		return bg, mapPgError(ctx, err)
 	}
 
 	if err := loadBoardgameAssociations(ctx, p.pool, &bg); err != nil {
@@ -95,21 +94,19 @@ func (p *Postgres) GetAllBoardgames(ctx context.Context, query listopt.Query, in
 	countQuery, countArgs := buildCountQuery(countBase, query)
 	selectQuery, selectArgs := buildPaginatedQuery(selectBase, query)
 
-	logging.FromCtx(ctx).Debug().Str("query", selectQuery).Msg("GetAllBoardgames")
-
 	var total int
 	if err := p.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
-		return nil, 0, mapPgError(err)
+		return nil, 0, mapPgError(ctx, err)
 	}
 
 	rows, err := p.pool.Query(ctx, selectQuery, selectArgs...)
 	if err != nil {
-		return nil, 0, mapPgError(err)
+		return nil, 0, mapPgError(ctx, err)
 	}
 
 	boardgames, err := pgx.CollectRows(rows, scanBoardgameRow)
 	if err != nil {
-		return nil, 0, mapPgError(err)
+		return nil, 0, mapPgError(ctx, err)
 	}
 
 	for i := range boardgames {
@@ -129,7 +126,7 @@ func (p *Postgres) UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame)
 		bg.MinAge, bg.BggID, bg.BoardgameID, bg.ID,
 	)
 	if err != nil {
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 	if cmd.RowsAffected() == 0 {
 		return store.ErrNotFound
@@ -141,7 +138,7 @@ func (p *Postgres) UpdateBoardgame(ctx context.Context, bg *boardgame.Boardgame)
 func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boardgame.Boardgame, assoc boardgame.UpdateAssociations) error {
 	tx, err := p.pool.Begin(ctx)
 	if err != nil {
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
@@ -151,7 +148,7 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 		bg.MinAge, bg.BggID, bg.BoardgameID, bg.ID,
 	)
 	if err != nil {
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 	if cmd.RowsAffected() == 0 {
 		return store.ErrNotFound
@@ -159,7 +156,7 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 
 	if assoc.Categories != nil {
 		if _, err := tx.Exec(ctx, sql.DeleteBoardgameCategories, bg.ID); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if err := insertBoardgameCategories(ctx, tx, bg.ID, *assoc.Categories); err != nil {
 			return err
@@ -168,7 +165,7 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 
 	if assoc.Mechanisms != nil {
 		if _, err := tx.Exec(ctx, sql.DeleteBoardgameMechanisms, bg.ID); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if err := insertBoardgameMechanisms(ctx, tx, bg.ID, *assoc.Mechanisms); err != nil {
 			return err
@@ -177,14 +174,14 @@ func (p *Postgres) UpdateBoardgameWithAssociations(ctx context.Context, bg *boar
 
 	if assoc.Contributions != nil {
 		if _, err := tx.Exec(ctx, sql.DeleteBoardgameContributions, bg.ID); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if err := insertBoardgameContributions(ctx, tx, bg.ID, *assoc.Contributions); err != nil {
 			return err
 		}
 	}
 
-	return mapPgError(tx.Commit(ctx))
+	return mapPgError(ctx, tx.Commit(ctx))
 }
 
 // DeleteBoardgame soft-deletes or hard-deletes a boardgame.
@@ -196,57 +193,57 @@ func (p *Postgres) DeleteBoardgame(ctx context.Context, id uint, hard bool) erro
 	if hard {
 		tx, txErr := p.pool.Begin(ctx)
 		if txErr != nil {
-			return mapPgError(txErr)
+			return mapPgError(ctx, txErr)
 		}
 		defer func() { _ = tx.Rollback(ctx) }()
 
 		if _, err = tx.Exec(ctx, sql.DeleteBoardgameCategories, id); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if _, err = tx.Exec(ctx, sql.DeleteBoardgameMechanisms, id); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if _, err = tx.Exec(ctx, sql.DeleteBoardgameContributions, id); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if _, err = tx.Exec(ctx, sql.HardDeleteBoardgameExpansions, id); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		cmd, err = tx.Exec(ctx, sql.HardDeleteBoardgame, id)
 		if err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 		if cmd.RowsAffected() == 0 {
 			return store.ErrNotFound
 		}
 		err = tx.Commit(ctx)
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 
 	tx, txErr := p.pool.Begin(ctx)
 	if txErr != nil {
-		return mapPgError(txErr)
+		return mapPgError(ctx, txErr)
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err = tx.Exec(ctx, sql.SoftDeleteBoardgameExpansions, id); err != nil {
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 	cmd, err = tx.Exec(ctx, sql.SoftDeleteBoardgame, id)
 	if err != nil {
-		return mapPgError(err)
+		return mapPgError(ctx, err)
 	}
 	if cmd.RowsAffected() == 0 {
 		return store.ErrNotFound
 	}
 	err = tx.Commit(ctx)
-	return mapPgError(err)
+	return mapPgError(ctx, err)
 }
 
 func insertBoardgameCategories(ctx context.Context, tx pgx.Tx, boardgameID uint, categoryIDs []uint) error {
 	for _, categoryID := range categoryIDs {
 		if _, err := tx.Exec(ctx, sql.InsertBoardgameCategory, boardgameID, categoryID); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 	}
 	return nil
@@ -255,7 +252,7 @@ func insertBoardgameCategories(ctx context.Context, tx pgx.Tx, boardgameID uint,
 func insertBoardgameMechanisms(ctx context.Context, tx pgx.Tx, boardgameID uint, mechanismIDs []uint) error {
 	for _, mechanismID := range mechanismIDs {
 		if _, err := tx.Exec(ctx, sql.InsertBoardgameMechanism, boardgameID, mechanismID); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 	}
 	return nil
@@ -266,7 +263,7 @@ func insertBoardgameContributions(ctx context.Context, tx pgx.Tx, boardgameID ui
 		if _, err := tx.Exec(ctx, sql.InsertBoardgameContribution,
 			boardgameID, contrib.ContributorID, contrib.Role, contrib.CreditOrder,
 		); err != nil {
-			return mapPgError(err)
+			return mapPgError(ctx, err)
 		}
 	}
 	return nil
@@ -295,25 +292,25 @@ func loadBoardgameAssociations(ctx context.Context, pool database, bg *boardgame
 func loadBoardgameCategories(ctx context.Context, pool database, boardgameID uint) ([]category.Category, error) {
 	rows, err := pool.Query(ctx, sql.SelectBoardgameCategories, boardgameID)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, mapPgError(ctx, err)
 	}
 	categories, err := pgx.CollectRows(rows, scanCategoryRow)
-	return categories, mapPgError(err)
+	return categories, mapPgError(ctx, err)
 }
 
 func loadBoardgameMechanisms(ctx context.Context, pool database, boardgameID uint) ([]mechanism.Mechanism, error) {
 	rows, err := pool.Query(ctx, sql.SelectBoardgameMechanisms, boardgameID)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, mapPgError(ctx, err)
 	}
 	mechanisms, err := pgx.CollectRows(rows, scanMechanismRow)
-	return mechanisms, mapPgError(err)
+	return mechanisms, mapPgError(ctx, err)
 }
 
 func loadBoardgameContributions(ctx context.Context, pool database, boardgameID uint) ([]contributor.Contribution, error) {
 	rows, err := pool.Query(ctx, sql.SelectBoardgameContributions, boardgameID)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, mapPgError(ctx, err)
 	}
 	defer rows.Close()
 
@@ -326,7 +323,7 @@ func loadBoardgameContributions(ctx context.Context, pool database, boardgameID 
 			&c.ID, &c.Slug, &c.Name, &c.Bio, &c.BggID, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt,
 			&role, &creditOrder,
 		); err != nil {
-			return nil, mapPgError(err)
+			return nil, mapPgError(ctx, err)
 		}
 		contributions = append(contributions, contributor.Contribution{
 			Contributor: c,
@@ -334,16 +331,16 @@ func loadBoardgameContributions(ctx context.Context, pool database, boardgameID 
 			CreditOrder: creditOrder,
 		})
 	}
-	return contributions, mapPgError(rows.Err())
+	return contributions, mapPgError(ctx, rows.Err())
 }
 
 func loadBoardgameExpansions(ctx context.Context, pool database, boardgameID uint) ([]boardgame.Boardgame, error) {
 	rows, err := pool.Query(ctx, sql.SelectBoardgameExpansions, boardgameID)
 	if err != nil {
-		return nil, mapPgError(err)
+		return nil, mapPgError(ctx, err)
 	}
 	expansions, err := pgx.CollectRows(rows, scanBoardgameRow)
-	return expansions, mapPgError(err)
+	return expansions, mapPgError(ctx, err)
 }
 
 func scanBoardgameRow(row pgx.CollectableRow) (boardgame.Boardgame, error) {

@@ -91,7 +91,7 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", bg.Slug).Msg("encode boardgame")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -181,13 +181,13 @@ func (controller *BoardgameController) GetByID(w http.ResponseWriter, r *http.Re
 		case errors.Is(err, boardgame.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("get boardgame by id")
+			logging.FromCtx(r.Context()).Error().Err(err).Uint64("id", parsedID).Msg("get boardgame by id")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", bg.Slug).Msg("encode boardgame")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -207,13 +207,13 @@ func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Reques
 		case errors.Is(err, boardgame.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("get boardgame")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("get boardgame")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, bg); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", bg.Slug).Msg("encode boardgame")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -258,13 +258,13 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 		case errors.Is(err, boardgame.ErrMissingReference):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("update boardgame")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("update boardgame")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, req); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("encode boardgame")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -287,7 +287,7 @@ func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Req
 		case errors.Is(err, boardgame.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete boardgame")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Bool("hard", hard).Msg("delete boardgame")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
@@ -339,13 +339,13 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		case errors.Is(err, boardgame.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("rate boardgame")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("rate boardgame")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, rating); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode boardgame rating")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("encode boardgame rating")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

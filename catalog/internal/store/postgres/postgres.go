@@ -64,7 +64,7 @@ func Connect(ctx context.Context, cfg *config.PostgresConfig) (*Postgres, error)
 		}
 	}
 
-	logging.FromCtx(ctx).Debug().Str("host", cfg.Host).Str("port", cfg.Port).Str("database", cfg.Database).Msg("database connected")
+	logging.FromCtx(ctx).Info().Str("host", cfg.Host).Str("port", cfg.Port).Str("database", cfg.Database).Msg("database connected")
 	return &Postgres{pool: pool, close: pool.Close}, nil
 }
 
@@ -107,7 +107,7 @@ func databaseURL(cfg *config.PostgresConfig) string {
 
 // mapPgError converts pgx errors to store errors.
 // Unexpected driver errors are logged and replaced so they do not leave the adapter.
-func mapPgError(err error) error {
+func mapPgError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -122,9 +122,9 @@ func mapPgError(err error) error {
 		case foreignKeyViolationCode:
 			return store.ErrForeignKey
 		}
-		logging.FromCtx(context.Background()).Error().Str("code", pgErr.Code).Str("message", pgErr.Message).Msg("postgres error")
+		logging.FromCtx(ctx).Error().Str("code", pgErr.Code).Str("message", pgErr.Message).Msg("postgres error")
 		return errors.New("database operation failed")
 	}
-	logging.FromCtx(context.Background()).Error().Err(err).Msg("database operation failed")
+	logging.FromCtx(ctx).Error().Err(err).Msg("database operation failed")
 	return errors.New("database operation failed")
 }

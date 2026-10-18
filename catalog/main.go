@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"os"
 
 	_ "github.com/FranciscoBarao/catalog/build/docs"
 	"github.com/FranciscoBarao/catalog/config"
@@ -16,7 +15,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/store/postgres"
 	"github.com/FranciscoBarao/catalog/internal/transport"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -42,12 +40,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to connect to database")
 	}
-	defer db.Shutdown()
+	defer func() {
+		db.Shutdown()
+		log.Info().Msg("server stopped")
+	}()
 
-	oauthKey, oauthKeyPresent := os.LookupEnv("OAUTH_KEY")
-	port, portPresent := os.LookupEnv("PORT")
-	if !oauthKeyPresent || !portPresent {
-		log.Fatal().Msg("failed to fetch essential env variables")
+	oauthKey, port, err := config.OAuthAndPort()
+	if err != nil {
+		log.Fatal().Err(err).Msg("environment")
 	}
 
 	categorySvc := category.NewService(db)
@@ -61,7 +61,7 @@ func main() {
 	contributorController := transport.NewContributorController(contributorSvc)
 
 	router := chi.NewRouter()
-	router.Use(middleware.Logger)
+	router.Use(logging.RequestMiddleware())
 
 	route.AddBoardGameRouter(router, oauthKey, bgController)
 	route.AddCategoryRouter(router, oauthKey, categoryController)
@@ -70,7 +70,6 @@ func main() {
 
 	router.Get("/swagger/*", httpSwagger.Handler())
 
-	log.Debug().Msg("routes registered")
 	log.Info().Str("port", port).Msg("server starting")
 	if err := http.ListenAndServe(":"+port, router); err != nil {
 		log.Fatal().Err(err).Msg("failed to create http server")

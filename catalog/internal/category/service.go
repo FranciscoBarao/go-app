@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/slug"
 	"github.com/FranciscoBarao/catalog/internal/store"
 )
@@ -54,6 +55,7 @@ func (svc *Service) Create(ctx context.Context, req *CreateCategoryRequest) (Cat
 	err = svc.db.CreateCategory(ctx, &c)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", c.Slug).Msg("category created")
 		return c, nil
 	case errors.Is(err, store.ErrAlreadyExists):
 		return Category{}, fmt.Errorf("category %q: %w", slugStr, ErrAlreadyExists)
@@ -121,6 +123,7 @@ func (svc *Service) Delete(ctx context.Context, slugStr string, hard bool) error
 	err := svc.db.DeleteCategory(ctx, slugStr, hard)
 	switch {
 	case err == nil:
+		logging.FromCtx(ctx).Info().Str("slug", slugStr).Bool("hard", hard).Msg("category deleted")
 		return nil
 	case errors.Is(err, store.ErrNotFound):
 		return fmt.Errorf("category %q: %w", slugStr, ErrNotFound)

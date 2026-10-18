@@ -73,7 +73,7 @@ func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", contrib.Slug).Msg("encode contributor")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -156,13 +156,13 @@ func (c *ContributorController) Get(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, contributor.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("get contributor")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("get contributor")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", contrib.Slug).Msg("encode contributor")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -202,13 +202,13 @@ func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, contributor.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("update contributor")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("update contributor")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, contrib); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode contributor")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", contrib.Slug).Msg("encode contributor")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -232,7 +232,7 @@ func (c *ContributorController) Delete(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, contributor.ErrStillReferenced):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete contributor")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Bool("hard", hard).Msg("delete contributor")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return

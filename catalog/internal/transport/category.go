@@ -72,7 +72,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode category")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", c.Slug).Msg("encode category")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -155,13 +155,13 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 		case errors.Is(err, category.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("get category")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("get category")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, c); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode category")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", c.Slug).Msg("encode category")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -185,7 +185,7 @@ func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Requ
 		case errors.Is(err, category.ErrStillReferenced):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete category")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Bool("hard", hard).Msg("delete category")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return

@@ -72,7 +72,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode mechanism")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", m.Slug).Msg("encode mechanism")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -155,13 +155,13 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 		case errors.Is(err, mechanism.ErrNotFound):
 			http.Error(w, err.Error(), http.StatusNotFound)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("get mechanism")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Msg("get mechanism")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 	if err := render.New().JSON(w, http.StatusOK, m); err != nil {
-		logging.FromCtx(r.Context()).Error().Err(err).Msg("encode mechanism")
+		logging.FromCtx(r.Context()).Error().Err(err).Str("slug", m.Slug).Msg("encode mechanism")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
@@ -185,7 +185,7 @@ func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Req
 		case errors.Is(err, mechanism.ErrStillReferenced):
 			http.Error(w, err.Error(), http.StatusConflict)
 		default:
-			logging.FromCtx(r.Context()).Error().Err(err).Msg("delete mechanism")
+			logging.FromCtx(r.Context()).Error().Err(err).Str("slug", slugStr).Bool("hard", hard).Msg("delete mechanism")
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		return

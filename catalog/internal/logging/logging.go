@@ -8,6 +8,8 @@ import (
 )
 
 // Init configures the global zerolog level and default context logger. Call once at startup.
+// Output is zerolog's console writer. JSON requires replacing that writer; there is no format setting.
+// An unknown level is debug, and Init logs a warning that names the rejected value.
 func Init(level string) {
 	lvl, err := zerolog.ParseLevel(level)
 	if err != nil {
@@ -15,8 +17,12 @@ func Init(level string) {
 	}
 	zerolog.SetGlobalLevel(lvl)
 
+	// ConsoleWriter is the chosen output. JSON means replacing this writer with os.Stderr.
 	l := zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr}).With().Timestamp().Logger()
 	zerolog.DefaultContextLogger = &l
+	if err != nil {
+		l.Warn().Str("rejected", level).Msg("unknown log level")
+	}
 }
 
 // FromCtx returns the logger stored in ctx, or the default context logger.

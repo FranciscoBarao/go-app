@@ -169,7 +169,6 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Item                                           | Type    | Priority | MoSCoW | Notes                                                       |
 | ---------------------------------------------- | ------- | -------- | ------ | ----------------------------------------------------------- |
 | Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy   |
-| Logging improvement / docs                     | Eng     | High     | Must   | Consistent structured logs, log levels, documentation       |
 | Development pipelines / CI                     | Eng     | High     | Should | Per-service build, test, lint on PRs                        |
 | Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment           |
 | Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                           |
@@ -191,3 +190,5 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md. |
 | Catalog test coverage  | 2026-10-16 | catalog/docs/qa-test-coverage.md; filled unit and integration gaps; no coverage gate.                        |
 | Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.       |
+| Logging improvement    | 2026-10-18 | standard in core/docs/standards/logging.md; catalog stays on zerolog console output, rejects an unknown level, and attaches request_id in middleware. |
+
