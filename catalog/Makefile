@@ -10,7 +10,7 @@ lint: ## Runs golangci-lint
 
 ## ---------- Build ----------
 build:
-	go build -o=$(BUILD_DIR)/catalog main.go
+	go build -o=$(BUILD_DIR)/catalog ./cmd/catalog
 
 build-docker:
 	docker compose build catalog catalog-db
