@@ -6,10 +6,12 @@ The following project intends to be a learning example of a marketplace for boar
  
 # Architecture 
 
-< Better describe the Architecture >
+<!-- TODO -->
 
 Microservices:
 - Catalog - Restricted service that contains a pre-defined set of products (Boardgames only for now). Main objective is to impose other components a more restrictive choice of products to use. Restricts the objects in the architecture.
+
+<!-- TODO -->
 - Marketplace - Basically a OLX for Boardgames where users can create offers. This is where users can re-sell products to each other.
 - User Management - Authentication and Authorization service that uses Oauth2. All other services are locked behind the tokens generated in this service. This service also has the user information to be used in other services (E.g: Ratings have a reference to a username which is present due to the authz token)
 - Comments - Service that contains comments left by users. These comments can reference several types (Products, Lists, Comments, etc) and therefore, aims to abstract and decouple the connections to other objects. 
@@ -25,87 +27,10 @@ The communications between the FE and the several services can be seen as domain
 If we require to perform boardgame related actions, all requests should pass through the Catalog since we require business logic related to it (E.g: BG exists so we can rate it?)
 
 
-
-
-
-# Useful links/tools
-## Structure 
-[Project Structure using Repository Pattern](https://dakaii.medium.com/repository-pattern-in-golang-d22d3fa76d91)
-
-The structured used in the services was based on the previous link, and intends to asbtract the different layers while allowing to "pass around" the database instance. 
-
-![Structure](doc/img/structure.png)
-
-In the Controllers, which contain the REST endpoints that user interacts with, we do all functional logic which includes creating Models, invoking their validation, and redirecting the storage interactions to the Repositories. It stands to reason that in the controllers, we have Repository interfaces that abstract the implementation of these methods while allowing it to be swapped out, enforcing loose coupling.
-
-In the Repositories, we have an abstracted storage instance and this layer is the abstraction bridge between the controllers and the storage implementation. This was interesting since if we wanted to change the storage implementation, we could maintain the Repository as long as the generic methods maintained the same (Loosely coupled).
-
-The storage implementation, in this case, is a specific PostgreSQL implementation of generic but database specific methods that allow us to create, read, update and delete objects. It stands to reason that in this project we used a ORM, namely Gorm, to interact with the database.
-
-In the main file, we sequentially:
-1. Connect to the Database
-2. Initialize the Repositories with the database
-3. Initialize the Controllers with the repositories
-4. Add the Routers with the controllers
-
-Note: Optionally we could always further abstract the controllers into Controllers & Services, however there was no need to further complicate the structure given the size of the project.
-
-
 ## Documentation
 For the documentation of the application, [Swag](https://github.com/swaggo/swag#the-swag-formatter) was used.
-For a tutorial, see -> [Tutorial](https://martinheinz.dev/blog/9)
 
 ## Testing
-* [Framework](https://apitest.dev/)
+* [Integration tests framework](https://apitest.dev/)
 * [mock-gen](https://github.com/uber-go/mock)
 * [embedded-postgres](https://github.com/fergusstrange/embedded-postgres)
-
-< Better describe the Tests implemented >
-
-< Implement and describe the Unit tests on the utils >
-
-
-
-
-## Sorting
-[Sorting in Golang](https://yourbasic.org/golang/how-to-sort-in-go/)
-
-## Validation
-[govalidator](https://github.com/asaskevich/govalidator)
-
-## Possible CLI 
-[Cobra](https://github.com/spf13/cobra)
-
-## JSON 
-[Decoding JSON Body](https://www.alexedwards.net/blog/how-to-properly-parse-a-json-request-body)
-
-## Oauth2
-[Oauth with chi](https://github.com/go-chi/oauth)
-
-
-
-
-# Support source
-* [Francesc Campoy Flores](https://www.campoy.cat) 
-* [Youtube channel](https://www.youtube.com/channel/UC_BzFbxG2za3bp5NRRRXJSw/)
-* [Dave Cheney](https://dave.cheney.net/about)
-* [Blog](https://dave.cheney.net/)
-* [Practical Go: Real world advice for writing maintainable Go programs](https://dave.cheney.net/practical-go/presentations/qcon-china.html)
-* [Rob Pike](https://research.google/people/r/)
-* [Presentation "Concurrency Is Not Parallelism"](https://www.youtube.com/watch?v=cN_DpYBzKso)
-* [Russ Cox](https://swtch.com/~rsc/)
-* [A Tour of Go](https://www.youtube.com/watch?v=ytEkHepK08c)
-* [Jaana Dogan](https://rakyll.org/about/)
-​​
-* https://go101.org/
-* http://www.golangbootcamp.com/book/frontmatter
-* https://golangbot.com/learn-golang-series/
-* https://go.dev/blog/slices-intro
-
-* [martin fowler - monolith first](https://martinfowler.com/bliki/MonolithFirst.html)
-* [martin fowler - break-monolith-into-microservices](https://martinfowler.com/articles/break-monolith-into-microservices.html)
-* [martin fowler - ](https://martinfowler.com/articles/201701-event-driven.html)
-* [Architecture patterns - ](https://www.youtube.com/watch?v=lTkL1oIMiaU)
-* [martin fowler - ](chrome-extension://efaidnbmnnnibpcajpcglclefindmkaj/https://sd.blackball.lv/library/)
-* [DOMAIN-DRIVEN DESIGN: Tackling Complexity in the Heart of Software](domain-driven_design_-_tackling_complexity_in_the_heart_of_software.pdf)
-* [roadmap](https://roadmap.sh/)

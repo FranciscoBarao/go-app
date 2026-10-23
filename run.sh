@@ -6,7 +6,7 @@ docker-compose rm -s -v catalog
 
 # Generates Swagger files locally
 export PATH=$(go env GOPATH)/bin:$PATH # GO Path is on the PATH env -> Required for swag init
-( cd catalog ; swag init --parseDependency --parseInternal )
+( cd catalog ; swag init -g cmd/catalog/main.go --parseDependency --parseInternal )
 
 
 # Runs everything

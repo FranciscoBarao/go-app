@@ -4,7 +4,7 @@ services:
     container_name: catalog
     build: 
       context: catalog/.
-      dockerfile: ./dockerfile/dev/dockerfile
+      dockerfile: cmd/catalog/Dockerfile
     ports:
       - 8081:8080
     restart: on-failure

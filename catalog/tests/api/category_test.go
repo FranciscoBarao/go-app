@@ -1,20 +1,20 @@
 package tests
 
 import (
-	"encoding/json"
 	"net/http"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
-	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type CategorySuite struct {
 	suite.Suite
-
 	base *Base
 }
 
@@ -23,170 +23,186 @@ func (suite *CategorySuite) SetupSuite() {
 }
 
 func (suite *CategorySuite) TestPostCategory() {
-	categoryName := "test"
-	category := model.NewCategory(categoryName)
 	suite.base.dbMock.EXPECT().
-		Create(category).
+		GetCategoryBySlug(gomock.Any(), "test").
+		Return(category.Category{}, store.ErrNotFound)
+	suite.base.dbMock.EXPECT().
+		CreateCategory(gomock.Any(), gomock.Any()).
 		Return(nil)
-
-	categoryJson, err := json.Marshal(category)
-	suite.Require().NoError(err)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/category").
-		JSON(categoryJson).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		JSON(`{"name":"test"}`).
+		Header("Content-Type", "application/json").
 		Expect(suite.T()).
-		Body(string(categoryJson)).
 		Status(http.StatusOK).
 		End()
 }
 
 func (suite *CategorySuite) TestGetCategory() {
-	categoryName := "test"
-	category := new(model.Category)
+	expected := category.Category{Slug: "test", Name: "test"}
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Do(func(category *model.Category, sort, query, field string) error {
-			category.Name = categoryName
-			return nil
-		}).
-		Return(nil)
+		GetCategoryBySlug(gomock.Any(), "test").
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/category/"+categoryName).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/category/test").
 		Expect(suite.T()).
 		Status(http.StatusOK).
-		Body(`{"name": "` + categoryName + `"}`).
 		End()
 }
 
 func (suite *CategorySuite) TestDeleteCategory() {
-	categoryName := "test"
-	category := new(model.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Return(nil)
-
-	suite.base.dbMock.EXPECT().
-		Delete(new(model.Category)).
+		DeleteCategory(gomock.Any(), "test", false).
 		Return(nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/category/"+categoryName).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Delete("/api/category/test").
 		Expect(suite.T()).
 		Status(http.StatusNoContent).
 		End()
 }
 
-func (suite *CategorySuite) TestPostCategoryFailures() {
-	// Several Json Objects on the body
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`[{"name":"a"},{"name":"b"}]`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Malformed Json
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`{name:"a"}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Unmarshall type error
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`{"name": 1}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Unknown Field
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`{"test": "test"}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Empty Body
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(``).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Invalid Struct -> NOT maxstringlength(30)
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`{"name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusForbidden).
-		End()
-
-	// Invalid Struct -> NOT alphanum
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/category").
-		JSON(`{"name": "test.?"}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusForbidden).
-		End()
-}
-
 func (suite *CategorySuite) TestGetCategoryFailure() {
-	categoryName := "test"
-	category := new(model.Category)
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
+		GetCategoryBySlug(gomock.Any(), "test").
+		Return(category.Category{}, store.ErrNotFound)
 
-	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/category/"+categoryName).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/category/test").
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
 		End()
 }
 
-func (suite *CategorySuite) TestDeleteCategoryFailure() {
-	categoryName := "test"
-	category := new(model.Category)
+func (suite *CategorySuite) TestGetCategories() {
+	expected := []category.Category{{Slug: "strategy", Name: "Strategy"}}
 	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Category not found with name: "+categoryName))
+		GetAllCategories(gomock.Any(), gomock.Any()).
+		Return(expected, 25, nil)
 
-	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/category/"+categoryName).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/category").
+		QueryParams(map[string]string{"page": "3", "pageSize": "10", "sort": "name.asc"}).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 3, 10, 25, 3)).
+		End()
+}
+
+func (suite *CategorySuite) TestQueryCategories() {
+	expected := []category.Category{{Slug: "strategy", Name: "Strategy"}}
+	suite.base.dbMock.EXPECT().
+		GetAllCategories(gomock.Any(), gomock.Any()).
+		Return(expected, len(expected), nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Method("QUERY").
+		URL("/api/category").
+		Body(`{"pagination":{"page":1,"pageSize":10}}`).
+		ContentType("application/json").
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 1, 10, 1, 1)).
+		End()
+}
+
+func (suite *CategorySuite) TestPostCategory_DuplicateSlug() {
+	suite.base.dbMock.EXPECT().
+		GetCategoryBySlug(gomock.Any(), "strategy").
+		Return(category.Category{Slug: "strategy", Name: "Strategy"}, nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/category").
+		JSON(`{"name":"Strategy"}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`slug "strategy" already in use; disambiguate the name: entry already exists` + "\n").
+		End()
+}
+
+func (suite *CategorySuite) TestPostCategory_EmptyName() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/category").
+		JSON(`{"name":""}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		End()
+}
+
+func (suite *CategorySuite) TestDeleteCategory_NotFound() {
+	suite.base.dbMock.EXPECT().
+		DeleteCategory(gomock.Any(), "missing", false).
+		Return(store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/category/missing").
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *CategorySuite) TestDeleteCategory_StillReferenced() {
+	suite.base.dbMock.EXPECT().
+		DeleteCategory(gomock.Any(), "strategy", false).
+		Return(store.ErrForeignKey)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/category/strategy").
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`category "strategy": still referenced` + "\n").
+		End()
+}
+
+func (suite *CategorySuite) TestDeleteCategory_Hard() {
+	suite.base.dbMock.EXPECT().
+		DeleteCategory(gomock.Any(), "strategy", true).
+		Return(nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/category/strategy").
+		QueryParams(map[string]string{"hard": "true"}).
+		Expect(suite.T()).
+		Status(http.StatusNoContent).
+		End()
+}
+
+func (suite *CategorySuite) TestGetCategories_MalformedPage() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/category").
+		QueryParams(map[string]string{"page": "nope"}).
+		Expect(suite.T()).
+		Status(http.StatusUnprocessableEntity).
+		End()
+}
+
+func (suite *CategorySuite) TestGetCategories_StoreError() {
+	suite.base.dbMock.EXPECT().
+		GetAllCategories(gomock.Any(), gomock.Any()).
+		Return(nil, 0, assert.AnError)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/category").
+		Expect(suite.T()).
+		Status(http.StatusInternalServerError).
+		Body("list categories: internal error\n").
 		End()
 }
 

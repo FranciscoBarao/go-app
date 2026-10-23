@@ -1,0 +1,126 @@
+basePath: /api/
+definitions:
+  model.Offer:
+    properties:
+      name:
+        description: Offer information
+        type: string
+      price:
+        type: number
+      type:
+        description: Catalog information
+        type: string
+      username:
+        description: User information
+        type: string
+      uuid:
+        description: Automatic
+        type: string
+    type: object
+info:
+  contact:
+    email: s.franciscobarao@gmail.com
+    name: Francisco Barao
+  description: This microservice is a marketplace to create, display and buy offers
+  title: Marketplace App Swagger
+  version: "1.0"
+paths:
+  /offer:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Offer'
+      summary: Fetches all Offers
+      tags:
+      - offer
+    post:
+      parameters:
+      - description: The input Offer struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.Offer'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Offer'
+      summary: Creates a Offer based on a json body
+      tags:
+      - offer
+  /offer/{id}:
+    delete:
+      parameters:
+      - description: The Offer id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: ""
+      summary: Deletes a specific Offer via Uuid
+      tags:
+      - offer
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Offer'
+      summary: Fetches a Offer
+      tags:
+      - offer
+    patch:
+      parameters:
+      - description: The Offer id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: The Offer struct to be updated into
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/model.Offer'
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Offer'
+      summary: Updates a specific Offer via Uuid
+      tags:
+      - offer
+swagger: "2.0"
