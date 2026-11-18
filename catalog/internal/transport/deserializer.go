@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 // maxJSONBodyBytes is the maximum size of a JSON body in bytes (1MB).
@@ -21,7 +20,7 @@ const maxJSONBodyBytes int64 = 1 << 20
 func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	mediaType, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if mediaType != "application/json" {
-		return fmt.Errorf("content-type header is not application/json: %w", utils.ErrBadRequest)
+		return fmt.Errorf("content-type header is not application/json: %w", errBadRequest)
 	}
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxJSONBodyBytes)
@@ -32,7 +31,7 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	err := decoder.Decode(dst)
 	if err == nil {
 		if err = decoder.Decode(&struct{}{}); err != io.EOF {
-			return fmt.Errorf("request body must only contain a single JSON object: %w", utils.ErrBadRequest)
+			return fmt.Errorf("request body must only contain a single JSON object: %w", errBadRequest)
 		}
 		return nil
 	}
@@ -54,10 +53,10 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
 	case errors.Is(err, io.EOF):
 		msg = "Request body must not be empty"
 	case err.Error() == "http: request body too large":
-		return fmt.Errorf("request body must not be larger than 1MB: %w", utils.ErrRequestTooLarge)
+		return fmt.Errorf("request body must not be larger than 1MB: %w", errRequestTooLarge)
 	default:
 		logging.FromCtx(r.Context()).Error().Err(err).Msg("decode json body")
 		return errors.New("internal error")
 	}
-	return fmt.Errorf("%s: %w", msg, utils.ErrBadRequest)
+	return fmt.Errorf("%s: %w", msg, errBadRequest)
 }

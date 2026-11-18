@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/FranciscoBarao/catalog/internal/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -43,62 +42,62 @@ func TestDecodeJSONBody(t *testing.T) {
 			name:         "rejects a non-json content type",
 			contentType:  "text/plain",
 			body:         strings.NewReader(`{"name":"Catan","n":2}`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "content-type header is not application/json",
 		},
 		{
 			name:         "rejects a missing content type",
 			body:         strings.NewReader(`{"name":"Catan","n":2}`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "content-type header is not application/json",
 		},
 		{
 			name:         "rejects an empty body",
 			contentType:  "application/json",
 			body:         strings.NewReader(""),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "Request body must not be empty",
 		},
 		{
 			name:         "rejects badly formed json",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "badly-formed JSON",
 		},
 		{
 			name:         "rejects a truncated json value",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{"name":`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "badly-formed JSON",
 		},
 		{
 			name:         "rejects a value of the wrong type",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{"name":"Catan","n":"two"}`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: `invalid value for the "n" field`,
 		},
 		{
 			name:         "rejects an unknown field",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{"name":"Catan","extra":1}`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "unknown field",
 		},
 		{
 			name:         "rejects more than one json object",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{"name":"Catan","n":1}{"name":"Pandemic","n":2}`),
-			wantErr:      utils.ErrBadRequest,
+			wantErr:      errBadRequest,
 			wantContains: "single JSON object",
 		},
 		{
 			name:         "rejects a body over 1MB",
 			contentType:  "application/json",
 			body:         strings.NewReader(`{"name":"` + strings.Repeat("a", int(maxJSONBodyBytes)) + `"}`),
-			wantErr:      utils.ErrRequestTooLarge,
+			wantErr:      errRequestTooLarge,
 			wantContains: "must not be larger than 1MB",
 		},
 		{

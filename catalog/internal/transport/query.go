@@ -14,8 +14,8 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
 )
 
-// ErrUnprocessable is a list query parameter that is not field.op.value or an integer.
-var ErrUnprocessable = errors.New("unprocessable")
+// errUnprocessable is a list query parameter that is not field.op.value or an integer.
+var errUnprocessable = errors.New("unprocessable")
 
 // Query parameter names accepted by the GET list endpoints.
 const (
@@ -88,7 +88,7 @@ func newQueryRequestFromURL(values url.Values) (QueryRequest, error) {
 	for _, raw := range values[paramFilter] {
 		parts := strings.SplitN(raw, ".", 3)
 		if len(parts) != 3 {
-			return QueryRequest{}, fmt.Errorf("malformed filter query parameter, should be field.op.value: %w", ErrUnprocessable)
+			return QueryRequest{}, fmt.Errorf("malformed filter query parameter, should be field.op.value: %w", errUnprocessable)
 		}
 		q.Filters = append(q.Filters, FilterRequest{Field: parts[0], Op: parts[1], Value: parts[2]})
 	}
@@ -106,7 +106,7 @@ func parseIntParam(values url.Values, name string) (int, error) {
 	}
 	n, err := strconv.Atoi(raw)
 	if err != nil {
-		return 0, fmt.Errorf("malformed %s query parameter, must be an integer: %w", name, ErrUnprocessable)
+		return 0, fmt.Errorf("malformed %s query parameter, must be an integer: %w", name, errUnprocessable)
 	}
 	return n, nil
 }

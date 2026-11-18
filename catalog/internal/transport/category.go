@@ -10,7 +10,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/category"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 //go:generate mockgen -package transport -destination category_mock.go . CategoryService
@@ -44,9 +43,9 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 	var req category.CreateCategoryRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create category")
@@ -54,7 +53,7 @@ func (controller *CategoryController) Create(w http.ResponseWriter, r *http.Requ
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -106,9 +105,9 @@ func (controller *CategoryController) Query(w http.ResponseWriter, r *http.Reque
 	var q QueryRequest
 	if err := decodeJSONBody(w, r, &q); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode category query")
@@ -148,7 +147,7 @@ func (controller *CategoryController) list(w http.ResponseWriter, r *http.Reques
 // @Success 	200 {object} category.Category
 // @Router 		/category/{slug} [get]
 func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	c, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
 		switch {
@@ -175,7 +174,7 @@ func (controller *CategoryController) Get(w http.ResponseWriter, r *http.Request
 // @Success 	204
 // @Router 		/category/{slug} [delete]
 func (controller *CategoryController) Delete(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {

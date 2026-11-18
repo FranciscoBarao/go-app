@@ -10,7 +10,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/contributor"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 //go:generate mockgen -package transport -destination contributor_mock.go . ContributorService
@@ -45,9 +44,9 @@ func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 	var req contributor.CreateContributorRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create contributor")
@@ -55,7 +54,7 @@ func (c *ContributorController) Create(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -107,9 +106,9 @@ func (c *ContributorController) Query(w http.ResponseWriter, r *http.Request) {
 	var q QueryRequest
 	if err := decodeJSONBody(w, r, &q); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode contributor query")
@@ -149,7 +148,7 @@ func (c *ContributorController) list(w http.ResponseWriter, r *http.Request, q Q
 // @Success 	200 {object} contributor.Contributor
 // @Router 		/contributors/{slug} [get]
 func (c *ContributorController) Get(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	contrib, err := c.service.Get(r.Context(), slugStr)
 	if err != nil {
 		switch {
@@ -176,13 +175,13 @@ func (c *ContributorController) Get(w http.ResponseWriter, r *http.Request) {
 // @Success 	200 {object} contributor.Contributor
 // @Router 		/contributors/{slug} [patch]
 func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	var req contributor.UpdateContributorRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode update contributor")
@@ -190,7 +189,7 @@ func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -222,7 +221,7 @@ func (c *ContributorController) Update(w http.ResponseWriter, r *http.Request) {
 // @Success 	204
 // @Router 		/contributors/{slug} [delete]
 func (c *ContributorController) Delete(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := c.service.Delete(r.Context(), slugStr, hard); err != nil {

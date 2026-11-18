@@ -10,7 +10,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
 	"github.com/FranciscoBarao/catalog/internal/mechanism"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 //go:generate mockgen -package transport -destination mechanism_mock.go . MechanismService
@@ -44,9 +43,9 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 	var req mechanism.CreateMechanismRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create mechanism")
@@ -54,7 +53,7 @@ func (controller *MechanismController) Create(w http.ResponseWriter, r *http.Req
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -106,9 +105,9 @@ func (controller *MechanismController) Query(w http.ResponseWriter, r *http.Requ
 	var q QueryRequest
 	if err := decodeJSONBody(w, r, &q); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode mechanism query")
@@ -148,7 +147,7 @@ func (controller *MechanismController) list(w http.ResponseWriter, r *http.Reque
 // @Success 	200 {object} mechanism.Mechanism
 // @Router 		/mechanism/{slug} [get]
 func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	m, err := controller.service.Get(r.Context(), slugStr)
 	if err != nil {
 		switch {
@@ -175,7 +174,7 @@ func (controller *MechanismController) Get(w http.ResponseWriter, r *http.Reques
 // @Success 	204
 // @Router 		/mechanism/{slug} [delete]
 func (controller *MechanismController) Delete(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	hard := r.URL.Query().Get("hard") == "true"
 
 	if err := controller.service.Delete(r.Context(), slugStr, hard); err != nil {

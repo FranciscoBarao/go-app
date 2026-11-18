@@ -238,7 +238,7 @@ func TestNewQueryRequestFromURL_MalformedParams(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			_, err := parseURL(t, c.rawQuery)
 
-			require.ErrorIs(t, err, ErrUnprocessable)
+			require.ErrorIs(t, err, errUnprocessable)
 		})
 	}
 }

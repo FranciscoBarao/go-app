@@ -12,7 +12,6 @@ import (
 	"github.com/FranciscoBarao/catalog/internal/boardgame"
 	"github.com/FranciscoBarao/catalog/internal/listopt"
 	"github.com/FranciscoBarao/catalog/internal/logging"
-	"github.com/FranciscoBarao/catalog/internal/utils"
 )
 
 //go:generate mockgen -package transport -destination boardgame_mock.go . BoardgameService
@@ -51,9 +50,9 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 	var req boardgame.CreateBoardgameRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode create boardgame")
@@ -61,14 +60,14 @@ func (controller *BoardgameController) Create(w http.ResponseWriter, r *http.Req
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	parentSlug := utils.GetFieldFromURL(r, "parentSlug")
+	parentSlug := getFieldFromURL(r, "parentSlug")
 	if parentSlug == "" {
-		parentSlug = utils.GetFieldFromURL(r, "slug")
+		parentSlug = getFieldFromURL(r, "slug")
 	}
 
 	bg, err := controller.service.Create(r.Context(), &req, parentSlug)
@@ -126,9 +125,9 @@ func (controller *BoardgameController) Query(w http.ResponseWriter, r *http.Requ
 	var req QueryRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode boardgame query")
@@ -168,7 +167,7 @@ func (controller *BoardgameController) list(w http.ResponseWriter, r *http.Reque
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame/by-id/{id} [get]
 func (controller *BoardgameController) GetByID(w http.ResponseWriter, r *http.Request) {
-	idStr := utils.GetFieldFromURL(r, "id")
+	idStr := getFieldFromURL(r, "id")
 	parsedID, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("invalid boardgame id %s", idStr), http.StatusBadRequest)
@@ -200,7 +199,7 @@ func (controller *BoardgameController) GetByID(w http.ResponseWriter, r *http.Re
 // @Success 	200 {object} boardgame.Boardgame
 // @Router 		/boardgame/{slug} [get]
 func (controller *BoardgameController) Get(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	bg, err := controller.service.GetBySlug(r.Context(), slugStr)
 	if err != nil {
 		switch {
@@ -230,9 +229,9 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 	var req boardgame.UpdateBoardgameRequest
 	if err := decodeJSONBody(w, r, &req); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode update boardgame")
@@ -240,12 +239,12 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 		}
 		return
 	}
-	if err := utils.ValidateStruct(&req); err != nil {
+	if err := validateRequest(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	err := controller.service.Update(r.Context(), &req, slugStr)
 	if err != nil {
 		switch {
@@ -278,7 +277,7 @@ func (controller *BoardgameController) Update(w http.ResponseWriter, r *http.Req
 // @Success 	204
 // @Router 		/boardgame/{slug} [delete]
 func (controller *BoardgameController) Delete(w http.ResponseWriter, r *http.Request) {
-	slugStr := utils.GetFieldFromURL(r, "slug")
+	slugStr := getFieldFromURL(r, "slug")
 	hard := r.URL.Query().Get("hard") == "true"
 
 	err := controller.service.DeleteBySlug(r.Context(), slugStr, hard)
@@ -306,9 +305,9 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 	var rating = &boardgame.Rating{}
 	if err := decodeJSONBody(w, r, rating); err != nil {
 		switch {
-		case errors.Is(err, utils.ErrBadRequest):
+		case errors.Is(err, errBadRequest):
 			http.Error(w, err.Error(), http.StatusBadRequest)
-		case errors.Is(err, utils.ErrRequestTooLarge):
+		case errors.Is(err, errRequestTooLarge):
 			http.Error(w, err.Error(), http.StatusRequestEntityTooLarge)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("decode boardgame rating")
@@ -316,16 +315,16 @@ func (controller *BoardgameController) Rate(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
-	if err := utils.ValidateStruct(rating); err != nil {
+	if err := validateRequest(rating); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	slugStr := utils.GetFieldFromURL(r, "slug")
-	user, err := utils.GetUsernameFromToken(r)
+	slugStr := getFieldFromURL(r, "slug")
+	user, err := getUsernameFromToken(r)
 	if err != nil {
 		switch {
-		case errors.Is(err, utils.ErrUnauthorized):
+		case errors.Is(err, errUnauthorized):
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 		default:
 			logging.FromCtx(r.Context()).Error().Err(err).Msg("boardgame rating user")
