@@ -9,7 +9,7 @@ Provide a single, authoritative source for "what a boardgame is" — its attribu
 ### Scope
 
 - **In scope:** boardgames and expansions, their descriptive attributes, classification (categories, mechanisms), industry credits (contributors), and CRUD + list/sort/filter over all of the above.
-- **Out of scope:** pricing, stock, orders, user accounts, and reviews. Those belong to other services. The catalog only exposes a lightweight `rate` hook that is forwarded elsewhere.
+- **Out of scope:** pricing, stock, orders, user accounts, and reviews. Those belong to other services.
 
 ### Design notes
 
@@ -125,75 +125,9 @@ does not support the `QUERY` HTTP method. The `GET` list endpoints are documente
 there in full and return the same envelope. See
 [Listing, filtering, sorting & pagination](#listing-filtering-sorting--pagination).
 
-## Boardgame API
 
-Create request body:
 
-```json
-{
-  "name": "Catan",
-  "description": "A trading and building game.",
-  "year_published": 1995,
-  "min_players": 3,
-  "max_players": 4,
-  "min_play_time": 45,
-  "max_play_time": 90,
-  "min_age": 10,
-  "bgg_id": 13,
-  "categories": [{ "slug": "economic" }],
-  "mechanisms": [{ "slug": "trading" }],
-  "contributions": [
-    { "slug": "klaus-teuber", "role": "designer", "credit_order": 1 }
-  ]
-}
-```
-
-Only `name`, `min_players`, and `max_players` are required.
-
-### Endpoints
-
-| Method | Path                              | Description                                     |
-| ------ | --------------------------------- | ----------------------------------------------- |
-| POST   | `/api/boardgame`                  | Create a boardgame                              |
-| POST   | `/api/boardgame/{slug}/expansion` | Create an expansion of `{slug}`                 |
-| GET    | `/api/boardgame`                  | List with filter/sort/pagination (envelope)     |
-| QUERY  | `/api/boardgame`                  | Same, with the request in a JSON body           |
-| GET    | `/api/boardgame/{slug}`           | Fetch one by slug                               |
-| GET    | `/api/boardgame/by-id/{id}`       | Fetch one by numeric id (internal)              |
-| PATCH  | `/api/boardgame/{slug}`           | Partial update                                  |
-| DELETE | `/api/boardgame/{slug}`           | Soft delete (`?hard=true` to hard delete)       |
-| POST   | `/api/boardgame/{slug}/rate`      | Rate a boardgame                                |
-
-### Examples
-
-```bash
-# Create
-curl -X POST localhost:8081/api/boardgame \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Catan","min_players":3,"max_players":4,"year_published":1995}'
-
-# Create an expansion of "catan"
-curl -X POST localhost:8081/api/boardgame/catan/expansion \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Catan: Seafarers","min_players":3,"max_players":4}'
-
-# Fetch by slug
-curl localhost:8081/api/boardgame/catan
-
-# Update (partial) — omitted fields are left unchanged
-curl -X PATCH localhost:8081/api/boardgame/catan \
-  -H 'Content-Type: application/json' \
-  -d '{"max_players":6}'
-
-# Soft delete, then hard delete
-curl -X DELETE localhost:8081/api/boardgame/catan
-curl -X DELETE "localhost:8081/api/boardgame/catan?hard=true"
-
-# Include soft-deleted rows in a list
-curl "localhost:8081/api/boardgame?include_deleted=true"
-```
-
-### Listing, filtering, sorting & pagination
+## Listing, filtering, sorting & pagination
 
 Every list resource (boardgame, category, mechanism, contributor) can be listed
 two ways, both returning the same paginated envelope:
@@ -215,13 +149,13 @@ two ways, both returning the same paginated envelope:
 
 GET query parameters (all optional):
 
-| Parameter         | Form              | Example                 |
-| ----------------- | ----------------- | ----------------------- |
-| `page`            | integer           | `page=2`                |
-| `pageSize`        | integer           | `pageSize=20`           |
-| `sort`            | `field.order`     | `sort=name.asc`         |
-| `filter`          | `field.op.value`  | `filter=min_players.ge.3` (repeatable) |
-| `include_deleted` | boolean           | `include_deleted=true` (boardgames only) |
+| Parameter         | Form             | Example                                  |
+| ----------------- | ---------------- | ---------------------------------------- |
+| `page`            | integer          | `page=2`                                 |
+| `pageSize`        | integer          | `pageSize=20`                            |
+| `sort`            | `field.order`    | `sort=name.asc`                          |
+| `filter`          | `field.op.value` | `filter=min_players.ge.3` (repeatable)   |
+| `include_deleted` | boolean          | `include_deleted=true` (boardgames only) |
 
 QUERY request body (send `{}` for defaults):
 
@@ -267,7 +201,78 @@ A `QUERY` request must send `Content-Type: application/json` and a body (use
 `{}` for defaults). Invalid sort/filter fields or operators return
 `422 Unprocessable Entity` on either method.
 
-## Category & Mechanism API
+
+## APIs
+
+### Boardgame
+
+Create request body:
+
+```json
+{
+  "name": "Catan",
+  "description": "A trading and building game.",
+  "year_published": 1995,
+  "min_players": 3,
+  "max_players": 4,
+  "min_play_time": 45,
+  "max_play_time": 90,
+  "min_age": 10,
+  "bgg_id": 13,
+  "categories": [{ "slug": "economic" }],
+  "mechanisms": [{ "slug": "trading" }],
+  "contributions": [
+    { "slug": "klaus-teuber", "role": "designer", "credit_order": 1 }
+  ]
+}
+```
+
+Only `name`, `min_players`, and `max_players` are required.
+
+#### Endpoints
+
+| Method | Path                              | Description                                 |
+| ------ | --------------------------------- | ------------------------------------------- |
+| POST   | `/api/boardgame`                  | Create a boardgame                          |
+| POST   | `/api/boardgame/{slug}/expansion` | Create an expansion of `{slug}`             |
+| GET    | `/api/boardgame`                  | List with filter/sort/pagination (envelope) |
+| QUERY  | `/api/boardgame`                  | Same, with the request in a JSON body       |
+| GET    | `/api/boardgame/{slug}`           | Fetch one by slug                           |
+| GET    | `/api/boardgame/by-id/{id}`       | Fetch one by numeric id (internal)          |
+| PATCH  | `/api/boardgame/{slug}`           | Partial update                              |
+| DELETE | `/api/boardgame/{slug}`           | Soft delete (`?hard=true` to hard delete)   |
+| POST   | `/api/boardgame/{slug}/rate`      | Rate a boardgame                            |
+
+#### Examples
+
+```bash
+# Create
+curl -X POST localhost:8081/api/boardgame \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Catan","min_players":3,"max_players":4,"year_published":1995}'
+
+# Create an expansion of "catan"
+curl -X POST localhost:8081/api/boardgame/catan/expansion \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Catan: Seafarers","min_players":3,"max_players":4}'
+
+# Fetch by slug
+curl localhost:8081/api/boardgame/catan
+
+# Update (partial) — omitted fields are left unchanged
+curl -X PATCH localhost:8081/api/boardgame/catan \
+  -H 'Content-Type: application/json' \
+  -d '{"max_players":6}'
+
+# Soft delete, then hard delete
+curl -X DELETE localhost:8081/api/boardgame/catan
+curl -X DELETE "localhost:8081/api/boardgame/catan?hard=true"
+
+# Include soft-deleted rows in a list
+curl "localhost:8081/api/boardgame?include_deleted=true"
+```
+
+### Category & Mechanism
 
 Categories and mechanisms share the same shape and behavior; only the base path differs (`/api/category`, `/api/mechanism`).
 
@@ -279,15 +284,19 @@ Create request body:
 
 Only `name` is required; the slug is derived from it.
 
-| Method | Path                   | Description                               |
-| ------ | ---------------------- | ----------------------------------------- |
-| POST   | `/api/category`        | Create                                    |
+#### Endpoints
+
+| Method | Path                   | Description                                 |
+| ------ | ---------------------- | ------------------------------------------- |
+| POST   | `/api/category`        | Create                                      |
 | GET    | `/api/category`        | List with filter/sort/pagination (envelope) |
-| QUERY  | `/api/category`        | Same, with the request in a JSON body     |
-| GET    | `/api/category/{slug}` | Fetch by slug                             |
-| DELETE | `/api/category/{slug}` | Soft delete (`?hard=true` to hard delete) |
+| QUERY  | `/api/category`        | Same, with the request in a JSON body       |
+| GET    | `/api/category/{slug}` | Fetch by slug                               |
+| DELETE | `/api/category/{slug}` | Soft delete (`?hard=true` to hard delete)   |
 
 See [Listing, filtering, sorting & pagination](#listing-filtering-sorting--pagination) for the parameters, body, and envelope shape.
+
+#### Examples
 
 ```bash
 curl -X POST localhost:8081/api/category -H 'Content-Type: application/json' -d '{"name":"Economic"}'
@@ -296,7 +305,7 @@ curl localhost:8081/api/category/economic
 curl -X DELETE "localhost:8081/api/mechanism/trading?hard=true"
 ```
 
-## Contributor API
+### Contributor
 
 Contributors are the people/companies credited on a boardgame.
 
@@ -308,18 +317,23 @@ Create request body:
 
 Only `name` is required.
 
-| Method | Path                       | Description                               |
-| ------ | -------------------------- | ----------------------------------------- |
-| POST   | `/api/contributors`        | Create                                    |
+#### Endpoints
+
+| Method | Path                       | Description                                 |
+| ------ | -------------------------- | ------------------------------------------- |
+| POST   | `/api/contributors`        | Create                                      |
 | GET    | `/api/contributors`        | List with filter/sort/pagination (envelope) |
-| QUERY  | `/api/contributors`        | Same, with the request in a JSON body     |
-| GET    | `/api/contributors/{slug}` | Fetch by slug                             |
-| PATCH  | `/api/contributors/{slug}` | Partial update                            |
-| DELETE | `/api/contributors/{slug}` | Soft delete (`?hard=true` to hard delete) |
+| QUERY  | `/api/contributors`        | Same, with the request in a JSON body       |
+| GET    | `/api/contributors/{slug}` | Fetch by slug                               |
+| PATCH  | `/api/contributors/{slug}` | Partial update                              |
+| DELETE | `/api/contributors/{slug}` | Soft delete (`?hard=true` to hard delete)   |
 
 A contributor is linked to a boardgame through a **contribution** in the boardgame's create/update body, using one of the supported roles:
 
 `designer`, `artist`, `publisher`, `developer`, `graphic_designer`
+
+
+#### Examples
 
 ```bash
 curl -X POST localhost:8081/api/contributors \
