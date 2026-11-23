@@ -122,6 +122,17 @@ services:
     #volumes:
     #  - user-management-data:/var/lib/postgresql/data
 
+  frontend:
+    container_name: frontend
+    build:
+      context: frontend/.
+      dockerfile: Dockerfile
+      args:
+        VITE_CATALOG_BASE_URL: ${VITE_CATALOG_BASE_URL:-http://localhost:8081}
+    ports:
+      - 5173:80
+    restart: on-failure
+
 #volumes:
   #catalog-data:
   #marketplace-data:

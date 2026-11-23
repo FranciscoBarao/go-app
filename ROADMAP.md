@@ -90,14 +90,20 @@ Goal: image support for catalog resources. Independent of Phase 2; can run in pa
 
 ## Phase 4 — Frontend
 
-Goal: public browse UI on top of Phase 2 APIs. Built in `frontend/` (currently a stub). No user accounts in scope here — that moves to Phase 6.
+Goal: public browse UI on top of Phase 2 APIs. Built in `frontend/` (Phase 4.1 skeleton in place, screens empty). No user accounts in scope here — that moves to Phase 6.
 
 ### Phase 4.1 — Skeleton (HIGH — before Phase 5)
 
-- [ ] Framework choice + project scaffold
-- [ ] Routing + base layout / navigation
-- [ ] API client + environment/config wiring
-- [ ] Dockerized dev setup (compose integration)
+- [x] Framework choice + project scaffold
+  - 2026-11-20: Vite 8 + React 19 + TypeScript, Biome for lint, Vitest for tests. Source lives under `frontend/internal/`, layout in `core/docs/standards/react-project-organisation.md`. Needs Node 22.12+.
+  - 2026-11-20: Node pin moved to 26 LTS. Vite stays 8.3.8 and React stays 19.3.1, the current releases.
+- [x] Routing + base layout / navigation
+  - 2026-11-20: React Router, route table in `internal/app/routes.tsx`, empty screens per feature. Layout is only the four list links.
+- [~] API client + environment/config wiring
+  - 2026-11-20: `internal/services/catalog` stubs and `internal/config` (`VITE_CATALOG_BASE_URL`). HTTP calls are still `// TODO`. Nothing imports the client yet, so the build arg has no runtime effect.
+- [x] Dockerized dev setup (compose integration)
+  - 2026-11-20: production nginx image (`frontend/Dockerfile`, `nginx.conf`) and compose service on port 5173. `make dev` runs the Vite server on the host. Image not built yet: the Docker daemon was not running.
+  - 2026-11-20: image built (`go-app-frontend`, 93.7MB). nginx config test passed. Container serves `/boardgames/catan` as the app and returns 404 for a missing hashed asset.
 
 ### Phase 4.2 — Browse & detail
 
