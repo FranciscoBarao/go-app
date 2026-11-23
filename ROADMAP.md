@@ -174,12 +174,12 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Item                                           | Type    | Priority | MoSCoW | Notes                                                       |
 | ---------------------------------------------- | ------- | -------- | ------ | ----------------------------------------------------------- |
 | Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy   |
-| Development pipelines / CI                     | Eng     | High     | Should | Per-service build, test, lint on PRs                        |
+| Development pipelines / CI                     | Eng     | High     | Should | Catalog `make check` on PRs via `.github/workflows/check.yaml`. Frontend not wired. |
 | Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment           |
 | Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                           |
 | UI testing                                     | Eng     | Medium   | Could  | Frontend component + e2e tests                              |
-| Automatic releases / versioning                | Eng     | Low      | Could  | Semver, changelogs, tags                                    |
-| PR automation                                  | Eng     | Low      | Could  | Auto squash-merge + validate PR title & branch nomenclature |
+| Automatic releases / versioning                | Eng     | Low      | Could  | Done 2026-11-23: `vX.Y.Z` tags and GitHub Releases on merge to main. See `core/docs/standards/release.md`. |
+| PR automation                                  | Eng     | Low      | Could  | PR title lint done 2026-11-23. Squash uses PR title (repo setting). Branch nomenclature not done. |
 | Game editions/versions as first-class entities | Product | Low      | Could  | Distinct from name aliases                                  |
 | Community (reviews, forums, ratings)           | Product | Very Low | Won't  | Deferred                                                    |
 | Shopping / marketplace                         | Product | Very Low | Won't  | Deferred                                                    |
@@ -197,4 +197,5 @@ Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to 
 | Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.                                                |
 | Logging improvement    | 2026-10-18 | standard in core/docs/standards/logging.md; catalog stays on zerolog console output, rejects an unknown level, and attaches request_id in middleware. |
 | Config loading         | 2026-10-18 | improved config-loading.md.                                                                                                                           |
+| CI, commits, releases  | 2026-11-23 | `.github/workflows/` validate-pr, check, tag, release. Standards in conventional-commits.md and release.md. Catalog `make check` on PRs. `vX.Y.Z` on merge to main. |
 

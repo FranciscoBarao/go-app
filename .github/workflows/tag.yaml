@@ -1,0 +1,42 @@
+name: Tag
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version without the v prefix (X.Y.Z)
+        type: string
+        required: true
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the v prefix (X.Y.Z)
+        type: string
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"

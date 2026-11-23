@@ -1,0 +1,42 @@
+name: Check
+
+on:
+  pull_request:
+    paths:
+      - "catalog/**"
+      - ".github/workflows/check.yaml"
+  workflow_call:
+    inputs:
+      working-directory:
+        description: Directory that contains the Makefile and go.mod
+        type: string
+        required: false
+        default: catalog
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory || 'catalog' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: ${{ inputs.working-directory || 'catalog' }}/go.mod
+          cache: false
+
+      - name: Display Go version
+        run: go version
+
+      - name: Clean Go caches
+        run: go clean -cache -modcache -testcache
+
+      - name: Run make check
+        run: make check
