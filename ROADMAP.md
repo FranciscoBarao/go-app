@@ -24,7 +24,7 @@ Phases are listed in intended work order. Phase 3 (images) can run in parallel w
 
 `2  ->  4.1 skeleton (+ 3 images in parallel)  ->  4.2  ->  5 import  ->  4.3-4.5  ->  6`
 
-High-priority engineering backlog items (CI, test coverage, logging, caching) are slotted in opportunistically alongside the phases above.
+High-priority engineering backlog items (caching) are slotted in opportunistically alongside the phases above.
 
 ## Phase 1 — Rich model & CRUD ✅
 
@@ -171,31 +171,28 @@ Goal: introduce user accounts and personal/group game lists. Build on the existi
 
 Prioritization uses priority buckets (High / Medium / Low / Very Low) mapped to MoSCoW (H = Must/Should, M = Should/Could, L = Could, VL = Won't-for-now). SWOT is intentionally not used — it is a strategic-analysis tool, not a backlog prioritizer.
 
-| Item                                           | Type    | Priority | MoSCoW | Notes                                                       |
-| ---------------------------------------------- | ------- | -------- | ------ | ----------------------------------------------------------- |
-| Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy   |
-| Development pipelines / CI                     | Eng     | High     | Should | Catalog `make check` on PRs via `.github/workflows/check.yaml`. Frontend not wired. |
-| Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment           |
-| Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                           |
-| UI testing                                     | Eng     | Medium   | Could  | Frontend component + e2e tests                              |
-| Automatic releases / versioning                | Eng     | Low      | Could  | Done 2026-11-23: `vX.Y.Z` tags and GitHub Releases on merge to main. See `core/docs/standards/release.md`. |
-| PR automation                                  | Eng     | Low      | Could  | PR title lint done 2026-11-23. Squash uses PR title (repo setting). Branch nomenclature not done. |
-| Game editions/versions as first-class entities | Product | Low      | Could  | Distinct from name aliases                                  |
-| Community (reviews, forums, ratings)           | Product | Very Low | Won't  | Deferred                                                    |
-| Shopping / marketplace                         | Product | Very Low | Won't  | Deferred                                                    |
+| Item                                           | Type    | Priority | MoSCoW | Notes                                                     |
+| ---------------------------------------------- | ------- | -------- | ------ | --------------------------------------------------------- |
+| Caching                                        | Eng     | High     | Must   | Response/query cache (e.g. Redis) + invalidation strategy |
+| Kubernetes test env for CD                     | Eng     | Medium   | Should | Hosted test environment for continuous deployment         |
+| Performance / load tests                       | Eng     | Medium   | Could  | Throughput and latency under load                         |
+| UI testing                                     | Eng     | Medium   | Could  | Frontend component + e2e tests                            |
+| Game editions/versions as first-class entities | Product | Low      | Could  | Distinct from name aliases                                |
+| Community (reviews, forums, ratings)           | Product | Very Low | Won't  | Deferred                                                  |
+| Shopping / marketplace                         | Product | Very Low | Won't  | Deferred                                                  |
 
 
 
 ## Work Done
 
-| Item                   | Date       | Notes                                                                                                                                                 |
-| ---------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md.                                                                                                    |
-| Move deserializer      | 2026-10-06 | catalog JSON decoding lives in transport as decodeJSONBody, with unit tests.                                                                          |
-| Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md.                                          |
-| Catalog test coverage  | 2026-10-16 | catalog/docs/qa-test-coverage.md; filled unit and integration gaps; no coverage gate.                                                                 |
-| Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.                                                |
-| Logging improvement    | 2026-10-18 | standard in core/docs/standards/logging.md; catalog stays on zerolog console output, rejects an unknown level, and attaches request_id in middleware. |
-| Config loading         | 2026-10-18 | improved config-loading.md.                                                                                                                           |
-| CI, commits, releases  | 2026-11-23 | `.github/workflows/` validate-pr, check, tag, release. Standards in conventional-commits.md and release.md. Catalog `make check` on PRs. `vX.Y.Z` on merge to main. |
+| Item                   | Date       | Notes                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Improve Error Handling | 2026-10-06 | standard in core/docs/standards/error-handling.md.                                                                                                                                                                                                                                                                             |
+| Move deserializer      | 2026-10-06 | catalog JSON decoding lives in transport as decodeJSONBody, with unit tests.                                                                                                                                                                                                                                                   |
+| Persistence layer      | 2026-10-07 | catalog store under internal/store/postgres, golang-migrate, standard in core/docs/standards/persistence.md.                                                                                                                                                                                                                   |
+| Catalog test coverage  | 2026-10-16 | catalog/docs/qa-test-coverage.md; filled unit and integration gaps; no coverage gate.                                                                                                                                                                                                                                          |
+| Catalog store tests    | 2026-10-16 | Each resource has its own suite. The store client is `db`; the embedded process stops in test cleanup.                                                                                                                                                                                                                         |
+| Logging improvement    | 2026-10-18 | standard in core/docs/standards/logging.md; catalog stays on zerolog console output, rejects an unknown level, and attaches request_id in middleware.                                                                                                                                                                          |
+| Config loading         | 2026-10-18 | improved config-loading.md.                                                                                                                                                                                                                                                                                                    |
+| CI, commits, releases  | 2026-11-24 | Workflows: validate-pr, check (`catalog/**`), check-frontend (`frontend/**` only), tag, release. Standards: conventional-commits, branch-nomenclature, release. PR template. Skills: git-branch, git-pr, index in `core/ai/skills/README.md`. `vX.Y.Z` on merge to main. Squash settings still need applying in the GitHub UI. |
 

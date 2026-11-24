@@ -25,11 +25,12 @@ The files live in `.github/workflows/` at the repository root. GitHub loads work
 | File               | When                                                       | What it does                                                                                                                       |
 | ------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `validate-pr.yaml` | pull request opened, reopened, edited, or synchronized     | Checks the PR title against conventional commits                                                                                   |
-| `check.yaml`       | pull request that touches `catalog/**`, or `workflow_call` | Checks out the repo, sets up Go from `go.mod`, prints `go version`, runs `go clean -cache -modcache -testcache`, then `make check` |
+| `check.yaml`          | pull request that touches `catalog/**`, or `workflow_call`  | Checks out the repo, sets up Go from `go.mod`, prints `go version`, runs `go clean -cache -modcache -testcache`, then `make check` |
+| `check-frontend.yaml` | pull request that touches `frontend/**`, or `workflow_call` | Checks out the repo, sets up Node 26, prints `node` and `npm` versions, then `make check` |
 | `tag.yaml`         | `workflow_call` or `workflow_dispatch`                     | Creates annotated tag `vX.Y.Z` and pushes it. A tag that already exists is left as is                                              |
 | `release.yaml`     | push to `main`, `workflow_dispatch`, or `workflow_call`    | Reads the squash commit, chooses the bump, calls `tag.yaml`, creates a GitHub Release with generated notes                         |
 
-`check.yaml` takes `working-directory`. The monorepo default is `catalog`. A caller after extract passes `.`.
+`check.yaml` takes `working-directory`. The monorepo default is `catalog`. A caller after extract passes `.`. `check-frontend.yaml` is the same pattern for the frontend; its default is `frontend`. When that app is its own repository, the file moves with it.
 
 The GitHub Release body is auto-generated notes. The template in [core/docs/templates/release-notes.md](../templates/release-notes.md) is for a handwritten write-up, typically a manual major. It is not the default release body.
 

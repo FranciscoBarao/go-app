@@ -2,7 +2,7 @@
 
 Pull request titles follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) spec. The repository squash-merges with the PR title as the commit subject and an empty body, so the title is the commit that lands on `main`.
 
-Branch commits are not linted. `validate-pr.yaml` checks the title on `opened`, `reopened`, `edited`, and `synchronize`.
+Branch commits are not linted. Branch names follow [branch-nomenclature.md](branch-nomenclature.md). `validate-pr.yaml` checks the title on `opened`, `reopened`, `edited`, and `synchronize`.
 
 ## Format
 
@@ -32,6 +32,6 @@ Invalid:
 
 ## Enforcement
 
-`.github/workflows/validate-pr.yaml` runs [`amannn/action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) on every pull request. Scope is not required.
+`.github/workflows/validate-pr.yaml` runs [`amannn/action-semantic-pull-request`](https://github.com/amannn/action-semantic-pull-request) on every pull request. Scope is not required. The pull request body uses `.github/pull_request_template.md`. A breaking change is checked in Summary and marked with `!` on the title.
 
 Squash settings that make the merge commit match this title are in [release.md](release.md).
