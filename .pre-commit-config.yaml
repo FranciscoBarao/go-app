@@ -8,10 +8,19 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
       - id: detect-private-key
-  - repo: https://github.com/TekWizely/pre-commit-golang
-    rev: v1.0.0-rc.4
+  - repo: local
     hooks:
-      - id: go-imports
-        args: ["-w", "-local", "github.com/FranciscoBarao"]
-      - id: go-mod-tidy
-      - id: golangci-lint-mod
+      - id: catalog-make-check
+        name: catalog make check
+        entry: make -C catalog check
+        language: system
+        pass_filenames: false
+        files: ^catalog/
+        verbose: true
+      - id: frontend-make-check
+        name: frontend make check
+        entry: make -C frontend check
+        language: system
+        pass_filenames: false
+        files: ^frontend/
+        verbose: true
