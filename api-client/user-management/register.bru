@@ -1,0 +1,28 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{userManagementBaseUrl}}/api/register
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "username": "demo",
+    "email": "demo@example.com",
+    "password": "demo123"
+  }
+}
+
+docs {
+  Public. Password must be at least 6 characters.
+  Does not issue a token; run Login after a successful register.
+}

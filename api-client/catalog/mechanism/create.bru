@@ -1,0 +1,27 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{catalogBaseUrl}}/api/mechanism
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Trading"
+  }
+}
+
+docs {
+  Slug is derived from name (trading) and is immutable.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

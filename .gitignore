@@ -41,6 +41,9 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# Bruno per-collection secrets
+api-client/**/.env
+
 # vercel
 .vercel
 

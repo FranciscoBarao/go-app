@@ -1,0 +1,41 @@
+meta {
+  name: Query
+  type: http
+  seq: 3
+}
+
+http {
+  method: QUERY
+  url: {{catalogBaseUrl}}/api/category
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "pagination": {
+      "page": 1,
+      "pageSize": 20
+    },
+    "sort": {
+      "field": "name",
+      "order": "asc"
+    },
+    "filters": [
+      {
+        "field": "name",
+        "op": "like",
+        "value": "eco"
+      }
+    ]
+  }
+}
+
+docs {
+  Same envelope as List. Send {} for defaults.
+  If this Bruno version cannot send QUERY, use List instead.
+}

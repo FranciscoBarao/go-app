@@ -1,0 +1,33 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{userManagementBaseUrl}}/api/login
+  body: formUrlEncoded
+  auth: none
+}
+
+headers {
+  Content-Type: application/x-www-form-urlencoded
+}
+
+body:form-urlencoded {
+  grant_type: password
+  username: demo
+  password: demo123
+}
+
+script:post-response {
+  if (res.body && res.body.access_token) {
+    bru.setEnvVar("token", res.body.access_token);
+  }
+}
+
+docs {
+  Password grant (go-chi/oauth UserCredentials).
+  On success, access_token is stored in this collection's local env as token.
+  Copy that value into Catalog's local env to send it on Catalog writes.
+}

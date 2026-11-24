@@ -1,0 +1,29 @@
+meta {
+  name: Rate
+  type: http
+  seq: 11
+}
+
+post {
+  url: {{catalogBaseUrl}}/api/boardgame/{{boardgameSlug}}/rate
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "value": 5
+  }
+}
+
+docs {
+  Username is taken from OAuth claims, not this body. Value is 0–10.
+  Catalog does not yet wrap this route in OAuth middleware, so Rate returns 401
+  even with Authorization enabled until Phase 6 wires claims into context.
+  Enable the Authorization header or inherit collection Bearer to send {{token}}.
+}

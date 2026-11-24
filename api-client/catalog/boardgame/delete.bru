@@ -1,0 +1,20 @@
+meta {
+  name: Delete
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{catalogBaseUrl}}/api/boardgame/{{boardgameSlug}}
+  body: none
+  auth: none
+}
+
+headers {
+  ~Authorization: Bearer {{token}}
+}
+
+docs {
+  Soft delete. Expansions of this boardgame are deleted the same way.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

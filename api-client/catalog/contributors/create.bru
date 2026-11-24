@@ -1,0 +1,29 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{catalogBaseUrl}}/api/contributors
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Klaus Teuber",
+    "bio": "German game designer.",
+    "bgg_id": 11
+  }
+}
+
+docs {
+  Slug is derived from name (klaus-teuber) and is immutable.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

@@ -1,0 +1,28 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{catalogBaseUrl}}/api/category
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Economic",
+    "bgg_id": 1021
+  }
+}
+
+docs {
+  Slug is derived from name (economic) and is immutable.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}
