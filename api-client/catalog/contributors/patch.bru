@@ -1,0 +1,27 @@
+meta {
+  name: Patch
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{catalogBaseUrl}}/api/contributors/{{contributorSlug}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "bio": "Designer of Catan."
+  }
+}
+
+docs {
+  Partial update; omitted fields are unchanged. Name changes do not update the slug.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

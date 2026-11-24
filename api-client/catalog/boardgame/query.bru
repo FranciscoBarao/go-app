@@ -1,0 +1,42 @@
+meta {
+  name: Query
+  type: http
+  seq: 4
+}
+
+http {
+  method: QUERY
+  url: {{catalogBaseUrl}}/api/boardgame
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "pagination": {
+      "page": 1,
+      "pageSize": 20
+    },
+    "sort": {
+      "field": "name",
+      "order": "asc"
+    },
+    "filters": [
+      {
+        "field": "min_players",
+        "op": "ge",
+        "value": "3"
+      }
+    ],
+    "include_deleted": false
+  }
+}
+
+docs {
+  Same envelope as List. Send {} for defaults.
+  If this Bruno version cannot send QUERY, use List instead.
+}

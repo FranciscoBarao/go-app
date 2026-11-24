@@ -1,0 +1,19 @@
+meta {
+  name: Delete
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{catalogBaseUrl}}/api/category/{{categorySlug}}
+  body: none
+  auth: none
+}
+
+headers {
+  ~Authorization: Bearer {{token}}
+}
+
+docs {
+  Soft delete. Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

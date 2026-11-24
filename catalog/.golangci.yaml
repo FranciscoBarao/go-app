@@ -1,0 +1,52 @@
+version: "2"
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - revive
+    - staticcheck
+    - unused
+  settings:
+    revive:
+      confidence: 0.8
+      severity: warning
+      enable-all-rules: false
+      rules:
+        - name: context-keys-type
+          severity: warning
+        - name: time-naming
+          severity: warning
+        - name: var-declaration
+          severity: warning
+        - name: unexported-return
+          severity: warning
+        - name: errorf
+          severity: warning
+        - name: blank-imports
+          severity: warning
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: '*test'
+          severity: warning
+        - name: dot-imports
+          severity: warning
+        - name: error-return
+          severity: warning
+        - name: error-strings
+          severity: warning
+        - name: error-naming
+          severity: warning
+        - name: exported
+          severity: warning
+        - name: increment-decrement
+          severity: warning
+        - name: var-naming
+          severity: warning
+        - name: range
+          severity: warning
+        - name: receiver-naming
+          severity: warning
+        - name: indent-error-flow
+          severity: warning

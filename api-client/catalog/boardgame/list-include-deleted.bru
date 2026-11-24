@@ -1,0 +1,19 @@
+meta {
+  name: List include deleted
+  type: http
+  seq: 10
+}
+
+get {
+  url: {{catalogBaseUrl}}/api/boardgame
+  body: none
+  auth: none
+}
+
+params:query {
+  include_deleted: true
+}
+
+docs {
+  Boardgame lists only. Soft-deleted rows are included.
+}

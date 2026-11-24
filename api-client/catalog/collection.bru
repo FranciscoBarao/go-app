@@ -1,0 +1,19 @@
+meta {
+  name: Catalog
+}
+
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+docs {
+  Catalog writes are currently unprotected. Requests default to auth none.
+  Writes and Rate include a disabled Authorization: Bearer {{token}} header.
+  Enable that header, or switch the request auth to inherit, to send the token.
+  Public GETs stay without auth.
+  Rate still 401 until catalog wires OAuth middleware (Phase 6).
+}

@@ -1,0 +1,23 @@
+meta {
+  name: Delete hard
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{catalogBaseUrl}}/api/mechanism/{{mechanismSlug}}
+  body: none
+  auth: none
+}
+
+params:query {
+  hard: true
+}
+
+headers {
+  ~Authorization: Bearer {{token}}
+}
+
+docs {
+  Permanent delete. Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

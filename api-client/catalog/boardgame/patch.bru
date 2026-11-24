@@ -1,0 +1,27 @@
+meta {
+  name: Patch
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{catalogBaseUrl}}/api/boardgame/{{boardgameSlug}}
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "max_players": 6
+  }
+}
+
+docs {
+  Partial update; omitted fields are unchanged. Name changes do not update the slug.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

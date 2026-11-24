@@ -1,0 +1,22 @@
+meta {
+  name: List
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{catalogBaseUrl}}/api/boardgame
+  body: none
+  auth: none
+}
+
+params:query {
+  page: 1
+  pageSize: 20
+  sort: name.asc
+  filter: min_players.ge.3
+}
+
+docs {
+  Paginated envelope. filter may be repeated for AND-combined conditions.
+}

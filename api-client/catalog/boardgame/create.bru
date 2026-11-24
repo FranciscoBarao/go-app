@@ -1,0 +1,53 @@
+meta {
+  name: Create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{catalogBaseUrl}}/api/boardgame
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  ~Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "name": "Catan",
+    "description": "A trading and building game.",
+    "year_published": 1995,
+    "min_players": 3,
+    "max_players": 4,
+    "min_play_time": 45,
+    "max_play_time": 90,
+    "min_age": 10,
+    "bgg_id": 13,
+    "categories": [
+      {
+        "slug": "{{categorySlug}}"
+      }
+    ],
+    "mechanisms": [
+      {
+        "slug": "{{mechanismSlug}}"
+      }
+    ],
+    "contributions": [
+      {
+        "slug": "{{contributorSlug}}",
+        "role": "designer",
+        "credit_order": 1
+      }
+    ]
+  }
+}
+
+docs {
+  Create taxonomy and the contributor first; unknown association slugs 404.
+  Only name, min_players, and max_players are required.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

@@ -1,0 +1,82 @@
+package postgres
+
+import (
+	"context"
+	"github.com/FranciscoBarao/catalog/internal/store/postgres/sql"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+
+	"github.com/FranciscoBarao/catalog/internal/category"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/store"
+)
+
+// CreateCategory inserts a new category into the database.
+func (p *Postgres) CreateCategory(ctx context.Context, c *category.Category) error {
+	err := p.pool.QueryRow(ctx, sql.InsertCategory, c.Slug, c.Name, c.BggID).
+		Scan(&c.ID, &c.CreatedAt, &c.UpdatedAt)
+	return mapPgError(ctx, err)
+}
+
+// GetCategoryBySlug retrieves a single category by slug.
+func (p *Postgres) GetCategoryBySlug(ctx context.Context, slug string) (category.Category, error) {
+	rows, err := p.pool.Query(ctx, sql.SelectCategoryBySlug, slug)
+	if err != nil {
+		return category.Category{}, mapPgError(ctx, err)
+	}
+	c, err := pgx.CollectOneRow(rows, scanCategoryRow)
+	return c, mapPgError(ctx, err)
+}
+
+// GetCategoryIDBySlug retrieves only the id of an active category by slug.
+func (p *Postgres) GetCategoryIDBySlug(ctx context.Context, slug string) (uint, error) {
+	var id uint
+	err := p.pool.QueryRow(ctx, sql.SelectCategoryIDBySlug, slug).Scan(&id)
+	return id, mapPgError(ctx, err)
+}
+
+// GetAllCategories retrieves active categories with optional filtering, sorting,
+// and pagination, returning the page and the total count of matching rows.
+func (p *Postgres) GetAllCategories(ctx context.Context, query listopt.Query) ([]category.Category, int, error) {
+	countQuery, countArgs := buildCountQuery(sql.CountCategories, query)
+	selectQuery, selectArgs := buildPaginatedQuery(sql.SelectAllCategories, query)
+
+	var total int
+	if err := p.pool.QueryRow(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, mapPgError(ctx, err)
+	}
+
+	rows, err := p.pool.Query(ctx, selectQuery, selectArgs...)
+	if err != nil {
+		return nil, 0, mapPgError(ctx, err)
+	}
+	categories, err := pgx.CollectRows(rows, scanCategoryRow)
+	return categories, total, mapPgError(ctx, err)
+}
+
+// DeleteCategory soft-deletes or hard-deletes a category by slug.
+func (p *Postgres) DeleteCategory(ctx context.Context, slug string, hard bool) error {
+	var (
+		cmd pgconn.CommandTag
+		err error
+	)
+	if hard {
+		cmd, err = p.pool.Exec(ctx, sql.HardDeleteCategory, slug)
+	} else {
+		cmd, err = p.pool.Exec(ctx, sql.SoftDeleteCategory, slug)
+	}
+	if err != nil {
+		return mapPgError(ctx, err)
+	}
+	if cmd.RowsAffected() == 0 {
+		return store.ErrNotFound
+	}
+	return nil
+}
+
+func scanCategoryRow(row pgx.CollectableRow) (category.Category, error) {
+	var c category.Category
+	err := row.Scan(&c.ID, &c.Slug, &c.Name, &c.BggID, &c.CreatedAt, &c.UpdatedAt, &c.DeletedAt)
+	return c, err
+}

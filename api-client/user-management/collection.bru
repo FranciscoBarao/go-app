@@ -1,0 +1,14 @@
+meta {
+  name: User Management
+}
+
+auth {
+  mode: none
+}
+
+docs {
+  Token issue only: register, password login, and client credentials.
+  Login and client-credentials write access_token into env token.
+  Copy that value into the Catalog collection local env to send it on writes.
+  Protected GET /api/user and DELETE /api/user/{username} are out of scope.
+}

@@ -1,16 +1,19 @@
 package tests
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"testing"
 
 	"github.com/steinfletcher/apitest"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
-	"github.com/FranciscoBarao/catalog/middleware"
-	"github.com/FranciscoBarao/catalog/model"
+	"github.com/FranciscoBarao/catalog/internal/boardgame"
+	"github.com/FranciscoBarao/catalog/internal/listopt"
+	"github.com/FranciscoBarao/catalog/internal/store"
+	"github.com/stretchr/testify/assert"
 )
 
 type BoardGameSuite struct {
@@ -23,18 +26,17 @@ func (suite *BoardGameSuite) SetupSuite() {
 }
 
 func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
-	bg := &model.Boardgame{Name: "test", Publisher: "test", PlayerNumber: 1}
 	suite.base.dbMock.EXPECT().
-		Create(bg).
-		Return(nil)
-
-	bgJson, err := json.Marshal(bg)
-	suite.Require().NoError(err)
+		GetBoardgameBySlug(gomock.Any(), "test").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+	suite.base.dbMock.EXPECT().
+		CreateBoardgame(gomock.Any(), gomock.Any()).
+		Return(boardgame.Boardgame{Slug: "test", Name: "test", MinPlayers: 1, MaxPlayers: 4}, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
 		Post("/api/boardgame").
-		JSON(bgJson).
+		JSON(`{"name":"test","min_players":1,"max_players":4}`).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
@@ -43,28 +45,32 @@ func (suite *BoardGameSuite) TestPostBoardgameSuccess() {
 }
 
 func (suite *BoardGameSuite) TestPostExpansion() {
-	// Expansion read of parent boardgame Mock
-	parentIDStr := "0"
-	u64, _ := strconv.ParseUint(parentIDStr, 10, 32)
-	parentID := uint(u64)
-	parentBg := new(model.Boardgame)
+	parent := boardgame.Boardgame{ID: 1, Slug: "parent", Name: "parent", MinPlayers: 1, MaxPlayers: 4}
 	suite.base.dbMock.EXPECT().
-		Read(parentBg, "", "id = ?", parentIDStr).
-		Return(nil)
+		GetBoardgameBySlug(gomock.Any(), "expansion").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "parent").
+		Return(parent, nil)
 
-	// Boardgame expansion creation Mock
-	expansion := &model.Boardgame{Name: "expansion", Publisher: "expansion", PlayerNumber: 1}
-	expansion.SetBoardgameID(&parentID)
 	suite.base.dbMock.EXPECT().
-		Create(expansion).
-		Return(nil)
-	expansionJson, err := json.Marshal(expansion)
-	suite.Require().NoError(err)
+		CreateBoardgame(gomock.Any(), gomock.Any()).
+		DoAndReturn(func(_ context.Context, input boardgame.CreateBoardgameDTO) (boardgame.Boardgame, error) {
+			suite.Require().NotNil(input.ParentID)
+			suite.Equal(uint(1), *input.ParentID)
+			return boardgame.Boardgame{
+				Slug:        "expansion",
+				Name:        "expansion",
+				MinPlayers:  1,
+				MaxPlayers:  4,
+				BoardgameID: input.ParentID,
+			}, nil
+		})
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame/"+parentIDStr+"/expansion").
-		JSON(expansionJson).
+		Post("/api/boardgame/parent/expansion").
+		JSON(`{"name":"expansion","min_players":1,"max_players":4}`).
 		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
@@ -73,258 +79,275 @@ func (suite *BoardGameSuite) TestPostExpansion() {
 }
 
 func (suite *BoardGameSuite) TestGetBoardgame() {
-	bgID := "test"
-	bg := new(model.Boardgame)
+	expected := boardgame.Boardgame{}
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(nil)
+		GetBoardgameBySlug(gomock.Any(), "test").
+		Return(expected, nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/boardgame/"+bgID).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/boardgame/test").
 		Expect(suite.T()).
 		Status(http.StatusOK).
 		End()
 }
 
 func (suite *BoardGameSuite) TestDeleteBoardgameSuccess() {
-	bgID := "1"
-	bg := new(model.Boardgame)
+	bg := boardgame.Boardgame{ID: 1, Slug: "test"}
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(nil)
-
+		GetBoardgameBySlug(gomock.Any(), "test").
+		Return(bg, nil)
 	suite.base.dbMock.EXPECT().
-		Delete(new(model.Boardgame)).
+		DeleteBoardgame(gomock.Any(), uint(1), false).
 		Return(nil)
 
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/boardgame/"+bgID).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Delete("/api/boardgame/test").
 		Expect(suite.T()).
 		Status(http.StatusNoContent).
 		End()
 }
 
-func (suite *BoardGameSuite) TestPostBoardgameJsonFailures() {
-	// Several Json Objects on the body
+func (suite *BoardGameSuite) TestGetBoardgamesWithQueryParams() {
+	expected := []boardgame.Boardgame{{Slug: "catan", Name: "Catan", MinPlayers: 3, MaxPlayers: 4}}
+	var gotQuery listopt.Query
+	suite.base.dbMock.EXPECT().
+		GetAllBoardgames(gomock.Any(), gomock.Any(), true).
+		DoAndReturn(func(_ context.Context, query listopt.Query, _ bool) ([]boardgame.Boardgame, int, error) {
+			gotQuery = query
+			return expected, 12, nil
+		})
+
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame").
-		JSON(`[{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]},{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}]`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/boardgame").
+		QueryParams(map[string]string{
+			"page":            "2",
+			"pageSize":        "5",
+			"sort":            "name.asc",
+			"filter":          "min_players.ge.3",
+			"include_deleted": "true",
+		}).
 		Expect(suite.T()).
-		Status(http.StatusBadRequest).
+		Status(http.StatusOK).
+		Assert(assertEnvelope(suite.T(), 1, 2, 5, 12, 3)).
 		End()
 
-	// Malformed Json
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame").
-		JSON(`{"Name:"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
+	suite.Assert().Equal("name", gotQuery.Sort.Column)
+	suite.Assert().Equal("asc", gotQuery.Sort.Order)
+	suite.Require().Len(gotQuery.Filters, 1)
+	suite.Assert().Equal("min_players", gotQuery.Filters[0].Column)
+	suite.Assert().Equal(listopt.Ge, gotQuery.Filters[0].Operator)
+	suite.Assert().Equal(5, gotQuery.Pagination.Limit())
+	suite.Assert().Equal(5, gotQuery.Pagination.Offset())
+}
 
-	// Unmarshall type error
+func (suite *BoardGameSuite) TestGetBoardgamesMalformedQueryParam() {
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame").
-		JSON(`{"Name":100,"Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Get("/api/boardgame").
+		QueryParams(map[string]string{"filter": "min_players.bogus.3"}).
 		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Unknown Field
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame").
-		JSON(`{"TEST":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
-		End()
-
-	// Empty Body
-	apitest.New().
-		HandlerFunc(suite.base.router.ServeHTTP).
-		Post("/api/boardgame").
-		JSON(``).
-		Header("Authorization", "Bearer "+suite.base.oauthHeader).
-		Expect(suite.T()).
-		Status(http.StatusBadRequest).
+		Status(http.StatusUnprocessableEntity).
 		End()
 }
 
-func (suite *BoardGameSuite) TestPostBoardgameStructFailures() {
-	//  <<<< field - Name >>>>
-	apitest.New(). // Invalid Struct -> NOT maxstringlength(100)
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusForbidden).
-			End()
-
-	apitest.New(). // Invalid Struct -> NOT alphanum
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test?","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusForbidden).
-			End()
-
-	//  <<<< field - Publisher >>>>
-	apitest.New(). // Invalid Struct -> NOT maxstringlength(100)
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusForbidden).
-			End()
-
-	apitest.New(). // Invalid Struct -> NOT alphanum
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test?","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusForbidden).
-			End()
-
-	//  <<<< field - PlayerNumber >>>>
-	apitest.New(). // Invalid Struct -> NOT int
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1.5,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-
-	apitest.New(). // Invalid Struct -> NOT in range(0|16)
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":17,"Tags":[],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusForbidden).
-			End()
-}
-
-func (suite *BoardGameSuite) TestPostBoardgameAssociationFailures() {
-	//  <<<< field - Tags >>>>
-	tagName := "test"
-	tag := new(model.Tag)
+func (suite *BoardGameSuite) TestQueryBoardgames() {
+	expected := []boardgame.Boardgame{{Slug: "catan", Name: "Catan", MinPlayers: 3, MaxPlayers: 4}}
 	suite.base.dbMock.EXPECT().
-		Read(tag, "", "name = ?", tagName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
+		GetAllBoardgames(gomock.Any(), gomock.Any(), false).
+		Return(expected, len(expected), nil)
 
-	apitest.New(). // Invalid Struct -> Tag does not previously exist
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[{"name":"`+tagName+`"}],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusNotFound).
-			End()
+	assertEnvelope := func(res *http.Response, _ *http.Request) error {
+		var body struct {
+			Data       []boardgame.Boardgame `json:"data"`
+			Page       int                   `json:"page"`
+			PageSize   int                   `json:"pageSize"`
+			TotalItems int                   `json:"totalItems"`
+			TotalPages int                   `json:"totalPages"`
+		}
+		if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+			return err
+		}
+		suite.Assert().Len(body.Data, 1)
+		suite.Assert().Equal(1, body.Page)
+		suite.Assert().Equal(10, body.PageSize)
+		suite.Assert().Equal(1, body.TotalItems)
+		suite.Assert().Equal(1, body.TotalPages)
+		return nil
+	}
 
-	apitest.New(). // Invalid Struct -> Tags have too many fields
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[{"name":"test", "test":"test"}],"Categories":[],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-
-	//  <<<< field - Categories >>>>
-	categoryName := "test"
-	category := new(model.Category)
-	suite.base.dbMock.EXPECT().
-		Read(category, "", "name = ?", categoryName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
-
-	apitest.New(). // Invalid Struct -> Category does not previously exist
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[{"name":"test"}],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusNotFound).
-			End()
-	apitest.New(). // Invalid Struct -> Categories have too many fields
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[{"name":"test", "test":"test"}],"Mechanisms":[]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-
-	//  <<<< field - Mechanisms >>>>
-	mechName := "test"
-	mech := new(model.Mechanism)
-	suite.base.dbMock.EXPECT().
-		Read(mech, "", "name = ?", mechName).
-		Return(middleware.NewError(http.StatusNotFound, "Record not found"))
-
-	apitest.New(). // Invalid Struct -> Mechanism does not previously exist
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test"}]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusNotFound).
-			End()
-	apitest.New(). // Invalid Struct -> Mchanisms have too many fields
-			HandlerFunc(suite.base.router.ServeHTTP).
-			Post("/api/boardgame").
-			JSON(`{"Name":"test","Publisher":"test","PlayerNumber":1,"Tags":[],"Categories":[],"Mechanisms":[{"name":"test", "test":"test"}]}`).
-			Header("Authorization", "Bearer "+suite.base.oauthHeader).
-			Expect(suite.T()).
-			Status(http.StatusBadRequest).
-			End()
-}
-
-func (suite *BoardGameSuite) TestGetBoardgameFailure() {
-	bgID := "1"
-	bg := new(model.Boardgame)
-	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with name: "+bgID))
-
-	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Get("/api/boardgame/"+bgID).
+		Method("QUERY").
+		URL("/api/boardgame").
+		Body(`{"pagination":{"page":1,"pageSize":10},"filters":[{"field":"min_players","op":"ge","value":"3"}]}`).
+		ContentType("application/json").
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		Assert(assertEnvelope).
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/missing").
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		Body("boardgame \"missing\": record not found\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgameByID_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameByID(gomock.Any(), uint(9)).
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/by-id/9").
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		Body("boardgame 9: record not found\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgameByID_Invalid() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame/by-id/nope").
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		Body("invalid boardgame id nope\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostBoardgame_InvalidPlayersOrder() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame").
+		JSON(`{"name":"Catan","min_players":5,"max_players":2}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusBadRequest).
+		Body("min_players cannot exceed max_players: validation failed\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostBoardgame_DuplicateSlug() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "catan").
+		Return(boardgame.Boardgame{ID: 1, Slug: "catan", Name: "Catan"}, nil)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame").
+		JSON(`{"name":"Catan","min_players":2,"max_players":4}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusConflict).
+		Body(`slug "catan" already in use; disambiguate the name, e.g. add a year or edition: entry already exists` + "\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestPostExpansion_ParentNotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "scenario").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame/missing/expansion").
+		JSON(`{"name":"Scenario","min_players":2,"max_players":4}`).
+		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
 		End()
 }
 
-func (suite *BoardGameSuite) TestDeleteBoardgameFailure() {
-	bgID := "1"
-	bg := new(model.Boardgame)
+func (suite *BoardGameSuite) TestPatchBoardgame() {
 	suite.base.dbMock.EXPECT().
-		Read(bg, "", "id = ?", bgID).
-		Return(middleware.NewError(http.StatusNotFound, "Boardgame not found with id: "+bgID))
+		GetBoardgameBySlug(gomock.Any(), "catan").
+		Return(boardgame.Boardgame{ID: 1, Slug: "catan", Name: "Catan", MinPlayers: 2, MaxPlayers: 4}, nil)
+	suite.base.dbMock.EXPECT().
+		UpdateBoardgameWithAssociations(gomock.Any(), gomock.Any(), gomock.Any()).
+		Return(nil)
 
-	// Record not found
 	apitest.New().
 		HandlerFunc(suite.base.router.ServeHTTP).
-		Delete("/api/boardgame/"+bgID).
+		Patch("/api/boardgame/catan").
+		JSON(`{"description":"A trading game"}`).
+		Header("Content-Type", "application/json").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusOK).
+		End()
+}
+
+func (suite *BoardGameSuite) TestPatchBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Patch("/api/boardgame/missing").
+		JSON(`{"description":"A trading game"}`).
+		Header("Content-Type", "application/json").
 		Header("Authorization", "Bearer "+suite.base.oauthHeader).
 		Expect(suite.T()).
 		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *BoardGameSuite) TestDeleteBoardgame_NotFound() {
+	suite.base.dbMock.EXPECT().
+		GetBoardgameBySlug(gomock.Any(), "missing").
+		Return(boardgame.Boardgame{}, store.ErrNotFound)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Delete("/api/boardgame/missing").
+		Header("Authorization", "Bearer "+suite.base.oauthHeader).
+		Expect(suite.T()).
+		Status(http.StatusNotFound).
+		End()
+}
+
+func (suite *BoardGameSuite) TestGetBoardgames_StoreError() {
+	suite.base.dbMock.EXPECT().
+		GetAllBoardgames(gomock.Any(), gomock.Any(), false).
+		Return(nil, 0, assert.AnError)
+
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Get("/api/boardgame").
+		Expect(suite.T()).
+		Status(http.StatusInternalServerError).
+		Body("list boardgames: internal error\n").
+		End()
+}
+
+func (suite *BoardGameSuite) TestRateBoardgame_Unauthorized() {
+	apitest.New().
+		HandlerFunc(suite.base.router.ServeHTTP).
+		Post("/api/boardgame/catan/rate").
+		JSON(`{"username":"ada","value":8}`).
+		Header("Content-Type", "application/json").
+		Expect(suite.T()).
+		Status(http.StatusUnauthorized).
 		End()
 }
 

@@ -1,0 +1,6 @@
+.git
+build/*
+!build/docs
+!build/docs/**
+environment
+**/.env

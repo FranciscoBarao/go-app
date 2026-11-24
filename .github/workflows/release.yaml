@@ -1,0 +1,123 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
+        required: true
+  workflow_call:
+    inputs:
+      bump:
+        description: Version bump (major, minor, or patch). Omit on push to infer from the commit.
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    name: Determine version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      skip: ${{ steps.bump.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - id: bump
+        name: Choose bump
+        env:
+          BUMP: ${{ inputs.bump }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          bump="${BUMP:-}"
+          subject="${COMMIT_MESSAGE%%$'\n'*}"
+
+          if [ -z "$bump" ]; then
+            breaking_title='^[a-z]+(\([^)]+\))?!:'
+            breaking_footer=$'(^|\n)BREAKING[- ]CHANGE:'
+            if [[ "$subject" =~ $breaking_title ]] || [[ "$COMMIT_MESSAGE" =~ $breaking_footer ]]; then
+              echo "skip=true" >> "$GITHUB_OUTPUT"
+              echo "::notice::Skipped auto-release. Major bumps require workflow_dispatch with bump=major."
+              exit 0
+            fi
+            commit_type="${subject%%:*}"
+            commit_type="${commit_type%%(*}"
+            case "$commit_type" in
+              feat) bump=minor ;;
+              fix|docs|style|refactor|perf|test|build|ci|chore|revert) bump=patch ;;
+              *)
+                echo "skip=true" >> "$GITHUB_OUTPUT"
+                echo "::notice::Commit subject is not a conventional commit; skipped release: ${subject}"
+                exit 0
+                ;;
+            esac
+          fi
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "bump=${bump}" >> "$GITHUB_OUTPUT"
+
+      - id: version
+        name: Next version
+        if: steps.bump.outputs.skip != 'true'
+        env:
+          BUMP: ${{ steps.bump.outputs.bump }}
+        run: |
+          set -euo pipefail
+          latest=$(git tag --list 'v*.*.*' --sort=-v:refname | head -n1)
+          : "${latest:=v0.0.0}"
+          IFS=. read -r major minor patch <<< "${latest#v}"
+          case "$BUMP" in
+            major) version="$((major + 1)).0.0" ;;
+            minor) version="${major}.$((minor + 1)).0" ;;
+            patch) version="${major}.${minor}.$((patch + 1))" ;;
+            *) echo "::error::Unknown bump: ${BUMP}"; exit 1 ;;
+          esac
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+          echo "Next version: v${version} (bump=${BUMP})"
+
+  tag:
+    name: Tag
+    needs: bump
+    if: needs.bump.outputs.skip != 'true'
+    uses: ./.github/workflows/tag.yaml
+    with:
+      version: ${{ needs.bump.outputs.version }}
+    secrets: inherit
+    permissions:
+      contents: write
+
+  release:
+    name: GitHub Release
+    needs: [bump, tag]
+    if: needs.bump.outputs.skip != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.bump.outputs.version }}
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists"
+            exit 0
+          fi
+          gh release create "$TAG" --generate-notes --title "$TAG"

@@ -1,0 +1,24 @@
+meta {
+  name: Delete hard
+  type: http
+  seq: 9
+}
+
+delete {
+  url: {{catalogBaseUrl}}/api/boardgame/{{boardgameSlug}}
+  body: none
+  auth: none
+}
+
+params:query {
+  hard: true
+}
+
+headers {
+  ~Authorization: Bearer {{token}}
+}
+
+docs {
+  Permanent delete, including expansions.
+  Authorization is disabled; enable it or inherit collection Bearer to send {{token}}.
+}

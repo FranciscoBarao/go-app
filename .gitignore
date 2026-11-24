@@ -1,3 +1,4 @@
+### Golang ###
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -21,18 +22,8 @@
 build
 
 
-### NextJS ###
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-
 # testing
 /coverage
-
-# next.js
-.next/
-/out/
 
 # production
 /build
@@ -50,19 +41,13 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# Bruno per-collection secrets
+api-client/**/.env
+
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
 
-### react ###
-.DS_*
-*.log
-logs
-**/*.backup.*
-**/*.back.*
 
 node_modules
 bower_components
@@ -74,7 +59,14 @@ thumb
 sketch
 
 
+## Doc
 TODO.md
-docs/
+build/
 /.kanbn
 
+
+# Mock files
+*_mock.go
+
+# AI files
+.cursor

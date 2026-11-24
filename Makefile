@@ -28,7 +28,9 @@ ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 		echo "Container image for swagger does not exist. Building.."; \
 		docker build . -t swagger-go -f doc/docker/dockerfile; \
 	fi
-	docker run --rm -v "$(shell pwd)/$(svc):/$(svc):ro" -v "$(shell pwd)/$(svc)/docs:/$(svc)/docs:rw" -w /$(svc) swagger-go swag init --parseInternal --parseDependency
+	entrypoint=main.go; \
+	if [ -f "$(svc)/cmd/$(svc)/main.go" ]; then entrypoint="cmd/$(svc)/main.go"; fi; \
+	docker run --rm -v "$(shell pwd)/$(svc):/$(svc):ro" -v "$(shell pwd)/$(svc)/build/docs:/$(svc)/build/docs:rw" -w /$(svc) swagger-go swag init -g "$$entrypoint" --parseInternal --parseDependency
 else
 	@echo "No service directory such as: $(svc)"
 endif
@@ -43,7 +45,7 @@ swag-all: ## Creates Swagger files for all services
 lint-go: ## Use golintci-lint on your project. Requires service. E.g: make lint-go svc=x
 ifeq ($(svc), $(filter $(svc), $(LIST_SERVICES)))
 	$(eval OUTPUT_OPTIONS = $(shell [ "${EXPORT_RESULT}" = "true" ] && echo "--out-format checkstyle ./... | tee /dev/tty > checkstyle-report.xml" || echo "" ))
-	docker run --rm -v "$(shell pwd)/$(svc):/app" -w /app golangci/golangci-lint:latest-alpine golangci-lint run --deadline=65s $(OUTPUT_OPTIONS)
+	docker run --rm -v "$(shell pwd)/$(svc):/app" -w /app golangci/golangci-lint:v2.15.0-alpine golangci-lint run --timeout=65s $(OUTPUT_OPTIONS)
 else
 	@echo "No service directory such as: $(svc)"
 endif
